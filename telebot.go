@@ -235,15 +235,23 @@ func InitTelegram() {
 
 	Bot.Handle("/ban", func(m *tb.Message) {
 		if IsGroupAdmin(m) && ValidReplyUser(m) {
-			Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
-			SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
+			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
+				SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
+			} else {
+				DErrorE(err, "Perm Update | Fail to ban user")
+				SmartSend(m, "❌ 您没有办法禁言 TA 呢")
+			}
 		}
 	})
 
 	Bot.Handle("/unban", func(m *tb.Message) {
 		if IsGroupAdmin(m) && ValidReplyUser(m) {
-			Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
-			SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
+			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
+				SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
+			} else {
+				DErrorE(err, "Perm Update | Fail to unban user")
+				SmartSend(m, "❌ 您没有办法解禁 TA 呢")
+			}
 		}
 	})
 
