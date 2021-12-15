@@ -36,6 +36,8 @@ var GroupConfigCache map[int64]*GroupConfig
 type GroupConfig struct {
 	ID     int64
 	Admins []int64
+
+	ShouldFollow int64
 }
 
 func InitDatabase() (err error) {

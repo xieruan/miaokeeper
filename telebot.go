@@ -25,6 +25,8 @@ var lastText = ""
 var puncReg *regexp.Regexp
 
 var zcomap *ObliviousMap
+var creditomap *ObliviousMap
+var votemap *ObliviousMap
 
 func SetCommands() error {
 	allCommands := [][]string{
@@ -55,6 +57,17 @@ func IsGroupAdmin(m *tb.Message) bool {
 	return gc != nil && gc.IsAdmin(m.Sender.ID)
 }
 
+func IsGroupAdminC(c *tb.Callback) bool {
+	gc := GetGroupConfig(c.Message.Chat.ID)
+	return gc != nil && gc.IsAdmin(c.Sender.ID)
+}
+
+func LazyDelete(m *tb.Message) {
+	time.AfterFunc(time.Second*10, func() {
+		Bot.Delete(m)
+	})
+}
+
 func InitTelegram() {
 	var err error
 	Bot, err = tb.NewBot(tb.Settings{
@@ -77,41 +90,45 @@ func InitTelegram() {
 	Bot.Handle("/su_add_group", func(m *tb.Message) {
 		if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
 			if UpdateGroup(m.Chat.ID, UMAdd) {
-				SmartSend(m, "✔️ 已将该组加入积分统计 ～")
+				SmartSendDelete(m, "✔️ 已将该组加入积分统计 ～")
 			} else {
-				SmartSend(m, "❌ 该组已经开启积分统计啦 ～")
+				SmartSendDelete(m, "❌ 该组已经开启积分统计啦 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/su_del_group", func(m *tb.Message) {
 		if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
 			if UpdateGroup(m.Chat.ID, UMDel) {
-				SmartSend(m, "✔️ 已将该组移除积分统计 ～")
+				SmartSendDelete(m, "✔️ 已将该组移除积分统计 ～")
 			} else {
-				SmartSend(m, "❌ 该组尚未开启积分统计哦 ～")
+				SmartSendDelete(m, "❌ 该组尚未开启积分统计哦 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/su_add_admin", func(m *tb.Message) {
 		if IsAdmin(m.Sender.ID) && m.ReplyTo != nil && m.ReplyTo.Sender.ID > 0 && !m.ReplyTo.Sender.IsBot {
 			if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-				SmartSend(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
 			} else {
-				SmartSend(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/su_del_admin", func(m *tb.Message) {
 		if IsAdmin(m.Sender.ID) && m.ReplyTo != nil && m.ReplyTo.Sender.ID > 0 && !m.ReplyTo.Sender.IsBot {
 			if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-				SmartSend(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+				SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
 			} else {
-				SmartSend(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	// ---------------- Group Admin ----------------
@@ -120,22 +137,24 @@ func InitTelegram() {
 		gc := GetGroupConfig(m.Chat.ID)
 		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-				SmartSend(m.ReplyTo, "✔️ TA 已经成为群管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为群管理员啦 ～")
 			} else {
-				SmartSend(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/deladmin", func(m *tb.Message) {
 		gc := GetGroupConfig(m.Chat.ID)
 		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-				SmartSend(m.ReplyTo, "✔️ 已将 TA 的群管理员移除 ～")
+				SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的群管理员移除 ～")
 			} else {
-				SmartSend(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
+				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/setcredit", func(m *tb.Message) {
@@ -145,7 +164,7 @@ func InitTelegram() {
 			credit := int64(0)
 
 			if len(addons) == 0 {
-				SmartSend(m, "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>")
+				SmartSendDelete(m, "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>")
 				return
 			}
 
@@ -160,10 +179,11 @@ func InitTelegram() {
 				target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 			}
 			target = UpdateCredit(target, UMSet, credit)
-			SmartSend(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+			SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
 		} else {
-			SmartSend(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/addcredit", func(m *tb.Message) {
@@ -173,7 +193,7 @@ func InitTelegram() {
 			credit := int64(0)
 
 			if len(addons) == 0 {
-				SmartSend(m, "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>")
+				SmartSendDelete(m, "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>")
 				return
 			}
 
@@ -188,10 +208,11 @@ func InitTelegram() {
 				target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 			}
 			target = UpdateCredit(target, UMAdd, credit)
-			SmartSend(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+			SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
 		} else {
-			SmartSend(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/creditrank", func(m *tb.Message) {
@@ -207,10 +228,14 @@ func InitTelegram() {
 			for i, c := range ranks {
 				rankStr += fmt.Sprintf("`%2d`. `%s`: `%d`\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.Credit)
 			}
-			SmartSend(m, "👀 当前的积分墙为: \n\n"+rankStr)
+			SmartSend(m, "👀 当前的积分墙为: \n\n"+rankStr, &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
 		} else {
-			SmartSend(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/lottery", func(m *tb.Message) {
@@ -225,10 +250,14 @@ func InitTelegram() {
 			num := rand.Intn(len(ranks))
 			c := ranks[num]
 			rankStr := fmt.Sprintf(" [-](%s) `%s`\n", fmt.Sprintf("tg://user?id=%d", c.ID), strings.ReplaceAll(c.Name, "`", "'"))
-			SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr))
+			SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
 		} else {
-			SmartSend(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 		}
+		LazyDelete(m)
 	})
 
 	// ---------------- Normal User ----------------
@@ -236,39 +265,51 @@ func InitTelegram() {
 	Bot.Handle("/ban", func(m *tb.Message) {
 		if IsGroupAdmin(m) && ValidReplyUser(m) {
 			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
 			} else {
 				DErrorE(err, "Perm Update | Fail to ban user")
-				SmartSend(m, "❌ 您没有办法禁言 TA 呢")
+				SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/unban", func(m *tb.Message) {
 		if IsGroupAdmin(m) && ValidReplyUser(m) {
 			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
 			} else {
 				DErrorE(err, "Perm Update | Fail to unban user")
-				SmartSend(m, "❌ 您没有办法解禁 TA 呢")
+				SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
 			}
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle("/mycredit", func(m *tb.Message) {
 		if m.Chat.ID > 0 {
-			SmartSend(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
+			SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
 		} else {
-			SmartSend(m, fmt.Sprintf("👀 您当前的积分为: %d", GetCredit(m.Chat.ID, m.Sender.ID).Credit))
+			SmartSendDelete(m, fmt.Sprintf("👀 您当前的积分为: %d", GetCredit(m.Chat.ID, m.Sender.ID).Credit))
 		}
+		LazyDelete(m)
 	})
 
 	Bot.Handle(tb.OnUserLeft, func(m *tb.Message) {
 		if IsGroup(m.Chat.ID) {
 			if m.UserLeft.ID > 0 && !m.UserLeft.IsBot {
+				gc := GetGroupConfig(m.Chat.ID)
+				if gc != nil {
+					gc.UpdateAdmin(m.UserLeft.ID, UMDel)
+				}
 				UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMSet, 0)
 			}
 		}
+		LazyDelete(m)
+	})
+
+	Bot.Handle(tb.OnPinned, func(m *tb.Message) {
+		LazyDelete(m)
 	})
 
 	Bot.Handle("嘴臭", func(m *tb.Message) {
@@ -281,13 +322,13 @@ func InitTelegram() {
 				} else {
 					token := fmt.Sprintf("%d,%d,%d", m.Chat.ID, m.Sender.ID, m.ReplyTo.Sender.ID)
 					if _, ok := zcomap.Get(token); ok {
-						UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMAdd, -10)
+						addCredit(m.Chat.ID, m.Sender, -10, true)
 						SmartSend(m, "😠 你自己先漱漱口呢，不要连续臭别人哦！扣 10 分警告一下")
 					} else {
 						zcomap.Set(token, 1)
-						ci := UpdateCredit(BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false), UMAdd, -25)
+						ci := addCredit(m.Chat.ID, m.ReplyTo.Sender, -25, true)
 						SmartSend(m.ReplyTo, fmt.Sprintf("您被 %s 警告了 ⚠️，请注意管理好自己的 Psycho-Pass！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.Sender)))
-						Bot.Delete(m)
+						LazyDelete(m)
 						if ci.Credit < -50 {
 							Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
 						}
@@ -296,6 +337,123 @@ func InitTelegram() {
 			} else {
 				SmartSend(m, "😠 匿名就不要乱啵啵啦！叭了个叭叭了个叭叭了个叭 ...")
 			}
+		}
+	})
+
+	Bot.Handle("恶意广告", func(m *tb.Message) {
+		if IsGroup(m.Chat.ID) && m.ReplyTo != nil {
+			if m.Sender.ID > 0 && m.Sender.Username != "Channel_Bot" {
+				if m.ReplyTo.Sender.ID == m.Sender.ID {
+					if Ban(m.Chat.ID, m.Sender.ID, 0) == nil {
+						SmartSend(m, "举报自己？那没办法...只好把你 🫒 啦～")
+					} else {
+						SmartSend(m, "呜呜呜，封不掉 ～")
+					}
+				} else if m.ReplyTo.Sender.IsBot && m.ReplyTo.SenderChat != nil {
+					if m.ReplyTo.SenderChat != nil && m.ReplyTo.SenderChat.ID != m.Chat.ID {
+						if BanChannel(m.Chat.ID, m.ReplyTo.SenderChat.ID) == nil {
+							SmartSend(m, fmt.Sprintf("好的！这就把这个频道给封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetChatName(m.ReplyTo.SenderChat)))
+						} else {
+							SmartSend(m, "呜呜呜，封不掉 ～")
+						}
+					} else {
+						SmartSend(m, "叭了个叭叭了个叭叭了个叭 ～")
+					}
+				} else if m.ReplyTo.Sender.IsBot {
+					if Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0) == nil {
+						SmartSend(m, fmt.Sprintf("好的！这就把这个机器人封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetUserName(m.ReplyTo.Sender)))
+					} else {
+						SmartSend(m, "呜呜呜，封不掉 ～")
+					}
+				} else {
+					token := fmt.Sprintf("ad-%d,%d", m.Chat.ID, m.Sender.ID)
+					if zcomap.Add(token) > 3 {
+						addCredit(m.Chat.ID, m.Sender, -5, true)
+						SmartSend(m, "😠 消停一下消停一下，举报太多次啦，扣 5 分缓一缓")
+					} else {
+						userId := m.ReplyTo.Sender.ID
+						vtToken := fmt.Sprintf("vt-%d,%d", m.Chat.ID, userId)
+						if Ban(m.Chat.ID, userId, 0) == nil {
+							addCredit(m.Chat.ID, m.ReplyTo.Sender, -50, true)
+							addCredit(m.Chat.ID, m.Sender, 15, true)
+							votemap.Set(vtToken, 0)
+							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意广告的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言并扣除 50 分作为警告。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 10 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
+							SendBtns(m.ReplyTo, msgTxt, "", GenVMBtns(0, m.Chat.ID, userId, m.Sender.ID))
+							LazyDelete(m)
+						} else {
+							SmartSend(m, "呜呜呜，封不掉 ～")
+						}
+					}
+				}
+			} else {
+				SmartSend(m, "😠 匿名就不要乱啵啵啦！叭了个叭叭了个叭叭了个叭 ...")
+			}
+		}
+	})
+
+	Bot.Handle(tb.OnCallback, func(c *tb.Callback) {
+		m := c.Message
+		if IsGroup(m.Chat.ID) {
+			cmds := strings.Split(strings.TrimSpace(c.Data), "/")
+			cmd, gid, uid, secuid := "", int64(0), int64(0), int64(0)
+			if len(cmds) > 0 {
+				cmd = cmds[0]
+			}
+			if len(cmds) > 1 {
+				gid, _ = strconv.ParseInt(cmds[1], 10, 64)
+			}
+			if len(cmds) > 2 {
+				uid, _ = strconv.ParseInt(cmds[2], 10, 64)
+			}
+			if len(cmds) > 3 {
+				secuid, _ = strconv.ParseInt(cmds[3], 10, 64)
+			}
+			if strings.Contains("vt unban kick", cmd) && IsGroup(gid) && uid > 0 && secuid > 0 {
+				if cmd == "unban" && IsGroupAdminC(c) {
+					if Unban(gid, uid, 0) == nil {
+						Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
+					} else {
+						Rsp(c, "❌ 解封失败，可能 TA 已经退群啦 ~")
+					}
+					SmartEdit(m, m.Text+"\n\nTA 已被管理员解封，积分原路返回 👊")
+					addCredit(gid, &tb.User{ID: uid}, 50, true)
+					addCredit(gid, &tb.User{ID: secuid}, -15, true)
+				} else if cmd == "kick" && IsGroupAdminC(c) {
+					if Kick(gid, uid) == nil {
+						Rsp(c, "✔️ 已将 TA 送出群留学去啦 ~")
+					} else {
+						Rsp(c, "❌ 踢出失败，可能 TA 已经退群啦 ~")
+					}
+					SmartEdit(m, m.Text+"\n\nTA 已被踢出群聊 🦶")
+				} else if cmd == "vt" {
+					vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
+					userVtToken := fmt.Sprintf("vu-%d,%d,%d", gid, uid, c.Sender.ID)
+					if _, ok := votemap.Get(vtToken); ok {
+						if votemap.Add(userVtToken) == 1 {
+							votes := votemap.Add(vtToken)
+							if votes >= 10 {
+								Unban(gid, uid, 0)
+								SmartEdit(m, m.Text+"\n\n于多名用户投票后决定，该用户不是恶意广告，用户已解封，积分已原路返回。")
+								addCredit(gid, &tb.User{ID: uid}, 50, true)
+								addCredit(gid, &tb.User{ID: secuid}, -15, true)
+							} else {
+								EditBtns(m, m.Text, "", GenVMBtns(votes, gid, uid, secuid))
+							}
+							Rsp(c, "✔️ 投票成功，感谢您的参与 ~")
+						} else {
+							Rsp(c, "❌ 您已经参与过投票了，请不要多次投票哦 ~")
+						}
+					} else {
+						Rsp(c, "❌ 投票时间已过，请联系管理员处理 ~")
+					}
+				} else {
+					Rsp(c, "❌ 请不要乱玩管理员指令！")
+				}
+			} else {
+				Rsp(c, "❌ 指令解析出错，请联系管理员解决 ~")
+			}
+		} else {
+			Rsp(c, "❌ 这个群组还没有被授权哦 ~")
 		}
 	})
 
@@ -311,13 +469,13 @@ func InitTelegram() {
 
 			if m.Sender.Username != "Channel_Bot" {
 				if puncReg.MatchString(text) {
-					UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMAdd, -10)
+					addCredit(m.Chat.ID, m.Sender, -5, true)
 					lastID = userId
 				} else if textLen >= 2 {
 					if lastID == userId && text == lastText {
-						UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMAdd, -5)
+						addCredit(m.Chat.ID, m.Sender, -3, true)
 					} else if lastID != userId || (textLen >= 14 && text != lastText) {
-						UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMAdd, 1)
+						addCredit(m.Chat.ID, m.Sender, 1, false)
 					}
 					lastID = userId
 					lastText = text
@@ -325,7 +483,7 @@ func InitTelegram() {
 			}
 
 			if ValidReplyUser(m) {
-				UpdateCredit(BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false), UMAdd, 1)
+				addCredit(m.Chat.ID, m.ReplyTo.Sender, 1, true)
 			}
 		}
 	})
@@ -338,19 +496,43 @@ func InitTelegram() {
 			userId := m.Sender.ID
 			if m.Sender.Username != "Channel_Bot" {
 				if lastID != userId {
-					UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMAdd, 1)
+					addCredit(m.Chat.ID, m.Sender, 1, false)
 					lastID = userId
 				}
 			}
 
 			if ValidReplyUser(m) {
-				UpdateCredit(BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false), UMAdd, 1)
+				addCredit(m.Chat.ID, m.ReplyTo.Sender, 1, true)
 			}
 		}
 	})
 
 	go Bot.Start()
 	DInfo("telegram bot is up.")
+}
+
+func Rsp(c *tb.Callback, msg string) {
+	Bot.Respond(c, &tb.CallbackResponse{
+		Text:      msg,
+		ShowAlert: true,
+	})
+}
+
+func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
+	return []string{
+		fmt.Sprintf("😠 这不公平 (%d)|vt/%d/%d/%d", votes, chatId, userId, secondUserId),
+		fmt.Sprintf("🚩 [管理]解封|unban/%d/%d/%d||🚮 [管理]清退|kick/%d/%d/%d", chatId, userId, secondUserId, chatId, userId, secondUserId),
+	}
+}
+
+func addCredit(chatId int64, user *tb.User, credit int64, force bool) *CreditInfo {
+	if chatId < 0 && user != nil && user.ID > 0 && credit != 0 {
+		token := fmt.Sprintf("ac-%d-%d", chatId, user.ID)
+		if creditomap.Add(token) < 20 || force { // can only get credit 20 times / hour
+			return UpdateCredit(BuildCreditInfo(chatId, user, false), UMAdd, credit)
+		}
+	}
+	return nil
 }
 
 func ValidReplyUser(m *tb.Message) bool {
@@ -368,10 +550,71 @@ func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
 	return ci
 }
 
+func SmartEdit(to *tb.Message, what interface{}, options ...interface{}) (*tb.Message, error) {
+	options = append([]interface{}{&tb.SendOptions{
+		// ParseMode:             "Markdown",
+		DisableWebPagePreview: true,
+	}}, options...)
+	m, err := Bot.Edit(to, what, options...)
+	if err != nil {
+		DErrorE(err, "Telegram Edit Error")
+	}
+	return m, err
+}
+
+func SmartSendDelete(to interface{}, what interface{}, options ...interface{}) (*tb.Message, error) {
+	msg, err := SmartSend(to, what, options...)
+	if err == nil && msg != nil {
+		LazyDelete(msg)
+	}
+	return msg, err
+}
+
+func MakeBtns(prefix string, btns []string) [][]tb.InlineButton {
+	btnsc := make([][]tb.InlineButton, 0)
+	for _, row := range btns {
+		btnscr := make([]tb.InlineButton, 0)
+		for _, btn := range strings.Split(row, "||") {
+			z := strings.SplitN(btn, "|", 2)
+			if len(z) < 2 {
+				continue
+			}
+			btnscr = append(btnscr, tb.InlineButton{
+				Unique: prefix + z[1],
+				Text:   z[0],
+				Data:   "",
+			})
+		}
+		btnsc = append(btnsc, btnscr)
+	}
+	return btnsc
+}
+
+func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*tb.Message, error) {
+	return SmartSendInner(to, what, &tb.SendOptions{
+		// ParseMode:             "Markdown",
+		DisableWebPagePreview: true,
+	}, &tb.ReplyMarkup{
+		OneTimeKeyboard:     true,
+		ResizeReplyKeyboard: true,
+		ForceReply:          true,
+		InlineKeyboard:      MakeBtns(prefix, btns),
+	})
+}
+
+func EditBtns(to *tb.Message, what interface{}, prefix string, btns []string) (*tb.Message, error) {
+	return SmartEdit(to, what, &tb.ReplyMarkup{
+		OneTimeKeyboard:     true,
+		ResizeReplyKeyboard: true,
+		ForceReply:          true,
+		InlineKeyboard:      MakeBtns(prefix, btns),
+	})
+}
+
 func SmartSend(to interface{}, what interface{}, options ...interface{}) (*tb.Message, error) {
 	if len(options) == 0 {
 		return SmartSendInner(to, what, &tb.SendOptions{
-			ParseMode:             "Markdown",
+			// ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 		})
 	}
@@ -417,11 +660,28 @@ func GetUserName(u *tb.User) string {
 		s = strings.TrimSpace(u.FirstName + " " + u.LastName)
 	} else if u.Username != "" {
 		s = "@" + u.Username
-	} else {
-		s = fmt.Sprintf("%d", u.ID)
 	}
 
 	return s
+}
+
+func GetChatName(u *tb.Chat) string {
+	s := ""
+	if u.FirstName != "" || u.LastName != "" {
+		s = strings.TrimSpace(u.FirstName + " " + u.LastName)
+	} else if u.Username != "" {
+		s = "@" + u.Username
+	}
+
+	return s
+}
+
+func Kick(chatId, userId int64) error {
+	cm, err := Bot.ChatMemberOf(&tb.Chat{ID: chatId}, &tb.User{ID: userId})
+	if err == nil {
+		return Bot.Ban(&tb.Chat{ID: chatId}, cm)
+	}
+	return err
 }
 
 func Ban(chatId, userId int64, duration int64) error {
@@ -474,7 +734,19 @@ func RestrictChatMember(chat *tb.Chat, member *tb.ChatMember) error {
 	return err
 }
 
+func BanChannel(chatId, channelId int64) error {
+	params := map[string]interface{}{
+		"chat_id":        strconv.FormatInt(chatId, 10),
+		"sender_chat_id": strconv.FormatInt(channelId, 10),
+	}
+
+	_, err := Bot.Raw("banChatSenderChat", params)
+	return err
+}
+
 func init() {
 	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
-	zcomap = NewOMap(60 * 60 * 1000)
+	zcomap = NewOMap(60*60*1000, true)
+	creditomap = NewOMap(60*60*1000, false)
+	votemap = NewOMap(24*60*60*1000, false)
 }
