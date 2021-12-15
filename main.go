@@ -27,7 +27,6 @@ func main() {
 
 	InitTables()
 	ReadConfigs()
-	InitCreditTable()
 
 	if *setadmin > 0 {
 		UpdateAdmin(*setadmin, UMSet)

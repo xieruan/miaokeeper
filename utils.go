@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func AddIntoInt64Arr(arr []int64, val int64) []int64 {
+func AddIntoInt64Arr(arr []int64, val int64) ([]int64, bool) {
 	res := []int64{}
 	seen := false
 	for _, s := range arr {
@@ -21,17 +21,20 @@ func AddIntoInt64Arr(arr []int64, val int64) []int64 {
 	if !seen {
 		res = append(res, val)
 	}
-	return res
+	return res, !seen
 }
 
-func DelFromInt64Arr(arr []int64, val int64) []int64 {
+func DelFromInt64Arr(arr []int64, val int64) ([]int64, bool) {
 	res := []int64{}
+	seen := false
 	for _, s := range arr {
 		if s != val {
 			res = append(res, s)
+		} else {
+			seen = true
 		}
 	}
-	return res
+	return res, seen
 }
 
 func ParseInt64ArrToStr(arr []int64) string {
