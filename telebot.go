@@ -344,8 +344,8 @@ func InitTelegram() {
 		if IsGroup(m.Chat.ID) && m.ReplyTo != nil {
 			if m.Sender.ID > 0 && m.Sender.Username != "Channel_Bot" {
 				if m.ReplyTo.Sender.ID == m.Sender.ID {
-					if Ban(m.Chat.ID, m.Sender.ID, 0) == nil {
-						SmartSend(m, "举报自己？那没办法...只好把你 🫒 啦～")
+					if Ban(m.Chat.ID, m.Sender.ID, 1800) == nil {
+						SmartSend(m, "举报自己？那没办法...只好把你 🫒 半小时哦～")
 						LazyDelete(m.ReplyTo)
 					} else {
 						SmartSend(m, "呜呜呜，封不掉 ～")
@@ -353,7 +353,7 @@ func InitTelegram() {
 				} else if m.ReplyTo.Sender.IsBot && m.ReplyTo.SenderChat != nil {
 					if m.ReplyTo.SenderChat != nil && m.ReplyTo.SenderChat.ID != m.Chat.ID {
 						if BanChannel(m.Chat.ID, m.ReplyTo.SenderChat.ID) == nil {
-							SmartSend(m, fmt.Sprintf("好的！这就把这个频道给封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetChatName(m.ReplyTo.SenderChat)))
+							SmartSend(m, fmt.Sprintf("好的！这就把这个频道封掉啦～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetChatName(m.ReplyTo.SenderChat)))
 							LazyDelete(m)
 							LazyDelete(m.ReplyTo)
 						} else {
@@ -363,8 +363,8 @@ func InitTelegram() {
 						SmartSend(m, "叭了个叭叭了个叭叭了个叭 ～")
 					}
 				} else if m.ReplyTo.Sender.IsBot {
-					if Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0) == nil {
-						SmartSend(m, fmt.Sprintf("好的！这就把这个机器人封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetUserName(m.ReplyTo.Sender)))
+					if Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 1800) == nil {
+						SmartSend(m, fmt.Sprintf("好的！这就把这个机器人封禁半小时～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetUserName(m.ReplyTo.Sender)))
 						LazyDelete(m)
 						LazyDelete(m.ReplyTo)
 					} else {
@@ -378,11 +378,11 @@ func InitTelegram() {
 					} else {
 						userId := m.ReplyTo.Sender.ID
 						vtToken := fmt.Sprintf("vt-%d,%d", m.Chat.ID, userId)
-						if Ban(m.Chat.ID, userId, 0) == nil {
+						if Ban(m.Chat.ID, userId, 1800) == nil {
 							addCredit(m.Chat.ID, m.ReplyTo.Sender, -50, true)
 							addCredit(m.Chat.ID, m.Sender, 15, true)
 							votemap.Set(vtToken, 0)
-							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意广告的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言并扣除 50 分作为警告。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 10 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
+							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意广告的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 10 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
 							SendBtns(m.ReplyTo, msgTxt, "", GenVMBtns(0, m.Chat.ID, userId, m.Sender.ID))
 							LazyDelete(m)
 							LazyDelete(m.ReplyTo)
