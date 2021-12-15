@@ -346,6 +346,7 @@ func InitTelegram() {
 				if m.ReplyTo.Sender.ID == m.Sender.ID {
 					if Ban(m.Chat.ID, m.Sender.ID, 0) == nil {
 						SmartSend(m, "举报自己？那没办法...只好把你 🫒 啦～")
+						LazyDelete(m.ReplyTo)
 					} else {
 						SmartSend(m, "呜呜呜，封不掉 ～")
 					}
@@ -353,6 +354,8 @@ func InitTelegram() {
 					if m.ReplyTo.SenderChat != nil && m.ReplyTo.SenderChat.ID != m.Chat.ID {
 						if BanChannel(m.Chat.ID, m.ReplyTo.SenderChat.ID) == nil {
 							SmartSend(m, fmt.Sprintf("好的！这就把这个频道给封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetChatName(m.ReplyTo.SenderChat)))
+							LazyDelete(m)
+							LazyDelete(m.ReplyTo)
 						} else {
 							SmartSend(m, "呜呜呜，封不掉 ～")
 						}
@@ -362,6 +365,8 @@ func InitTelegram() {
 				} else if m.ReplyTo.Sender.IsBot {
 					if Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0) == nil {
 						SmartSend(m, fmt.Sprintf("好的！这就把这个机器人封了～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）", GetUserName(m.ReplyTo.Sender)))
+						LazyDelete(m)
+						LazyDelete(m.ReplyTo)
 					} else {
 						SmartSend(m, "呜呜呜，封不掉 ～")
 					}
@@ -380,6 +385,7 @@ func InitTelegram() {
 							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意广告的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言并扣除 50 分作为警告。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 10 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
 							SendBtns(m.ReplyTo, msgTxt, "", GenVMBtns(0, m.Chat.ID, userId, m.Sender.ID))
 							LazyDelete(m)
+							LazyDelete(m.ReplyTo)
 						} else {
 							SmartSend(m, "呜呜呜，封不掉 ～")
 						}
