@@ -233,6 +233,20 @@ func InitTelegram() {
 
 	// ---------------- Normal User ----------------
 
+	Bot.Handle("/ban", func(m *tb.Message) {
+		if IsGroupAdmin(m) && ValidReplyUser(m) {
+			Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
+			SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
+		}
+	})
+
+	Bot.Handle("/unban", func(m *tb.Message) {
+		if IsGroupAdmin(m) && ValidReplyUser(m) {
+			Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
+			SmartSend(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
+		}
+	})
+
 	Bot.Handle("/mycredit", func(m *tb.Message) {
 		if m.Chat.ID > 0 {
 			SmartSend(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
@@ -264,7 +278,7 @@ func InitTelegram() {
 					} else {
 						zcomap.Set(token, 1)
 						ci := UpdateCredit(BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false), UMAdd, -25)
-						SmartSend(m.ReplyTo, fmt.Sprintf("您被 %s 警告了 ⚠️，请注意管理好自己的 Phycho-Pass！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.Sender)))
+						SmartSend(m.ReplyTo, fmt.Sprintf("您被 %s 警告了 ⚠️，请注意管理好自己的 Psycho-Pass！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.Sender)))
 						Bot.Delete(m)
 						if ci.Credit < -50 {
 							Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
@@ -390,13 +404,16 @@ func SmartSendInner(to interface{}, what interface{}, options ...interface{}) (*
 }
 
 func GetUserName(u *tb.User) string {
+	s := ""
 	if u.FirstName != "" || u.LastName != "" {
-		return strings.TrimSpace(u.FirstName + " " + u.LastName)
+		s = strings.TrimSpace(u.FirstName + " " + u.LastName)
 	} else if u.Username != "" {
-		return "@" + u.Username
+		s = "@" + u.Username
 	} else {
-		return fmt.Sprintf("%d", u.ID)
+		s = fmt.Sprintf("%d", u.ID)
 	}
+
+	return s
 }
 
 func Ban(chatId, userId int64, duration int64) error {
@@ -450,6 +467,6 @@ func RestrictChatMember(chat *tb.Chat, member *tb.ChatMember) error {
 }
 
 func init() {
-	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`]")
+	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
 	zcomap = NewOMap(60 * 60 * 1000)
 }
