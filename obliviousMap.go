@@ -63,6 +63,20 @@ func (om *ObliviousMap) Set(key string, value int) int {
 	return value
 }
 
+func (om *ObliviousMap) Unset(key string) {
+	om.lock.Lock()
+	defer om.lock.Unlock()
+
+	_, ok := om.inner[key]
+	if ok {
+		delete(om.inner, key)
+	}
+	_, ok = om.timer[key]
+	if ok {
+		delete(om.timer, key)
+	}
+}
+
 func (om *ObliviousMap) Add(key string) int {
 	v, _ := om.Get(key)
 	return om.Set(key, v+1)

@@ -37,7 +37,7 @@ type GroupConfig struct {
 	ID     int64
 	Admins []int64
 
-	ShouldFollow int64
+	MustFollow string
 }
 
 func InitDatabase() (err error) {
@@ -264,15 +264,23 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInf
 		user.Credit = 0
 	}
 
-	query, err := MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_%d
-			(userid, name, username, credit)
-		VALUES
-			(?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE
-			name = VALUES(name),
-			username = VALUES(username),
-			credit = VALUES(credit)
-		`, Abs(user.GroupId)), user.ID, user.Name, user.Username, user.Credit)
+	var query *sql.Rows
+	var err error
+
+	if method != UMDel {
+		query, err = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_%d
+				(userid, name, username, credit)
+			VALUES
+				(?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+				name = VALUES(name),
+				username = VALUES(username),
+				credit = VALUES(credit)
+			`, Abs(user.GroupId)), user.ID, user.Name, user.Username, user.Credit)
+	} else {
+		query, err = MYSQLDB.Query(fmt.Sprintf(`DELETE FROM MiaoKeeper_Credit_%d
+			WHERE userid = ?;`, Abs(user.GroupId)), user.ID)
+	}
 	if err != nil {
 		DErrorE(err, "Database Credit Update Error")
 	}
