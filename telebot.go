@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -153,7 +154,7 @@ func InitTelegram() {
 
 	// ---------------- Group Admin ----------------
 
-	Bot.Handle("/addadmin", func(m *tb.Message) {
+	Bot.Handle("/add_admin", func(m *tb.Message) {
 		gc := GetGroupConfig(m.Chat.ID)
 		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
@@ -165,7 +166,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/deladmin", func(m *tb.Message) {
+	Bot.Handle("/del_admin", func(m *tb.Message) {
 		gc := GetGroupConfig(m.Chat.ID)
 		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
@@ -177,7 +178,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/setcredit", func(m *tb.Message) {
+	Bot.Handle("/set_credit", func(m *tb.Message) {
 		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
 			target := &CreditInfo{}
@@ -206,7 +207,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/addcredit", func(m *tb.Message) {
+	Bot.Handle("/add_credit", func(m *tb.Message) {
 		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
 			target := &CreditInfo{}
@@ -235,7 +236,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/setchannel", func(m *tb.Message) {
+	Bot.Handle("/set_channel", func(m *tb.Message) {
 		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			gc := GetGroupConfig(m.Chat.ID)
 			if gc != nil {
@@ -282,16 +283,28 @@ func InitTelegram() {
 
 	Bot.Handle("/lottery", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) {
-			rank, _ := strconv.Atoi(m.Payload)
+			payloads := strings.Fields(m.Payload)
+
+			rank, _ := strconv.Atoi(payloads[0])
+			n, _ := strconv.Atoi(payloads[1])
+
 			if rank <= 0 {
 				rank = 10
 			} else if rank > 100 {
 				rank = 100
 			}
+			if n > rank {
+				n = rank
+			}
+
 			ranks := GetCreditRank(m.Chat.ID, rank)
-			num := rand.Intn(len(ranks))
-			c := ranks[num]
-			rankStr := fmt.Sprintf(" [-](%s) `%s`\n", fmt.Sprintf("tg://user?id=%d", c.ID), strings.ReplaceAll(c.Name, "`", "'"))
+			sort.Slice(ranks, func(i, j int) bool {
+				return rand.Intn(10) >= 5
+			})
+			rankStr := ""
+			for i, c := range ranks[:n] {
+				rankStr += fmt.Sprintf("`%2d.` `%s` ([%d](%s))\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.ID, fmt.Sprintf("tg://user?id=%d", c.ID))
+			}
 			SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
@@ -304,7 +317,7 @@ func InitTelegram() {
 
 	// ---------------- Normal User ----------------
 
-	Bot.Handle("/banuser", func(m *tb.Message) {
+	Bot.Handle("/ban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
 				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
@@ -316,7 +329,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/unbanuser", func(m *tb.Message) {
+	Bot.Handle("/unban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
 				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
@@ -328,7 +341,7 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
-	Bot.Handle("/kickonce", func(m *tb.Message) {
+	Bot.Handle("/kick_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
 				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 被踢出去啦！", GetUserName(m.ReplyTo.Sender)))
@@ -386,8 +399,11 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
+	Bot.Handle("口臭", CMDWarnUser)
+	Bot.Handle("口 臭", CMDWarnUser)
 	Bot.Handle("嘴臭", CMDWarnUser)
-	Bot.Handle("举报", CMDWarnUser)
+	Bot.Handle("嘴 臭", CMDWarnUser)
+
 	Bot.Handle("恶意广告", CMDBanUser)
 	Bot.Handle("恶意发言", CMDBanUser)
 
@@ -482,11 +498,23 @@ func InitTelegram() {
 		}
 	})
 
+	Bot.Handle(tb.OnSticker, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
+	Bot.Handle(tb.OnPhoto, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
+	Bot.Handle(tb.OnDocument, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
 	Bot.Handle(tb.OnText, func(m *tb.Message) {
 		if IsGroup(m.Chat.ID) {
-			// if !CheckChannelFollow(m, m.UserJoined, false) {
-			// 	return
-			// }
+			if !CheckChannelFollow(m, m.Sender, false) {
+				return
+			}
 
 			if m.IsForwarded() {
 				return
@@ -543,6 +571,12 @@ func InitTelegram() {
 func CheckChannelFollow(m *tb.Message, user *tb.User, showExceptDialog bool) bool {
 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && gc.MustFollow != "" {
 		usrName := strings.ReplaceAll(GetUserName(user), "`", "'")
+		if user.IsBot {
+			if showExceptDialog {
+				SmartSendDelete(m.Chat, fmt.Sprintf("👏 欢迎 %s 加入群组，已为机器人自动放行 ～", usrName))
+			}
+			return true
+		}
 		usrStatus := UserIsInGroup(gc.MustFollow, user.ID)
 		if usrStatus == UIGIn {
 			if showExceptDialog {
