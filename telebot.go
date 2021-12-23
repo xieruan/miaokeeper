@@ -92,8 +92,26 @@ func LazyDelete(m *tb.Message) {
 func InitTelegram() {
 	var err error
 	Bot, err = tb.NewBot(tb.Settings{
-		Token:  TOKEN,
-		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
+		Token: TOKEN,
+		Poller: &tb.LongPoller{
+			Timeout: 10 * time.Second,
+			AllowedUpdates: []string{
+				"message",
+				"edited_message",
+				// "channel_post",
+				// "edited_channel_post",
+				// "inline_query",
+				// "chosen_inline_result",
+				"callback_query",
+				// "shipping_query",
+				// "pre_checkout_query",
+				// "poll",
+				// "poll_answer",
+				"my_chat_member",
+				"chat_member",
+				// "chat_join_request",
+			},
+		},
 	})
 
 	if err != nil {
@@ -259,7 +277,7 @@ func InitTelegram() {
 	})
 
 	Bot.Handle("/creditrank", func(m *tb.Message) {
-		if IsGroupAdmin(m.Chat, m.Sender) {
+		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			rank, _ := strconv.Atoi(m.Payload)
 			if rank <= 0 {
 				rank = 10
@@ -282,7 +300,7 @@ func InitTelegram() {
 	})
 
 	Bot.Handle("/lottery", func(m *tb.Message) {
-		if IsGroupAdmin(m.Chat, m.Sender) {
+		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			payloads := strings.Fields(m.Payload)
 
 			rank, _ := strconv.Atoi(payloads[0])
@@ -311,6 +329,17 @@ func InitTelegram() {
 			})
 		} else {
 			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+		}
+		LazyDelete(m)
+	})
+
+	Bot.Handle("/check_credit", func(m *tb.Message) {
+		if m.Chat.ID > 0 {
+			SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
+		} else if !m.IsReply() {
+			SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
+		} else {
+			SmartSendDelete(m, fmt.Sprintf("👀 TA 当前的积分为: %d", GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit))
 		}
 		LazyDelete(m)
 	})
@@ -363,16 +392,24 @@ func InitTelegram() {
 	})
 
 	Bot.Handle(tb.OnUserLeft, func(m *tb.Message) {
-		if IsGroup(m.Chat.ID) {
-			if m.UserLeft.ID > 0 && !m.UserLeft.IsBot {
-				gc := GetGroupConfig(m.Chat.ID)
-				if gc != nil {
-					gc.UpdateAdmin(m.UserLeft.ID, UMDel)
-				}
-				UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0)
-			}
+		gc := GetGroupConfig(m.Chat.ID)
+		if gc != nil && m.UserLeft.ID > 0 {
+			gc.UpdateAdmin(m.UserLeft.ID, UMDel)
+			UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0)
 		}
 		LazyDelete(m)
+	})
+
+	Bot.Handle(tb.OnChatMember, func(cmu *tb.ChatMemberUpdated) {
+		gc := GetGroupConfig(cmu.Chat.ID)
+		if gc != nil && cmu.NewChatMember != nil && cmu.NewChatMember.User != nil && cmu.NewChatMember.User.ID > 0 {
+			user := cmu.NewChatMember.User
+			if cmu.NewChatMember.Role == tb.Kicked ||
+				cmu.NewChatMember.Role == tb.Left {
+				gc.UpdateAdmin(user.ID, UMDel)
+				UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0)
+			}
+		}
 	})
 
 	// Bot.Handle("清除我的积分", func(m *tb.Message) {
@@ -432,7 +469,7 @@ func InitTelegram() {
 					if Unban(gid, uid, 0) == nil {
 						Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
 					} else {
-						Rsp(c, "❌ 解封失败，可能 TA 已经退群啦 ~")
+						Rsp(c, "❌ 解封失败，TA 可能已经被解封或者已经退群啦 ~")
 					}
 					SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
 					addCredit(gid, &tb.User{ID: uid}, 50, true)
@@ -507,6 +544,14 @@ func InitTelegram() {
 	})
 
 	Bot.Handle(tb.OnDocument, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
+	Bot.Handle(tb.OnAnimation, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
+	Bot.Handle(tb.OnVideo, func(m *tb.Message) {
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
@@ -814,6 +859,11 @@ func UserIsInGroup(chatRepr string, userId int64) UIGStatus {
 		return UIGErr
 	} else if cm.Role != tb.Administrator && cm.Role != tb.Creator {
 		return UIGErr
+	}
+
+	// if is admin, pass
+	if cm.Anonymous || cm.Role == tb.Administrator || cm.Role == tb.Creator {
+		return UIGIn
 	}
 
 	if userId == Bot.Me.ID {
