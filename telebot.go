@@ -339,7 +339,7 @@ func InitTelegram() {
 		} else if !m.IsReply() {
 			SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 TA 当前的积分为: %d", GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit))
+			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit))
 		}
 		LazyDelete(m)
 	})
@@ -349,7 +349,7 @@ func InitTelegram() {
 	Bot.Handle("/ban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 获得禁言大礼包，可喜可贺可喜可贺！", GetUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)))
 			} else {
 				DErrorE(err, "Perm Update | Fail to ban user")
 				SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
@@ -361,7 +361,7 @@ func InitTelegram() {
 	Bot.Handle("/unban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 重新获得了自由 ～", GetUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)))
 			} else {
 				DErrorE(err, "Perm Update | Fail to unban user")
 				SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
@@ -373,7 +373,7 @@ func InitTelegram() {
 	Bot.Handle("/kick_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 %s 被踢出去啦！", GetUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)))
 			} else {
 				DErrorE(err, "Perm Update | Fail to kick user once")
 				SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
@@ -386,7 +386,7 @@ func InitTelegram() {
 		if m.Chat.ID > 0 {
 			SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 您当前的积分为: %d", GetCredit(m.Chat.ID, m.Sender.ID).Credit))
+			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit))
 		}
 		LazyDelete(m)
 	})
@@ -569,23 +569,21 @@ func InitTelegram() {
 			textLen := len([]rune(text))
 			userId := m.Sender.ID
 
-			if m.Sender.Username != "Channel_Bot" {
-				if puncReg.MatchString(text) {
-					addCredit(m.Chat.ID, m.Sender, -5, true)
-					lastID = userId
-				} else if textLen >= 2 {
-					if lastID == userId && text == lastText {
-						addCredit(m.Chat.ID, m.Sender, -3, true)
-					} else if lastID != userId || (textLen >= 14 && text != lastText) {
-						addCredit(m.Chat.ID, m.Sender, 1, false)
-					}
-					lastID = userId
-					lastText = text
+			if puncReg.MatchString(text) {
+				addCreditToMsgSender(m.Chat.ID, m, -5, true)
+				lastID = userId
+			} else if textLen >= 2 {
+				if lastID == userId && text == lastText {
+					addCreditToMsgSender(m.Chat.ID, m, -2, true)
+				} else if lastID != userId || (textLen >= 14 && text != lastText) {
+					addCreditToMsgSender(m.Chat.ID, m, 1, false)
 				}
+				lastID = userId
+				lastText = text
 			}
 
 			if ValidReplyUser(m) {
-				addCredit(m.Chat.ID, m.ReplyTo.Sender, 1, true)
+				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
 			}
 		}
 	})
@@ -596,15 +594,13 @@ func InitTelegram() {
 				return
 			}
 			userId := m.Sender.ID
-			if m.Sender.Username != "Channel_Bot" {
-				if lastID != userId {
-					addCredit(m.Chat.ID, m.Sender, 1, false)
-					lastID = userId
-				}
+			if lastID != userId {
+				addCreditToMsgSender(m.Chat.ID, m, 1, false)
+				lastID = userId
 			}
 
 			if ValidReplyUser(m) {
-				addCredit(m.Chat.ID, m.ReplyTo.Sender, 1, true)
+				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
 			}
 		}
 	})
@@ -615,7 +611,7 @@ func InitTelegram() {
 
 func CheckChannelFollow(m *tb.Message, user *tb.User, showExceptDialog bool) bool {
 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && gc.MustFollow != "" {
-		usrName := strings.ReplaceAll(GetUserName(user), "`", "'")
+		usrName := GetQuotableUserName(user)
 		if user.IsBot {
 			if showExceptDialog {
 				SmartSendDelete(m.Chat, fmt.Sprintf("👏 欢迎 %s 加入群组，已为机器人自动放行 ～", usrName))
@@ -656,6 +652,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, showExceptDialog bool) boo
 							})
 						}
 					})
+					Bot.Delete(m)
 					return false
 				}
 			}
@@ -682,6 +679,13 @@ func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	}
 }
 
+func addCreditToMsgSender(chatId int64, m *tb.Message, credit int64, force bool) *CreditInfo {
+	if ValidMessageUser(m) {
+		return addCredit(chatId, m.Sender, credit, force)
+	}
+	return nil
+}
+
 func addCredit(chatId int64, user *tb.User, credit int64, force bool) *CreditInfo {
 	if chatId < 0 && user != nil && user.ID > 0 && credit != 0 {
 		token := fmt.Sprintf("ac-%d-%d", chatId, user.ID)
@@ -693,8 +697,15 @@ func addCredit(chatId int64, user *tb.User, credit int64, force bool) *CreditInf
 }
 
 func ValidReplyUser(m *tb.Message) bool {
-	return m.ReplyTo != nil && m.ReplyTo.Sender.ID > 0 && !m.ReplyTo.Sender.IsBot &&
-		m.ReplyTo.Sender.ID != m.Sender.ID && m.ReplyTo.Sender.Username != "Channel_Bot"
+	return m.ReplyTo != nil && ValidMessageUser(m) && ValidMessageUser(m.ReplyTo) && m.ReplyTo.Sender.ID != m.Sender.ID
+}
+
+func ValidMessageUser(m *tb.Message) bool {
+	return m.SenderChat != nil && ValidUser(m.Sender)
+}
+
+func ValidUser(u *tb.User) bool {
+	return u != nil && u.ID > 0 && !u.IsBot && u.Username != "Channel_Bot" && u.Username != "Telegram"
 }
 
 func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
@@ -840,6 +851,10 @@ func GetUserName(u *tb.User) string {
 	}
 
 	return s
+}
+
+func GetQuotableUserName(u *tb.User) string {
+	return strings.ReplaceAll(GetUserName(u), "`", "'")
 }
 
 func GetChatName(u *tb.Chat) string {
