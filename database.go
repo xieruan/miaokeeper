@@ -67,7 +67,7 @@ func ReadConfig(key string) string {
 	ret := ""
 	err := MYSQLDB.QueryRow(`SELECT v FROM MiaoKeeper_Config WHERE k = ?;`, key).Scan(&ret)
 	if err != nil {
-		DLogf("Config Read Error | error=%v", err.Error())
+		DLogf("Config Read Error | key=%s error=%v", key, err.Error())
 	}
 	return ret
 }
@@ -80,7 +80,7 @@ func WriteConfig(key, value string) {
 		ON DUPLICATE KEY UPDATE
 			v = VALUES(v)`, key, value)
 	if err != nil {
-		DLogf("Config Write Error | error=%v", err.Error())
+		DLogf("Config Write Error | key=%s value=%s error=%v", key, value, err.Error())
 	}
 	if q != nil {
 		q.Close()
@@ -230,7 +230,7 @@ func GetCredit(groupId, userId int64) *CreditInfo {
 		&ret.ID, &ret.Name, &ret.Username, &ret.Credit,
 	)
 	if err != nil {
-		DLogf("Database Credit Read Error | error=%s", err.Error())
+		DLogf("Database Credit Read Error | gid=%d uid=%d error=%s", groupId, userId, err.Error())
 	}
 	return ret
 }
@@ -287,6 +287,8 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInf
 	if query != nil {
 		query.Close()
 	}
+
+	DLogf("Update Credit | group=%d user=%d alter=%d credit=%d", Abs(user.GroupId), user.ID, method, value)
 
 	return user
 }

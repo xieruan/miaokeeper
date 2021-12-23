@@ -701,7 +701,7 @@ func ValidReplyUser(m *tb.Message) bool {
 }
 
 func ValidMessageUser(m *tb.Message) bool {
-	return m.SenderChat != nil && ValidUser(m.Sender)
+	return m != nil && m.SenderChat == nil && ValidUser(m.Sender)
 }
 
 func ValidUser(u *tb.User) bool {
