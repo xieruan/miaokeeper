@@ -287,7 +287,10 @@ func InitTelegram() {
 							gc.MustFollowOnMsg = true
 						}
 						SetGroupConfig(m.Chat.ID, gc)
-						SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg))
+						SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
+							ParseMode:             "Markdown",
+							DisableWebPagePreview: true,
+						})
 					}
 				}
 			}
@@ -358,7 +361,10 @@ func InitTelegram() {
 		} else if !m.IsReply() {
 			SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit))
+			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
 		}
 		LazyDelete(m)
 	})
@@ -368,7 +374,10 @@ func InitTelegram() {
 	Bot.Handle("/ban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
 			} else {
 				DErrorE(err, "Perm Update | Fail to ban user")
 				SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
@@ -380,7 +389,10 @@ func InitTelegram() {
 	Bot.Handle("/unban_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
 			} else {
 				DErrorE(err, "Perm Update | Fail to unban user")
 				SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
@@ -392,7 +404,10 @@ func InitTelegram() {
 	Bot.Handle("/kick_user", func(m *tb.Message) {
 		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 			if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)))
+				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
 			} else {
 				DErrorE(err, "Perm Update | Fail to kick user once")
 				SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
@@ -405,7 +420,10 @@ func InitTelegram() {
 		if m.Chat.ID > 0 {
 			SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit))
+			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
 		}
 		LazyDelete(m)
 	})
