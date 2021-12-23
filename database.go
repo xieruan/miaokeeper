@@ -38,6 +38,8 @@ type GroupConfig struct {
 	Admins []int64
 
 	MustFollow string
+	MustFollowOnJoin bool
+	MustFollowOnMsg bool
 }
 
 func InitDatabase() (err error) {

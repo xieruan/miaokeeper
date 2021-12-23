@@ -258,17 +258,36 @@ func InitTelegram() {
 		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			gc := GetGroupConfig(m.Chat.ID)
 			if gc != nil {
-				if m.Payload == "" {
+				payloads := strings.Fields(strings.TrimSpace(m.Payload))
+				groupName := ""
+				mode := ""
+				if len(payloads) > 0 {
+					groupName = payloads[0]
+				}
+				if len(payloads) > 1 {
+					mode = payloads[1]
+				}
+				if groupName == "" {
 					gc.MustFollow = ""
+					gc.MustFollowOnJoin = false
+					gc.MustFollowOnMsg = false
 					SetGroupConfig(m.Chat.ID, gc)
 					SmartSendDelete(m, "\u200d 已经取消加群频道验证啦 ～")
 				} else {
-					if UserIsInGroup(m.Payload, Bot.Me.ID) != UIGIn {
+					if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
 						SmartSendDelete(m, "❌ 您还没有在辣个频道给我权限呢 TAT")
 					} else {
-						gc.MustFollow = m.Payload
+						gc.MustFollow = groupName
+						if mode == "join" {
+							gc.MustFollowOnJoin = true
+						} else if mode == "msg" {
+							gc.MustFollowOnMsg = true
+						} else {
+							gc.MustFollowOnJoin = true
+							gc.MustFollowOnMsg = true
+						}
 						SetGroupConfig(m.Chat.ID, gc)
-						SmartSendDelete(m, "\u200d 已经设置好加群频道验证啦 ～")
+						SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg))
 					}
 				}
 			}
@@ -609,8 +628,15 @@ func InitTelegram() {
 	DInfo("MiaoKeeper is up.")
 }
 
-func CheckChannelFollow(m *tb.Message, user *tb.User, showExceptDialog bool) bool {
+func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
+	showExceptDialog := isJoin
 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && gc.MustFollow != "" {
+		if isJoin && !gc.MustFollowOnJoin {
+			return true
+		}
+		if !isJoin && !gc.MustFollowOnMsg {
+			return true
+		}
 		usrName := GetQuotableUserName(user)
 		if user.IsBot {
 			if showExceptDialog {
@@ -876,16 +902,16 @@ func UserIsInGroup(chatRepr string, userId int64) UIGStatus {
 		return UIGErr
 	}
 
-	// if is admin, pass
-	if cm.Anonymous || cm.Role == tb.Administrator || cm.Role == tb.Creator {
-		return UIGIn
-	}
-
 	if userId == Bot.Me.ID {
 		return UIGIn
 	}
 
 	cm, err = ChatMemberOf(chatRepr, userId)
+	// if is admin, pass
+	if cm.Anonymous || cm.Role == tb.Administrator || cm.Role == tb.Creator {
+		return UIGIn
+	}
+
 	if err != nil || cm == nil {
 		return UIGOut
 	}
