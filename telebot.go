@@ -133,6 +133,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m, "❌ 该组已经开启积分统计啦 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -144,6 +146,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m, "❌ 该组尚未开启积分统计哦 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -155,6 +159,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -166,6 +172,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -180,6 +188,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -192,6 +202,8 @@ func InitTelegram() {
 			} else {
 				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -294,6 +306,8 @@ func InitTelegram() {
 					}
 				}
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
 		}
 		LazyDelete(m)
 	})
@@ -356,15 +370,19 @@ func InitTelegram() {
 	})
 
 	Bot.Handle("/check_credit", func(m *tb.Message) {
-		if m.Chat.ID > 0 {
-			SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
-		} else if !m.IsReply() {
-			SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
+		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+			if m.Chat.ID > 0 {
+				SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
+			} else if !m.IsReply() {
+				SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
+			} else {
+				SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
+			}
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-			})
+			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 		}
 		LazyDelete(m)
 	})
@@ -382,6 +400,8 @@ func InitTelegram() {
 				DErrorE(err, "Perm Update | Fail to ban user")
 				SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -397,6 +417,8 @@ func InitTelegram() {
 				DErrorE(err, "Perm Update | Fail to unban user")
 				SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -412,6 +434,8 @@ func InitTelegram() {
 				DErrorE(err, "Perm Update | Fail to kick user once")
 				SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
 			}
+		} else {
+			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -419,7 +443,7 @@ func InitTelegram() {
 	Bot.Handle("/mycredit", func(m *tb.Message) {
 		if m.Chat.ID > 0 {
 			SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
-		} else {
+		} else if IsGroup(m.Chat.ID) {
 			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
@@ -643,6 +667,7 @@ func InitTelegram() {
 	})
 
 	go Bot.Start()
+	// go StartCountDown()
 	DInfo("MiaoKeeper is up.")
 }
 
@@ -1037,6 +1062,43 @@ func BanChannel(chatId, channelId int64) error {
 	_, err := Bot.Raw("banChatSenderChat", params)
 	return err
 }
+
+// func StartCountDown() {
+// 	chat := int64(-1001270914368) // miao group
+// 	// chat := int64(-1001681365705) // test group
+// 	target := int64(1640408400)
+// 	if target-time.Now().UnixMilli()/1000 < 0 {
+// 		return
+// 	}
+// 	c := &tb.Chat{ID: chat}
+// 	msg, _ := SmartSend(c, "🎄 EST 时区圣诞节倒计时已激活 ～")
+// 	Bot.Pin(msg)
+
+// 	for {
+// 		time.Sleep(time.Second - time.Millisecond*10)
+// 		ct := target - time.Now().UnixMilli()/1000
+// 		if ct >= 3600 {
+// 			if ct%3600 == 0 {
+// 				go SmartEdit(msg, fmt.Sprintf("🎄 还有 %d 小时 EST 时区圣诞倒计时开始", ct/3600))
+// 			}
+// 		} else if ct >= 600 {
+// 			if ct%600 == 0 {
+// 				go SmartEdit(msg, fmt.Sprintf("🎄 还有 %d 分钟 EST 时区圣诞倒计时开始", ct/60))
+// 			}
+// 		} else if ct >= 60 {
+// 			if ct%60 == 0 {
+// 				Bot.Delete(msg)
+// 				msg, _ = SmartSend(chat, fmt.Sprintf("🎄 还有 %d 分钟 EST 时区圣诞倒计时开始", ct/60))
+// 				Bot.Pin(msg)
+// 			}
+// 		} else if ct > 0 && ct <= 10 {
+// 			go SmartEdit(msg, fmt.Sprintf("🎄 倒计时开始！距离 EST 圣诞节还有 %d 秒 EST ～", ct))
+// 		} else if ct <= 0 {
+// 			go SmartEdit(msg, "🎄 各位喵群的小伙伴们！！！圣诞节快乐～～～")
+// 			return
+// 		}
+// 	}
+// }
 
 func init() {
 	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
