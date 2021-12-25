@@ -134,7 +134,7 @@ func InitTelegram() {
 				SmartSendDelete(m, "❌ 该组已经开启积分统计啦 ～")
 			}
 		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+			SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
@@ -147,17 +147,21 @@ func InitTelegram() {
 				SmartSendDelete(m, "❌ 该组尚未开启积分统计哦 ～")
 			}
 		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+			SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
 		}
 		LazyDelete(m)
 	})
 
 	Bot.Handle("/su_add_admin", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) && m.ReplyTo != nil && m.ReplyTo.Sender.ID > 0 && !m.ReplyTo.Sender.IsBot {
-			if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-				SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+		if IsAdmin(m.Sender.ID) {
+			if ValidMessageUser(m.ReplyTo) {
+				if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
+					SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+				} else {
+					SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
+				}
 			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
+				SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
 			}
 		} else {
 			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
@@ -166,11 +170,15 @@ func InitTelegram() {
 	})
 
 	Bot.Handle("/su_del_admin", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) && m.ReplyTo != nil && m.ReplyTo.Sender.ID > 0 && !m.ReplyTo.Sender.IsBot {
-			if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-				SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+		if IsAdmin(m.Sender.ID) {
+			if ValidMessageUser(m.ReplyTo) {
+				if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
+					SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+				} else {
+					SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+				}
 			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+				SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
 			}
 		} else {
 			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
