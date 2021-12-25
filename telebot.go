@@ -42,7 +42,7 @@ func SetCommands() error {
 	allCommands := [][]string{
 		{"mycredit", "获取自己的积分"},
 		{"creditrank", "获取积分排行榜前 N 名"},
-		{"lottery", "在积分排行榜前 N 名内抽出一名幸运儿"},
+		{"lottery", "在积分排行榜前 N 名内抽出 K 名幸运儿"},
 	}
 	cmds := []tb.Command{}
 	for _, cmd := range allCommands {
@@ -449,6 +449,11 @@ func InitTelegram() {
 				DisableWebPagePreview: true,
 			})
 		}
+		LazyDelete(m)
+	})
+
+	Bot.Handle("/version", func(m *tb.Message) {
+		SmartSendDelete(m, fmt.Sprintf("👀 当前版本为: %s", VERSION))
 		LazyDelete(m)
 	})
 
