@@ -681,12 +681,20 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			return true
 		}
 		usrName := GetQuotableUserName(user)
+
+		// ignore bot
 		if user.IsBot {
 			if showExceptDialog {
 				SmartSendDelete(m.Chat, fmt.Sprintf("👏 欢迎 %s 加入群组，已为机器人自动放行 ～", usrName))
 			}
 			return true
 		}
+
+		// ignore channel
+		if !ValidMessageUser(m) {
+			return true
+		}
+
 		usrStatus := UserIsInGroup(gc.MustFollow, user.ID)
 		if usrStatus == UIGIn {
 			if showExceptDialog {
@@ -774,7 +782,7 @@ func ValidMessageUser(m *tb.Message) bool {
 }
 
 func ValidUser(u *tb.User) bool {
-	return u != nil && u.ID > 0 && !u.IsBot && u.Username != "Channel_Bot" && u.Username != "Telegram"
+	return u != nil && u.ID > 0 && !u.IsBot && u.ID != 777000 && u.Username != "Channel_Bot" && u.Username != "GroupAnonymousBot" && u.Username != "Telegram"
 }
 
 func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
