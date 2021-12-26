@@ -114,6 +114,16 @@ func InitTelegram() {
 		},
 	})
 
+	if !Bot.Me.CanJoinGroups {
+		DErrorf("TeleBot Error | bot cannot be added to group, please check with @botfather")
+		os.Exit(1)
+	}
+
+	if !Bot.Me.CanReadMessages {
+		DErrorf("TeleBot Error | bot cannot be run under privacy mode, please check with @botfather")
+		os.Exit(1)
+	}
+
 	if err != nil {
 		DErrorE(err, "TeleBot Error | cannot initialize telegram bot")
 		os.Exit(1)
@@ -609,10 +619,6 @@ func InitTelegram() {
 		}
 	})
 
-	Bot.Handle(tb.OnSticker, func(m *tb.Message) {
-		CheckChannelFollow(m, m.Sender, false)
-	})
-
 	Bot.Handle(tb.OnPhoto, func(m *tb.Message) {
 		CheckChannelFollow(m, m.Sender, false)
 	})
@@ -626,6 +632,10 @@ func InitTelegram() {
 	})
 
 	Bot.Handle(tb.OnVideo, func(m *tb.Message) {
+		CheckChannelFollow(m, m.Sender, false)
+	})
+
+	Bot.Handle(tb.OnEdited, func(m *tb.Message) {
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
@@ -664,6 +674,10 @@ func InitTelegram() {
 
 	Bot.Handle(tb.OnSticker, func(m *tb.Message) {
 		if IsGroup(m.Chat.ID) {
+			if !CheckChannelFollow(m, m.Sender, false) {
+				return
+			}
+
 			if m.IsForwarded() {
 				return
 			}
