@@ -34,12 +34,13 @@ type CreditInfo struct {
 var GroupConfigCache map[int64]*GroupConfig
 
 type GroupConfig struct {
-	ID     int64
-	Admins []int64
+	ID            int64
+	Admins        []int64
+	BannedForward []int64
 
-	MustFollow string
+	MustFollow       string
 	MustFollowOnJoin bool
-	MustFollowOnMsg bool
+	MustFollowOnMsg  bool
 }
 
 func InitDatabase() (err error) {
@@ -151,6 +152,7 @@ func NewGroupConfig(groupId int64) *GroupConfig {
 	return SetGroupConfig(groupId, &GroupConfig{
 		ID:     groupId,
 		Admins: make([]int64, 0),
+		BannedForward: make([]int64, 0),
 	})
 }
 
@@ -201,8 +203,28 @@ func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {
 	return changed
 }
 
+func (gc *GroupConfig) UpdateBannedForward(id int64, method UpdateMethod) bool {
+	changed := false
+	if method == UMSet {
+		if len(gc.BannedForward) != 1 || gc.BannedForward[0] != id {
+			changed = true
+			gc.BannedForward = []int64{id}
+		}
+	} else if method == UMAdd {
+		gc.BannedForward, changed = AddIntoInt64Arr(gc.BannedForward, id)
+	} else if method == UMDel {
+		gc.BannedForward, changed = DelFromInt64Arr(gc.BannedForward, id)
+	}
+	SetGroupConfig(gc.ID, gc)
+	return changed
+}
+
 func (gc *GroupConfig) IsAdmin(userId int64) bool {
 	return I64In(&gc.Admins, userId)
+}
+
+func (gc *GroupConfig) IsBannedForward(id int64) bool {
+	return I64In(&gc.BannedForward, id)
 }
 
 func UpdateGroup(groupId int64, method UpdateMethod) bool {

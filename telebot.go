@@ -226,6 +226,55 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
+	Bot.Handle("/ban_forward", func(m *tb.Message) {
+		gc := GetGroupConfig(m.Chat.ID)
+		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+			isReply := false
+			id, _ := strconv.ParseInt(m.Payload, 10, 64)
+			if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
+				id = m.ReplyTo.OriginalChat.ID
+				isReply = true
+			}
+			if id != 0 {
+				if gc.UpdateBannedForward(id, UMAdd) {
+					if isReply {
+						Bot.Delete(m.ReplyTo)
+					}
+					SmartSendDelete(m, "✔️ TA 已经被我封掉啦 ～")
+				} else {
+					SmartSendDelete(m, "❌ TA 已经被封禁过啦 ～")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+			}
+		} else {
+			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		}
+		LazyDelete(m)
+	})
+
+	Bot.Handle("/unban_forward", func(m *tb.Message) {
+		gc := GetGroupConfig(m.Chat.ID)
+		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+			id, _ := strconv.ParseInt(m.Payload, 10, 64)
+			if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
+				id = m.ReplyTo.OriginalChat.ID
+			}
+			if id != 0 {
+				if gc.UpdateBannedForward(id, UMDel) {
+					SmartSendDelete(m, "✔️ TA 已经被我解封啦 ～")
+				} else {
+					SmartSendDelete(m, "❌ TA 还没有被封禁哦 ～")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+			}
+		} else {
+			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		}
+		LazyDelete(m)
+	})
+
 	Bot.Handle("/set_credit", func(m *tb.Message) {
 		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 			addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
@@ -620,27 +669,35 @@ func InitTelegram() {
 	})
 
 	Bot.Handle(tb.OnPhoto, func(m *tb.Message) {
+		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
 	Bot.Handle(tb.OnDocument, func(m *tb.Message) {
+		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
 	Bot.Handle(tb.OnAnimation, func(m *tb.Message) {
+		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
 	Bot.Handle(tb.OnVideo, func(m *tb.Message) {
+		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
 	Bot.Handle(tb.OnEdited, func(m *tb.Message) {
+		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
 	})
 
 	Bot.Handle(tb.OnText, func(m *tb.Message) {
 		if IsGroup(m.Chat.ID) {
+			if !CheckChannelForward(m) {
+				return
+			}
 			if !CheckChannelFollow(m, m.Sender, false) {
 				return
 			}
@@ -674,6 +731,9 @@ func InitTelegram() {
 
 	Bot.Handle(tb.OnSticker, func(m *tb.Message) {
 		if IsGroup(m.Chat.ID) {
+			if !CheckChannelForward(m) {
+				return
+			}
 			if !CheckChannelFollow(m, m.Sender, false) {
 				return
 			}
@@ -696,6 +756,20 @@ func InitTelegram() {
 	go Bot.Start()
 	// go StartCountDown()
 	DInfo("MiaoKeeper is up.")
+}
+
+func CheckChannelForward(m *tb.Message) bool {
+	if m.IsForwarded() {
+		if gc := GetGroupConfig(m.Chat.ID); gc != nil && len(gc.BannedForward) > 0 {
+			shouldDelete := (m.OriginalChat != nil && gc.IsBannedForward(m.OriginalChat.ID)) ||
+				(m.OriginalSender != nil && gc.IsBannedForward(m.OriginalSender.ID))
+			if shouldDelete {
+				Bot.Delete(m)
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
