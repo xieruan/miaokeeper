@@ -524,6 +524,18 @@ func InitTelegram() {
 		LazyDelete(m)
 	})
 
+	Bot.Handle("/ping", func(m *tb.Message) {
+		cid := strconv.FormatInt(m.Chat.ID, 10)
+		t := time.Now().UnixMilli()
+		Bot.Delete(m)
+		Bot.ChatByID(cid)
+		t = time.Now().UnixMilli() - t
+		SmartSendDelete(m.Chat, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为: `%dms`", t/6), &tb.SendOptions{
+			ParseMode:             "Markdown",
+			DisableWebPagePreview: true,
+		})
+	})
+
 	Bot.Handle(tb.OnUserLeft, func(m *tb.Message) {
 		gc := GetGroupConfig(m.Chat.ID)
 		if gc != nil && m.UserLeft.ID > 0 {
