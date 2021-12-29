@@ -26,6 +26,7 @@ const (
 
 var Bot *tb.Bot
 var TOKEN = ""
+var TELEGRAMURL = ""
 
 var GROUPS = []int64{}
 var ADMINS = []int64{}
@@ -112,662 +113,673 @@ func InitTelegram() {
 				// "chat_join_request",
 			},
 		},
+		URL: TELEGRAMURL,
 	})
 
-	if !Bot.Me.CanJoinGroups {
-		DErrorf("TeleBot Error | bot cannot be added to group, please check with @botfather")
-		os.Exit(1)
-	}
+	if !ping {
 
-	if !Bot.Me.CanReadMessages {
-		DErrorf("TeleBot Error | bot cannot be run under privacy mode, please check with @botfather")
-		os.Exit(1)
-	}
-
-	if err != nil {
-		DErrorE(err, "TeleBot Error | cannot initialize telegram bot")
-		os.Exit(1)
-	}
-
-	err = SetCommands()
-	if err != nil {
-		DErrorE(err, "TeleBot Error | cannot update commands for telegram bot")
-	}
-
-	// ---------------- Super Admin ----------------
-
-	Bot.Handle("/su_add_group", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
-			if UpdateGroup(m.Chat.ID, UMAdd) {
-				SmartSendDelete(m, "✔️ 已将该组加入积分统计 ～")
-			} else {
-				SmartSendDelete(m, "❌ 该组已经开启积分统计啦 ～")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
+		if !Bot.Me.CanJoinGroups {
+			DErrorf("TeleBot Error | bot cannot be added to group, please check with @botfather")
+			os.Exit(1)
 		}
-		LazyDelete(m)
-	})
 
-	Bot.Handle("/su_del_group", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
-			if UpdateGroup(m.Chat.ID, UMDel) {
-				SmartSendDelete(m, "✔️ 已将该组移除积分统计 ～")
-			} else {
-				SmartSendDelete(m, "❌ 该组尚未开启积分统计哦 ～")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
+		if !Bot.Me.CanReadMessages {
+			DErrorf("TeleBot Error | bot cannot be run under privacy mode, please check with @botfather")
+			os.Exit(1)
 		}
-		LazyDelete(m)
-	})
 
-	Bot.Handle("/su_add_admin", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) {
-			if ValidMessageUser(m.ReplyTo) {
-				if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-					SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+		if err != nil {
+			DErrorE(err, "TeleBot Error | cannot initialize telegram bot")
+			os.Exit(1)
+		}
+
+		err = SetCommands()
+		if err != nil {
+			DErrorE(err, "TeleBot Error | cannot update commands for telegram bot")
+		}
+
+		// ---------------- Super Admin ----------------
+
+		Bot.Handle("/su_add_group", func(m *tb.Message) {
+			if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
+				if UpdateGroup(m.Chat.ID, UMAdd) {
+					SmartSendDelete(m, "✔️ 已将该组加入积分统计 ～")
 				} else {
-					SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
+					SmartSendDelete(m, "❌ 该组已经开启积分统计啦 ～")
 				}
 			} else {
-				SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
+				SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
 			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
+			LazyDelete(m)
+		})
 
-	Bot.Handle("/su_del_admin", func(m *tb.Message) {
-		if IsAdmin(m.Sender.ID) {
-			if ValidMessageUser(m.ReplyTo) {
-				if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-					SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+		Bot.Handle("/su_del_group", func(m *tb.Message) {
+			if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
+				if UpdateGroup(m.Chat.ID, UMDel) {
+					SmartSendDelete(m, "✔️ 已将该组移除积分统计 ～")
 				} else {
-					SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+					SmartSendDelete(m, "❌ 该组尚未开启积分统计哦 ～")
 				}
 			} else {
-				SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
+				SmartSendDelete(m, "❌ 您没有在群组使用，或者您没有使用这个命令的权限呢")
 			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
+			LazyDelete(m)
+		})
 
-	// ---------------- Group Admin ----------------
-
-	Bot.Handle("/add_admin", func(m *tb.Message) {
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-				SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为群管理员啦 ～")
-			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/del_admin", func(m *tb.Message) {
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-			if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-				SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的群管理员移除 ～")
-			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/ban_forward", func(m *tb.Message) {
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-			isReply := false
-			id, _ := strconv.ParseInt(m.Payload, 10, 64)
-			if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
-				id = m.ReplyTo.OriginalChat.ID
-				isReply = true
-			}
-			if id != 0 {
-				if gc.UpdateBannedForward(id, UMAdd) {
-					if isReply {
-						Bot.Delete(m.ReplyTo)
+		Bot.Handle("/su_add_admin", func(m *tb.Message) {
+			if IsAdmin(m.Sender.ID) {
+				if ValidMessageUser(m.ReplyTo) {
+					if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
+						SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+					} else {
+						SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
 					}
-					SmartSendDelete(m, "✔️ TA 已经被我封掉啦 ～")
 				} else {
-					SmartSendDelete(m, "❌ TA 已经被封禁过啦 ～")
+					SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
 				}
 			} else {
-				SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+				SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 			}
-		} else {
-			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
+			LazyDelete(m)
+		})
 
-	Bot.Handle("/unban_forward", func(m *tb.Message) {
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-			id, _ := strconv.ParseInt(m.Payload, 10, 64)
-			if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
-				id = m.ReplyTo.OriginalChat.ID
-			}
-			if id != 0 {
-				if gc.UpdateBannedForward(id, UMDel) {
-					SmartSendDelete(m, "✔️ TA 已经被我解封啦 ～")
+		Bot.Handle("/su_del_admin", func(m *tb.Message) {
+			if IsAdmin(m.Sender.ID) {
+				if ValidMessageUser(m.ReplyTo) {
+					if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
+						SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+					} else {
+						SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+					}
 				} else {
-					SmartSendDelete(m, "❌ TA 还没有被封禁哦 ～")
+					SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
 				}
 			} else {
-				SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+				SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
 			}
-		} else {
-			SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
+			LazyDelete(m)
+		})
 
-	Bot.Handle("/set_credit", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-			addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
-			target := &CreditInfo{}
-			credit := int64(0)
+		// ---------------- Group Admin ----------------
 
-			if len(addons) == 0 {
-				SmartSendDelete(m, "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>")
-				return
-			}
-
-			if len(addons) == 1 {
-				credit = addons[0]
+		Bot.Handle("/add_admin", func(m *tb.Message) {
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+				if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
+					SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为群管理员啦 ～")
+				} else {
+					SmartSendDelete(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
+				}
 			} else {
-				target.ID = addons[0]
-				credit = addons[1]
+				SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
 			}
+			LazyDelete(m)
+		})
 
-			if m.ReplyTo != nil {
-				target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
-			}
-			target = UpdateCredit(target, UMSet, credit)
-			SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
-		} else {
-			SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/add_credit", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-			addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
-			target := &CreditInfo{}
-			credit := int64(0)
-
-			if len(addons) == 0 {
-				SmartSendDelete(m, "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>")
-				return
-			}
-
-			if len(addons) == 1 {
-				credit = addons[0]
+		Bot.Handle("/del_admin", func(m *tb.Message) {
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+				if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
+					SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的群管理员移除 ～")
+				} else {
+					SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
+				}
 			} else {
-				target.ID = addons[0]
-				credit = addons[1]
+				SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
 			}
+			LazyDelete(m)
+		})
 
-			if m.ReplyTo != nil {
-				target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
+		Bot.Handle("/ban_forward", func(m *tb.Message) {
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+				isReply := false
+				id, _ := strconv.ParseInt(m.Payload, 10, 64)
+				if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
+					id = m.ReplyTo.OriginalChat.ID
+					isReply = true
+				}
+				if id != 0 {
+					if gc.UpdateBannedForward(id, UMAdd) {
+						if isReply {
+							Bot.Delete(m.ReplyTo)
+						}
+						SmartSendDelete(m, "✔️ TA 已经被我封掉啦 ～")
+					} else {
+						SmartSendDelete(m, "❌ TA 已经被封禁过啦 ～")
+					}
+				} else {
+					SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
 			}
-			target = UpdateCredit(target, UMAdd, credit)
-			SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
-		} else {
-			SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
+			LazyDelete(m)
+		})
 
-	Bot.Handle("/set_channel", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+		Bot.Handle("/unban_forward", func(m *tb.Message) {
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+				id, _ := strconv.ParseInt(m.Payload, 10, 64)
+				if id == 0 && m.IsReply() && m.ReplyTo.IsForwarded() && m.ReplyTo.OriginalChat != nil {
+					id = m.ReplyTo.OriginalChat.ID
+				}
+				if id != 0 {
+					if gc.UpdateBannedForward(id, UMDel) {
+						SmartSendDelete(m, "✔️ TA 已经被我解封啦 ～")
+					} else {
+						SmartSendDelete(m, "❌ TA 还没有被封禁哦 ～")
+					}
+				} else {
+					SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/set_credit", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
+				target := &CreditInfo{}
+				credit := int64(0)
+
+				if len(addons) == 0 {
+					SmartSendDelete(m, "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>")
+					return
+				}
+
+				if len(addons) == 1 {
+					credit = addons[0]
+				} else {
+					target.ID = addons[0]
+					credit = addons[1]
+				}
+
+				if m.ReplyTo != nil {
+					target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
+				}
+				target = UpdateCredit(target, UMSet, credit)
+				SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+			} else {
+				SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/add_credit", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
+				target := &CreditInfo{}
+				credit := int64(0)
+
+				if len(addons) == 0 {
+					SmartSendDelete(m, "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>")
+					return
+				}
+
+				if len(addons) == 1 {
+					credit = addons[0]
+				} else {
+					target.ID = addons[0]
+					credit = addons[1]
+				}
+
+				if m.ReplyTo != nil {
+					target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
+				}
+				target = UpdateCredit(target, UMAdd, credit)
+				SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+			} else {
+				SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/set_channel", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				gc := GetGroupConfig(m.Chat.ID)
+				if gc != nil {
+					payloads := strings.Fields(strings.TrimSpace(m.Payload))
+					groupName := ""
+					mode := ""
+					if len(payloads) > 0 {
+						groupName = payloads[0]
+					}
+					if len(payloads) > 1 {
+						mode = payloads[1]
+					}
+					if groupName == "" {
+						gc.MustFollow = ""
+						gc.MustFollowOnJoin = false
+						gc.MustFollowOnMsg = false
+						SetGroupConfig(m.Chat.ID, gc)
+						SmartSendDelete(m, "\u200d 已经取消加群频道验证啦 ～")
+					} else {
+						if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
+							SmartSendDelete(m, "❌ 您还没有在辣个频道给我权限呢 TAT")
+						} else {
+							gc.MustFollow = groupName
+							if mode == "join" {
+								gc.MustFollowOnJoin = true
+							} else if mode == "msg" {
+								gc.MustFollowOnMsg = true
+							} else {
+								gc.MustFollowOnJoin = true
+								gc.MustFollowOnMsg = true
+							}
+							SetGroupConfig(m.Chat.ID, gc)
+							SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
+								ParseMode:             "Markdown",
+								DisableWebPagePreview: true,
+							})
+						}
+					}
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/creditrank", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				rank, _ := strconv.Atoi(m.Payload)
+				if rank <= 0 {
+					rank = 10
+				} else if rank > 30 {
+					rank = 30
+				}
+				ranks := GetCreditRank(m.Chat.ID, rank)
+				rankStr := ""
+				for i, c := range ranks {
+					rankStr += fmt.Sprintf("`%2d`. `%s`: `%d`\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.Credit)
+				}
+				SmartSend(m, "👀 当前的积分墙为: \n\n"+rankStr, &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/lottery", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				payloads := strings.Fields(m.Payload)
+
+				rank, _ := strconv.Atoi(payloads[0])
+				n, _ := strconv.Atoi(payloads[1])
+
+				if rank <= 0 {
+					rank = 10
+				} else if rank > 100 {
+					rank = 100
+				}
+				if n > rank {
+					n = rank
+				}
+
+				ranks := GetCreditRank(m.Chat.ID, rank)
+				sort.Slice(ranks, func(i, j int) bool {
+					return rand.Intn(10) >= 5
+				})
+				rankStr := ""
+				for i, c := range ranks[:n] {
+					rankStr += fmt.Sprintf("`%2d.` `%s` ([%d](%s))\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.ID, fmt.Sprintf("tg://user?id=%d", c.ID))
+				}
+				SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/check_credit", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				if m.Chat.ID > 0 {
+					SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
+				} else if !m.IsReply() {
+					SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
+				} else {
+					SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
+						ParseMode:             "Markdown",
+						DisableWebPagePreview: true,
+					})
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		// ---------------- Normal User ----------------
+
+		Bot.Handle("/ban_user", func(m *tb.Message) {
+			if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
+				if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
+					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+						ParseMode:             "Markdown",
+						DisableWebPagePreview: true,
+					})
+				} else {
+					DErrorE(err, "Perm Update | Fail to ban user")
+					SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/unban_user", func(m *tb.Message) {
+			if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
+				if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
+					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+						ParseMode:             "Markdown",
+						DisableWebPagePreview: true,
+					})
+				} else {
+					DErrorE(err, "Perm Update | Fail to unban user")
+					SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/kick_user", func(m *tb.Message) {
+			if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
+				if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
+					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+						ParseMode:             "Markdown",
+						DisableWebPagePreview: true,
+					})
+				} else {
+					DErrorE(err, "Perm Update | Fail to kick user once")
+					SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/mycredit", func(m *tb.Message) {
+			if m.Chat.ID > 0 {
+				SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
+			} else if IsGroup(m.Chat.ID) {
+				SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+				})
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/version", func(m *tb.Message) {
+			SmartSendDelete(m, fmt.Sprintf("👀 当前版本为: %s", VERSION))
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/ping", func(m *tb.Message) {
+			t := time.Now().UnixMilli()
+			Bot.GetCommands()
+			t1 := time.Now().UnixMilli() - t
+			msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`", t1), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
+			t2 := time.Now().UnixMilli() - t - t1
+			SmartEdit(msg, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`", t1, t2), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+			})
+			LazyDelete(m)
+		})
+
+		Bot.Handle(tb.OnUserLeft, func(m *tb.Message) {
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && m.UserLeft.ID > 0 {
+				gc.UpdateAdmin(m.UserLeft.ID, UMDel)
+				UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0)
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle(tb.OnChatMember, func(cmu *tb.ChatMemberUpdated) {
+			gc := GetGroupConfig(cmu.Chat.ID)
+			if gc != nil && cmu.NewChatMember != nil && cmu.NewChatMember.User != nil && cmu.NewChatMember.User.ID > 0 {
+				user := cmu.NewChatMember.User
+				if cmu.NewChatMember.Role == tb.Kicked ||
+					cmu.NewChatMember.Role == tb.Left {
+					gc.UpdateAdmin(user.ID, UMDel)
+					UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0)
+				}
+			}
+		})
+
+		// Bot.Handle("清除我的积分", func(m *tb.Message) {
+		// 	if IsGroup(m.Chat.ID) {
+		// 		UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMDel, 0)
+		// 		SmartSendDelete(m, "好的")
+		// 	}
+		// 	LazyDelete(m)
+		// })
+
+		// Bot.Handle("频道测试", func(m *tb.Message) {
+		// 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && m.ReplyTo != nil && gc.MustFollow != "" {
+		// 		i := UserIsInGroup(gc.MustFollow, m.ReplyTo.Sender.ID)
+		// 		SmartSendDelete(m, fmt.Sprintf("状态：%v", i))
+		// 	}
+		// 	LazyDelete(m)
+		// })
+
+		Bot.Handle(tb.OnUserJoined, func(m *tb.Message) {
+			CheckChannelFollow(m, m.UserJoined, true)
+		})
+
+		Bot.Handle(tb.OnPinned, func(m *tb.Message) {
+			LazyDelete(m)
+		})
+
+		Bot.Handle("口臭", CMDWarnUser)
+		Bot.Handle("口 臭", CMDWarnUser)
+		Bot.Handle("嘴臭", CMDWarnUser)
+		Bot.Handle("嘴 臭", CMDWarnUser)
+
+		Bot.Handle("恶意广告", CMDBanUser)
+		Bot.Handle("恶意发言", CMDBanUser)
+
+		Bot.Handle(tb.OnCallback, func(c *tb.Callback) {
+			m := c.Message
 			gc := GetGroupConfig(m.Chat.ID)
 			if gc != nil {
-				payloads := strings.Fields(strings.TrimSpace(m.Payload))
-				groupName := ""
-				mode := ""
-				if len(payloads) > 0 {
-					groupName = payloads[0]
+				cmds := strings.Split(strings.TrimSpace(c.Data), "/")
+				cmd, gid, uid, secuid := "", int64(0), int64(0), int64(0)
+				if len(cmds) > 0 {
+					cmd = cmds[0]
 				}
-				if len(payloads) > 1 {
-					mode = payloads[1]
+				if len(cmds) > 1 {
+					gid, _ = strconv.ParseInt(cmds[1], 10, 64)
 				}
-				if groupName == "" {
-					gc.MustFollow = ""
-					gc.MustFollowOnJoin = false
-					gc.MustFollowOnMsg = false
-					SetGroupConfig(m.Chat.ID, gc)
-					SmartSendDelete(m, "\u200d 已经取消加群频道验证啦 ～")
-				} else {
-					if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
-						SmartSendDelete(m, "❌ 您还没有在辣个频道给我权限呢 TAT")
-					} else {
-						gc.MustFollow = groupName
-						if mode == "join" {
-							gc.MustFollowOnJoin = true
-						} else if mode == "msg" {
-							gc.MustFollowOnMsg = true
+				if len(cmds) > 2 {
+					uid, _ = strconv.ParseInt(cmds[2], 10, 64)
+				}
+				if len(cmds) > 3 {
+					secuid, _ = strconv.ParseInt(cmds[3], 10, 64)
+				}
+				vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
+				isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
+				if strings.Contains("vt unban kick check", cmd) && IsGroup(gid) && uid > 0 {
+					if cmd == "unban" && isGroupAdmin {
+						if Unban(gid, uid, 0) == nil {
+							Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
 						} else {
-							gc.MustFollowOnJoin = true
-							gc.MustFollowOnMsg = true
+							Rsp(c, "❌ 解封失败，TA 可能已经被解封或者已经退群啦 ~")
 						}
-						SetGroupConfig(m.Chat.ID, gc)
-						SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
-							ParseMode:             "Markdown",
-							DisableWebPagePreview: true,
-						})
-					}
-				}
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/creditrank", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-			rank, _ := strconv.Atoi(m.Payload)
-			if rank <= 0 {
-				rank = 10
-			} else if rank > 30 {
-				rank = 30
-			}
-			ranks := GetCreditRank(m.Chat.ID, rank)
-			rankStr := ""
-			for i, c := range ranks {
-				rankStr += fmt.Sprintf("`%2d`. `%s`: `%d`\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.Credit)
-			}
-			SmartSend(m, "👀 当前的积分墙为: \n\n"+rankStr, &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-			})
-		} else {
-			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/lottery", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-			payloads := strings.Fields(m.Payload)
-
-			rank, _ := strconv.Atoi(payloads[0])
-			n, _ := strconv.Atoi(payloads[1])
-
-			if rank <= 0 {
-				rank = 10
-			} else if rank > 100 {
-				rank = 100
-			}
-			if n > rank {
-				n = rank
-			}
-
-			ranks := GetCreditRank(m.Chat.ID, rank)
-			sort.Slice(ranks, func(i, j int) bool {
-				return rand.Intn(10) >= 5
-			})
-			rankStr := ""
-			for i, c := range ranks[:n] {
-				rankStr += fmt.Sprintf("`%2d.` `%s` ([%d](%s))\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.ID, fmt.Sprintf("tg://user?id=%d", c.ID))
-			}
-			SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-			})
-		} else {
-			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/check_credit", func(m *tb.Message) {
-		if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-			if m.Chat.ID > 0 {
-				SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
-			} else if !m.IsReply() {
-				SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
-			} else {
-				SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
-					ParseMode:             "Markdown",
-					DisableWebPagePreview: true,
-				})
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
-		}
-		LazyDelete(m)
-	})
-
-	// ---------------- Normal User ----------------
-
-	Bot.Handle("/ban_user", func(m *tb.Message) {
-		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
-			if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-					ParseMode:             "Markdown",
-					DisableWebPagePreview: true,
-				})
-			} else {
-				DErrorE(err, "Perm Update | Fail to ban user")
-				SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/unban_user", func(m *tb.Message) {
-		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
-			if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-					ParseMode:             "Markdown",
-					DisableWebPagePreview: true,
-				})
-			} else {
-				DErrorE(err, "Perm Update | Fail to unban user")
-				SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/kick_user", func(m *tb.Message) {
-		if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
-			if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
-				SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-					ParseMode:             "Markdown",
-					DisableWebPagePreview: true,
-				})
-			} else {
-				DErrorE(err, "Perm Update | Fail to kick user once")
-				SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
-			}
-		} else {
-			SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/mycredit", func(m *tb.Message) {
-		if m.Chat.ID > 0 {
-			SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
-		} else if IsGroup(m.Chat.ID) {
-			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-			})
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/version", func(m *tb.Message) {
-		SmartSendDelete(m, fmt.Sprintf("👀 当前版本为: %s", VERSION))
-		LazyDelete(m)
-	})
-
-	Bot.Handle("/ping", func(m *tb.Message) {
-		cid := strconv.FormatInt(m.Chat.ID, 10)
-		t := time.Now().UnixMilli()
-		Bot.Delete(m)
-		Bot.ChatByID(cid)
-		t = time.Now().UnixMilli() - t
-		SmartSendDelete(m.Chat, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为: `%dms`", t/6), &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-		})
-	})
-
-	Bot.Handle(tb.OnUserLeft, func(m *tb.Message) {
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil && m.UserLeft.ID > 0 {
-			gc.UpdateAdmin(m.UserLeft.ID, UMDel)
-			UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0)
-		}
-		LazyDelete(m)
-	})
-
-	Bot.Handle(tb.OnChatMember, func(cmu *tb.ChatMemberUpdated) {
-		gc := GetGroupConfig(cmu.Chat.ID)
-		if gc != nil && cmu.NewChatMember != nil && cmu.NewChatMember.User != nil && cmu.NewChatMember.User.ID > 0 {
-			user := cmu.NewChatMember.User
-			if cmu.NewChatMember.Role == tb.Kicked ||
-				cmu.NewChatMember.Role == tb.Left {
-				gc.UpdateAdmin(user.ID, UMDel)
-				UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0)
-			}
-		}
-	})
-
-	// Bot.Handle("清除我的积分", func(m *tb.Message) {
-	// 	if IsGroup(m.Chat.ID) {
-	// 		UpdateCredit(BuildCreditInfo(m.Chat.ID, m.Sender, false), UMDel, 0)
-	// 		SmartSendDelete(m, "好的")
-	// 	}
-	// 	LazyDelete(m)
-	// })
-
-	// Bot.Handle("频道测试", func(m *tb.Message) {
-	// 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && m.ReplyTo != nil && gc.MustFollow != "" {
-	// 		i := UserIsInGroup(gc.MustFollow, m.ReplyTo.Sender.ID)
-	// 		SmartSendDelete(m, fmt.Sprintf("状态：%v", i))
-	// 	}
-	// 	LazyDelete(m)
-	// })
-
-	Bot.Handle(tb.OnUserJoined, func(m *tb.Message) {
-		CheckChannelFollow(m, m.UserJoined, true)
-	})
-
-	Bot.Handle(tb.OnPinned, func(m *tb.Message) {
-		LazyDelete(m)
-	})
-
-	Bot.Handle("口臭", CMDWarnUser)
-	Bot.Handle("口 臭", CMDWarnUser)
-	Bot.Handle("嘴臭", CMDWarnUser)
-	Bot.Handle("嘴 臭", CMDWarnUser)
-
-	Bot.Handle("恶意广告", CMDBanUser)
-	Bot.Handle("恶意发言", CMDBanUser)
-
-	Bot.Handle(tb.OnCallback, func(c *tb.Callback) {
-		m := c.Message
-		gc := GetGroupConfig(m.Chat.ID)
-		if gc != nil {
-			cmds := strings.Split(strings.TrimSpace(c.Data), "/")
-			cmd, gid, uid, secuid := "", int64(0), int64(0), int64(0)
-			if len(cmds) > 0 {
-				cmd = cmds[0]
-			}
-			if len(cmds) > 1 {
-				gid, _ = strconv.ParseInt(cmds[1], 10, 64)
-			}
-			if len(cmds) > 2 {
-				uid, _ = strconv.ParseInt(cmds[2], 10, 64)
-			}
-			if len(cmds) > 3 {
-				secuid, _ = strconv.ParseInt(cmds[3], 10, 64)
-			}
-			vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
-			isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
-			if strings.Contains("vt unban kick check", cmd) && IsGroup(gid) && uid > 0 {
-				if cmd == "unban" && isGroupAdmin {
-					if Unban(gid, uid, 0) == nil {
-						Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
-					} else {
-						Rsp(c, "❌ 解封失败，TA 可能已经被解封或者已经退群啦 ~")
-					}
-					SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
-					addCredit(gid, &tb.User{ID: uid}, 50, true)
-					if secuid > 0 {
+						SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
+						addCredit(gid, &tb.User{ID: uid}, 50, true)
+						if secuid > 0 {
+							votemap.Unset(vtToken)
+							addCredit(gid, &tb.User{ID: secuid}, -15, true)
+						}
+					} else if cmd == "kick" && isGroupAdmin {
+						if Kick(gid, uid) == nil {
+							Rsp(c, "✔️ 已将 TA 送出群留学去啦 ~")
+						} else {
+							Rsp(c, "❌ 踢出失败，可能 TA 已经退群啦 ~")
+						}
 						votemap.Unset(vtToken)
-						addCredit(gid, &tb.User{ID: secuid}, -15, true)
-					}
-				} else if cmd == "kick" && isGroupAdmin {
-					if Kick(gid, uid) == nil {
-						Rsp(c, "✔️ 已将 TA 送出群留学去啦 ~")
-					} else {
-						Rsp(c, "❌ 踢出失败，可能 TA 已经退群啦 ~")
-					}
-					votemap.Unset(vtToken)
-					SmartEdit(m, m.Text+"\n\nTA 已被管理员踢出群聊 🦶")
-				} else if cmd == "check" {
-					if uid == c.Sender.ID {
-						usrStatus := UserIsInGroup(gc.MustFollow, uid)
-						if usrStatus == UIGIn {
-							if Unban(gid, uid, 0) == nil {
-								Bot.Delete(m)
-								Rsp(c, "✔️ 验证成功，欢迎您的加入 ~")
-							} else {
-								Rsp(c, "❌ 验证成功，但是解禁失败，请联系管理员处理 ~")
-							}
-						} else {
-							Rsp(c, "❌ 验证失败，请确认自己已经加入对应群组 ~")
-						}
-					} else {
-						Rsp(c, "😠 人家的验证不要乱点哦！！！")
-					}
-				} else if cmd == "vt" {
-					userVtToken := fmt.Sprintf("vu-%d,%d,%d", gid, uid, c.Sender.ID)
-					if _, ok := votemap.Get(vtToken); ok {
-						if votemap.Add(userVtToken) == 1 {
-							votes := votemap.Add(vtToken)
-							if votes >= 6 {
-								Unban(gid, uid, 0)
-								votemap.Unset(vtToken)
-								SmartEdit(m, m.Text+"\n\n于多名用户投票后决定，该用户不是恶意广告，用户已解封，积分已原路返回。")
-								addCredit(gid, &tb.User{ID: uid}, 50, true)
-								if secuid > 0 {
-									addCredit(gid, &tb.User{ID: secuid}, -15, true)
+						SmartEdit(m, m.Text+"\n\nTA 已被管理员踢出群聊 🦶")
+					} else if cmd == "check" {
+						if uid == c.Sender.ID {
+							usrStatus := UserIsInGroup(gc.MustFollow, uid)
+							if usrStatus == UIGIn {
+								if Unban(gid, uid, 0) == nil {
+									Bot.Delete(m)
+									Rsp(c, "✔️ 验证成功，欢迎您的加入 ~")
+								} else {
+									Rsp(c, "❌ 验证成功，但是解禁失败，请联系管理员处理 ~")
 								}
 							} else {
-								EditBtns(m, m.Text, "", GenVMBtns(votes, gid, uid, secuid))
+								Rsp(c, "❌ 验证失败，请确认自己已经加入对应群组 ~")
 							}
-							Rsp(c, "✔️ 投票成功，感谢您的参与 ~")
 						} else {
-							Rsp(c, "❌ 您已经参与过投票了，请不要多次投票哦 ~")
+							Rsp(c, "😠 人家的验证不要乱点哦！！！")
+						}
+					} else if cmd == "vt" {
+						userVtToken := fmt.Sprintf("vu-%d,%d,%d", gid, uid, c.Sender.ID)
+						if _, ok := votemap.Get(vtToken); ok {
+							if votemap.Add(userVtToken) == 1 {
+								votes := votemap.Add(vtToken)
+								if votes >= 6 {
+									Unban(gid, uid, 0)
+									votemap.Unset(vtToken)
+									SmartEdit(m, m.Text+"\n\n于多名用户投票后决定，该用户不是恶意广告，用户已解封，积分已原路返回。")
+									addCredit(gid, &tb.User{ID: uid}, 50, true)
+									if secuid > 0 {
+										addCredit(gid, &tb.User{ID: secuid}, -15, true)
+									}
+								} else {
+									EditBtns(m, m.Text, "", GenVMBtns(votes, gid, uid, secuid))
+								}
+								Rsp(c, "✔️ 投票成功，感谢您的参与 ~")
+							} else {
+								Rsp(c, "❌ 您已经参与过投票了，请不要多次投票哦 ~")
+							}
+						} else {
+							Rsp(c, "❌ 投票时间已过，请联系管理员处理 ~")
 						}
 					} else {
-						Rsp(c, "❌ 投票时间已过，请联系管理员处理 ~")
+						Rsp(c, "❌ 请不要乱玩管理员指令！")
 					}
 				} else {
-					Rsp(c, "❌ 请不要乱玩管理员指令！")
+					Rsp(c, "❌ 指令解析出错，请联系管理员解决 ~")
 				}
 			} else {
-				Rsp(c, "❌ 指令解析出错，请联系管理员解决 ~")
+				Rsp(c, "❌ 这个群组还没有被授权哦 ~")
 			}
-		} else {
-			Rsp(c, "❌ 这个群组还没有被授权哦 ~")
-		}
-	})
+		})
 
-	Bot.Handle(tb.OnPhoto, func(m *tb.Message) {
-		CheckChannelForward(m)
-		CheckChannelFollow(m, m.Sender, false)
-	})
+		Bot.Handle(tb.OnPhoto, func(m *tb.Message) {
+			CheckChannelForward(m)
+			CheckChannelFollow(m, m.Sender, false)
+		})
 
-	Bot.Handle(tb.OnDocument, func(m *tb.Message) {
-		CheckChannelForward(m)
-		CheckChannelFollow(m, m.Sender, false)
-	})
+		Bot.Handle(tb.OnDocument, func(m *tb.Message) {
+			CheckChannelForward(m)
+			CheckChannelFollow(m, m.Sender, false)
+		})
 
-	Bot.Handle(tb.OnAnimation, func(m *tb.Message) {
-		CheckChannelForward(m)
-		CheckChannelFollow(m, m.Sender, false)
-	})
+		Bot.Handle(tb.OnAnimation, func(m *tb.Message) {
+			CheckChannelForward(m)
+			CheckChannelFollow(m, m.Sender, false)
+		})
 
-	Bot.Handle(tb.OnVideo, func(m *tb.Message) {
-		CheckChannelForward(m)
-		CheckChannelFollow(m, m.Sender, false)
-	})
+		Bot.Handle(tb.OnVideo, func(m *tb.Message) {
+			CheckChannelForward(m)
+			CheckChannelFollow(m, m.Sender, false)
+		})
 
-	Bot.Handle(tb.OnEdited, func(m *tb.Message) {
-		CheckChannelForward(m)
-		CheckChannelFollow(m, m.Sender, false)
-	})
+		Bot.Handle(tb.OnEdited, func(m *tb.Message) {
+			CheckChannelForward(m)
+			CheckChannelFollow(m, m.Sender, false)
+		})
 
-	Bot.Handle(tb.OnText, func(m *tb.Message) {
-		if IsGroup(m.Chat.ID) {
-			if !CheckChannelForward(m) {
-				return
-			}
-			if !CheckChannelFollow(m, m.Sender, false) {
-				return
-			}
-
-			if m.IsForwarded() {
-				return
-			}
-
-			text := strings.TrimSpace(m.Text)
-			textLen := len([]rune(text))
-			userId := m.Sender.ID
-
-			if puncReg.MatchString(text) {
-				addCreditToMsgSender(m.Chat.ID, m, -5, true)
-				lastID = userId
-			} else if textLen >= 2 {
-				if lastID == userId && text == lastText {
-					addCreditToMsgSender(m.Chat.ID, m, -2, true)
-				} else if lastID != userId || (textLen >= 14 && text != lastText) {
-					addCreditToMsgSender(m.Chat.ID, m, 1, false)
+		Bot.Handle(tb.OnText, func(m *tb.Message) {
+			if IsGroup(m.Chat.ID) {
+				if !CheckChannelForward(m) {
+					return
 				}
-				lastID = userId
-				lastText = text
-			}
+				if !CheckChannelFollow(m, m.Sender, false) {
+					return
+				}
 
-			if ValidReplyUser(m) {
-				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
-			}
-		}
-	})
+				if m.IsForwarded() {
+					return
+				}
 
-	Bot.Handle(tb.OnSticker, func(m *tb.Message) {
-		if IsGroup(m.Chat.ID) {
-			if !CheckChannelForward(m) {
-				return
-			}
-			if !CheckChannelFollow(m, m.Sender, false) {
-				return
-			}
+				text := strings.TrimSpace(m.Text)
+				textLen := len([]rune(text))
+				userId := m.Sender.ID
 
-			if m.IsForwarded() {
-				return
-			}
-			userId := m.Sender.ID
-			if lastID != userId {
-				addCreditToMsgSender(m.Chat.ID, m, 1, false)
-				lastID = userId
-			}
+				if puncReg.MatchString(text) {
+					addCreditToMsgSender(m.Chat.ID, m, -5, true)
+					lastID = userId
+				} else if textLen >= 2 {
+					if lastID == userId && text == lastText {
+						addCreditToMsgSender(m.Chat.ID, m, -2, true)
+					} else if lastID != userId || (textLen >= 14 && text != lastText) {
+						addCreditToMsgSender(m.Chat.ID, m, 1, false)
+					}
+					lastID = userId
+					lastText = text
+				}
 
-			if ValidReplyUser(m) {
-				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
+				if ValidReplyUser(m) {
+					addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
+				}
 			}
-		}
-	})
+		})
+
+		Bot.Handle(tb.OnSticker, func(m *tb.Message) {
+			if IsGroup(m.Chat.ID) {
+				if !CheckChannelForward(m) {
+					return
+				}
+				if !CheckChannelFollow(m, m.Sender, false) {
+					return
+				}
+
+				if m.IsForwarded() {
+					return
+				}
+				userId := m.Sender.ID
+				if lastID != userId {
+					addCreditToMsgSender(m.Chat.ID, m, 1, false)
+					lastID = userId
+				}
+
+				if ValidReplyUser(m) {
+					addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
+				}
+			}
+		})
+	}
 
 	go Bot.Start()
-	// go StartCountDown()
-	DInfo("MiaoKeeper is up.")
+
+	if !ping {
+		// go StartCountDown()
+		DInfo("MiaoKeeper is up.")
+	}
 }
 
 func CheckChannelForward(m *tb.Message) bool {
