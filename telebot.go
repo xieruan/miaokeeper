@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -38,6 +39,11 @@ var puncReg *regexp.Regexp
 var zcomap *ObliviousMap
 var creditomap *ObliviousMap
 var votemap *ObliviousMap
+
+var redpacketmap *ObliviousMap
+var redpacketnmap *ObliviousMap
+
+var redpacketlock sync.Mutex
 
 func SetCommands() error {
 	allCommands := [][]string{
@@ -383,6 +389,43 @@ func InitTelegram() {
 			LazyDelete(m)
 		})
 
+		Bot.Handle("/send_redpacket", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				payloads := strings.Fields(m.Payload)
+
+				mc := 0
+				if len(payloads) > 0 {
+					mc, _ = strconv.Atoi(payloads[0])
+				}
+				n := 0
+				if len(payloads) > 1 {
+					n, _ = strconv.Atoi(payloads[1])
+				}
+
+				if mc <= 0 {
+					mc = 10
+				} else if mc > 1000 {
+					mc = 1000
+				}
+				if n < 1 {
+					n = 1
+				} else if n > 50 {
+					n = 50
+				}
+
+				chatId := m.Chat.ID
+				redpacketId := rand.Intn(10000)
+				redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
+				redpacketmap.Set(redpacketKey, mc)
+				redpacketnmap.Set(redpacketKey, n)
+				SendRedPacket(m.Chat, chatId, redpacketId)
+				LazyDelete(m)
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
 		Bot.Handle("/creditrank", func(m *tb.Message) {
 			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 				rank, _ := strconv.Atoi(m.Payload)
@@ -411,7 +454,10 @@ func InitTelegram() {
 				payloads := strings.Fields(m.Payload)
 
 				rank, _ := strconv.Atoi(payloads[0])
-				n, _ := strconv.Atoi(payloads[1])
+				n := 0
+				if len(payloads) > 1 {
+					n, _ = strconv.Atoi(payloads[1])
+				}
 
 				if rank <= 0 {
 					rank = 10
@@ -615,9 +661,10 @@ func InitTelegram() {
 				if len(cmds) > 3 {
 					secuid, _ = strconv.ParseInt(cmds[3], 10, 64)
 				}
+				triggerUid := c.Sender.ID
 				vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
 				isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
-				if strings.Contains("vt unban kick check", cmd) && IsGroup(gid) && uid > 0 {
+				if strings.Contains("vt unban kick check rp", cmd) && IsGroup(gid) && uid > 0 {
 					if cmd == "unban" && isGroupAdmin {
 						if Unban(gid, uid, 0) == nil {
 							Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
@@ -676,6 +723,42 @@ func InitTelegram() {
 							}
 						} else {
 							Rsp(c, "❌ 投票时间已过，请联系管理员处理 ~")
+						}
+					} else if cmd == "rp" {
+						redpacketKey := fmt.Sprintf("%d-%d", gid, secuid)
+
+						redpacketlock.Lock()
+						defer redpacketlock.Unlock()
+
+						credits, _ := redpacketmap.Get(redpacketKey)
+						left, _ := redpacketnmap.Get(redpacketKey)
+						if credits > 0 && left > 0 {
+							redpacketUserKey := fmt.Sprintf("%d-%d:%d", gid, secuid, triggerUid)
+							if redpacketmap.Add(redpacketUserKey) == 1 {
+								amount := 0
+								if left <= 1 {
+									amount = credits
+								} else if left == 2 {
+									amount = rand.Intn(credits)
+								} else {
+									amount = rand.Intn(credits * (left - 1) / left)
+								}
+								redpacketnmap.Set(redpacketKey, left-1)
+								redpacketmap.Set(redpacketKey, credits-amount)
+
+								if amount == 0 {
+									Rsp(c, "🐢 您的运气也太差啦！什么都没有抽到哦...")
+								} else {
+									Rsp(c, "🎉 恭喜获得 "+strconv.Itoa(amount)+" 积分，积分已经实时到账～")
+									addCredit(gid, c.Sender, 50, true)
+								}
+
+								SendRedPacket(m, gid, int(secuid))
+							} else {
+								Rsp(c, "❌ 您已经参与过这次活动了，不能太贪心哦！")
+							}
+						} else {
+							Rsp(c, "❌ 抽奖活动已经结束啦！请期待下一次活动～")
 						}
 					} else {
 						Rsp(c, "❌ 请不要乱玩管理员指令！")
@@ -779,6 +862,27 @@ func InitTelegram() {
 	if !ping {
 		// go StartCountDown()
 		DInfo("MiaoKeeper is up.")
+	}
+}
+
+func SendRedPacket(to interface{}, chatId int64, packetId int) (*tb.Message, error) {
+	redpacketKey := fmt.Sprintf("%d-%d", chatId, packetId)
+	credits, _ := redpacketmap.Get(redpacketKey)
+	left, _ := redpacketnmap.Get(redpacketKey)
+
+	msg := "🧧 *积分红包*\n\n小伙伴们手速都太快啦，红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～"
+	btns := []string{}
+
+	if credits > 0 && left > 0 {
+		msg = fmt.Sprintf("🧧 *积分红包*\n\n发红包啦！大家快抢哦～\n\n剩余积分: `%d`\n剩余数量: `%d`", credits, left)
+		btns = []string{fmt.Sprintf("🤏 我要抢红包|rp/%d/1/%d", chatId, packetId)}
+	}
+
+	if Type(to) == "*telebot.Message" {
+		mess, _ := to.(*tb.Message)
+		return EditBtnsMarkdown(mess, msg, "", btns)
+	} else {
+		return SendBtnsMarkdown(to, msg, "", btns)
 	}
 }
 
@@ -921,10 +1025,12 @@ func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
 }
 
 func SmartEdit(to *tb.Message, what interface{}, options ...interface{}) (*tb.Message, error) {
-	options = append([]interface{}{&tb.SendOptions{
-		// ParseMode:             "Markdown",
-		DisableWebPagePreview: true,
-	}}, options...)
+	if len(options) == 0 {
+		options = append([]interface{}{&tb.SendOptions{
+			// ParseMode:             "Markdown",
+			DisableWebPagePreview: true,
+		}}, options...)
+	}
 	m, err := Bot.Edit(to, what, options...)
 	if err != nil {
 		DErrorE(err, "Telegram Edit Error")
@@ -975,7 +1081,7 @@ func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*
 	}, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
-		ForceReply:          true,
+		ForceReply:          false,
 		InlineKeyboard:      MakeBtns(prefix, btns),
 	})
 }
@@ -987,7 +1093,7 @@ func SendBtnsMarkdown(to interface{}, what interface{}, prefix string, btns []st
 	}, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
-		ForceReply:          true,
+		ForceReply:          false,
 		InlineKeyboard:      MakeBtns(prefix, btns),
 	})
 }
@@ -996,7 +1102,19 @@ func EditBtns(to *tb.Message, what interface{}, prefix string, btns []string) (*
 	return SmartEdit(to, what, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
-		ForceReply:          true,
+		ForceReply:          false,
+		InlineKeyboard:      MakeBtns(prefix, btns),
+	})
+}
+
+func EditBtnsMarkdown(to *tb.Message, what interface{}, prefix string, btns []string) (*tb.Message, error) {
+	return SmartEdit(to, what, &tb.SendOptions{
+		ParseMode:             "Markdown",
+		DisableWebPagePreview: true,
+	}, &tb.ReplyMarkup{
+		OneTimeKeyboard:     true,
+		ResizeReplyKeyboard: true,
+		ForceReply:          false,
 		InlineKeyboard:      MakeBtns(prefix, btns),
 	})
 }
@@ -1238,4 +1356,6 @@ func init() {
 	zcomap = NewOMap(60*60*1000, true)
 	creditomap = NewOMap(60*60*1000, false)
 	votemap = NewOMap(30*60*1000, false)
+	redpacketmap = NewOMap(24*60*60*1000, false)
+	redpacketnmap = NewOMap(24*60*60*1000, false)
 }

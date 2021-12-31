@@ -21,7 +21,7 @@ func CMDWarnUser(m *tb.Message) {
 				} else {
 					zcomap.Set(token, 1)
 					ci := addCredit(m.Chat.ID, m.ReplyTo.Sender, -25, true)
-					SmartSend(m.ReplyTo, fmt.Sprintf("您被 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.Sender)))
+					SmartSend(m.ReplyTo, fmt.Sprintf("%s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender)))
 					LazyDelete(m)
 					if ci.Credit < -50 {
 						Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)
@@ -77,7 +77,7 @@ func CMDBanUser(m *tb.Message) {
 							addCredit(m.Chat.ID, m.ReplyTo.Sender, -50, true)
 							addCredit(m.Chat.ID, m.Sender, 15, true)
 							votemap.Set(vtToken, 0)
-							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意广告的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
+							msgTxt := fmt.Sprintf("%s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender))
 							SendBtns(m.ReplyTo, msgTxt, "", GenVMBtns(0, m.Chat.ID, userId, m.Sender.ID))
 							LazyDelete(m)
 							LazyDelete(m.ReplyTo)
