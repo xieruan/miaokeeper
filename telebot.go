@@ -750,7 +750,7 @@ func InitTelegram() {
 									Rsp(c, "🐢 您的运气也太差啦！什么都没有抽到哦...")
 								} else {
 									Rsp(c, "🎉 恭喜获得 "+strconv.Itoa(amount)+" 积分，积分已经实时到账～")
-									addCredit(gid, c.Sender, 50, true)
+									addCredit(gid, c.Sender, int64(credits), true)
 								}
 
 								SendRedPacket(m, gid, int(secuid))
@@ -1352,6 +1352,7 @@ func BanChannel(chatId, channelId int64) error {
 // }
 
 func init() {
+	rand.Seed(time.Now().UnixNano())
 	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
 	zcomap = NewOMap(60*60*1000, true)
 	creditomap = NewOMap(60*60*1000, false)
