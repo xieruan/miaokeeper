@@ -750,7 +750,7 @@ func InitTelegram() {
 									Rsp(c, "🐢 您的运气也太差啦！什么都没有抽到哦...")
 								} else {
 									Rsp(c, "🎉 恭喜获得 "+strconv.Itoa(amount)+" 积分，积分已经实时到账～")
-									addCredit(gid, c.Sender, int64(credits), true)
+									addCredit(gid, c.Sender, int64(amount), true)
 								}
 
 								SendRedPacket(m, gid, int(secuid))
