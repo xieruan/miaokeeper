@@ -474,6 +474,7 @@ func InitTelegram() {
 					SmartSendDelete(m, "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 1000 之间，红包个数需在 1 ~ 20 之间，且红包大小不能低于参与人数哦～", &tb.SendOptions{
 						ParseMode: "Markdown",
 					})
+					LazyDelete(m)
 					return
 				}
 
@@ -490,7 +491,6 @@ func InitTelegram() {
 					redpacketmap.Set(redpacketKey, mc)
 					redpacketnmap.Set(redpacketKey, n)
 					SendRedPacket(m.Chat, chatId, redpacketId)
-					LazyDelete(m)
 				} else {
 					SmartSendDelete(m, "❌ 您的积分不够发这个红包哦，请在努力赚积分吧～")
 				}
