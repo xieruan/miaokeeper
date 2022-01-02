@@ -40,6 +40,8 @@ var zcomap *ObliviousMap
 var creditomap *ObliviousMap
 var votemap *ObliviousMap
 
+var joinmap *ObliviousMap
+
 var redpacketrankmap map[string]string
 var redpacketmap *ObliviousMap
 var redpacketnmap *ObliviousMap
@@ -370,6 +372,8 @@ func InitTelegram() {
 							SmartSendDelete(m, "❌ 您还没有在辣个频道给我权限呢 TAT")
 						} else {
 							gc.MustFollow = groupName
+							gc.MustFollowOnJoin = false
+							gc.MustFollowOnMsg = false
 							if mode == "join" {
 								gc.MustFollowOnJoin = true
 							} else if mode == "msg" {
@@ -419,6 +423,7 @@ func InitTelegram() {
 				chatId := m.Chat.ID
 				redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
 				redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
+				redpacketrankmap[redpacketKey+":sender"] = "管理员-" + GetQuotableUserName(m.Sender)
 				redpacketmap.Set(redpacketKey, mc)
 				redpacketnmap.Set(redpacketKey, n)
 				SendRedPacket(m.Chat, chatId, redpacketId)
@@ -465,15 +470,11 @@ func InitTelegram() {
 					n, _ = strconv.Atoi(payloads[1])
 				}
 
-				if mc <= 0 {
-					mc = 10
-				} else if mc > 1000 {
-					mc = 1000
-				}
-				if n < 1 {
-					n = 1
-				} else if n > 20 {
-					n = 20
+				if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
+					SmartSendDelete(m, "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 1000 之间，红包个数需在 1 ~ 20 之间，且红包大小不能低于参与人数哦～", &tb.SendOptions{
+						ParseMode: "Markdown",
+					})
+					return
 				}
 
 				userredpacketlock.Lock()
@@ -485,6 +486,7 @@ func InitTelegram() {
 					addCredit(chatId, m.Sender, -Abs(int64(mc)), true)
 					redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
 					redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
+					redpacketrankmap[redpacketKey+":sender"] = GetQuotableUserName(m.Sender)
 					redpacketmap.Set(redpacketKey, mc)
 					redpacketnmap.Set(redpacketKey, n)
 					SendRedPacket(m.Chat, chatId, redpacketId)
@@ -715,6 +717,7 @@ func InitTelegram() {
 				}
 				triggerUid := c.Sender.ID
 				vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
+				joinVerificationId := fmt.Sprintf("join,%d,%d", gid, uid)
 				isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
 				if strings.Contains("vt unban kick check rp", cmd) && IsGroup(gid) && uid > 0 {
 					if cmd == "unban" && isGroupAdmin {
@@ -724,8 +727,9 @@ func InitTelegram() {
 							Rsp(c, "❌ 解封失败，TA 可能已经被解封或者已经退群啦 ~")
 						}
 						SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
-						addCredit(gid, &tb.User{ID: uid}, 50, true)
+						joinmap.Unset(joinVerificationId)
 						if secuid > 0 {
+							addCredit(gid, &tb.User{ID: uid}, 50, true)
 							votemap.Unset(vtToken)
 							addCredit(gid, &tb.User{ID: secuid}, -15, true)
 						}
@@ -735,6 +739,7 @@ func InitTelegram() {
 						} else {
 							Rsp(c, "❌ 踢出失败，可能 TA 已经退群啦 ~")
 						}
+						joinmap.Unset(joinVerificationId)
 						votemap.Unset(vtToken)
 						SmartEdit(m, m.Text+"\n\nTA 已被管理员踢出群聊 🦶")
 					} else if cmd == "check" {
@@ -744,6 +749,7 @@ func InitTelegram() {
 								if Unban(gid, uid, 0) == nil {
 									Bot.Delete(m)
 									Rsp(c, "✔️ 验证成功，欢迎您的加入 ~")
+									joinmap.Unset(joinVerificationId)
 								} else {
 									Rsp(c, "❌ 验证成功，但是解禁失败，请联系管理员处理 ~")
 								}
@@ -794,7 +800,13 @@ func InitTelegram() {
 								} else if left == 2 {
 									amount = rand.Intn(credits)
 								} else {
-									amount = rand.Intn(credits * (left - 1) / left)
+									rate := 3
+									if left <= 4 {
+										rate = 2
+									} else if left >= 12 {
+										rate = 4
+									}
+									amount = rand.Intn(credits * rate / left)
 								}
 								redpacketnmap.Set(redpacketKey, left-1)
 								redpacketmap.Set(redpacketKey, credits-amount)
@@ -928,11 +940,15 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 	credits, _ := redpacketmap.Get(redpacketKey)
 	left, _ := redpacketnmap.Get(redpacketKey)
 
-	msg := "🧧 *积分红包*\n\n小伙伴们手速都太快啦，红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～"
+	msg := fmt.Sprintf("🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～", redpacketrankmap[redpacketKey+":sender"])
 	btns := []string{}
 
 	if credits > 0 && left > 0 {
-		msg = fmt.Sprintf("🧧 *积分红包*\n\n发红包啦！大家快抢哦～\n\n剩余积分: `%d`\n剩余数量: `%d`", credits, left)
+		creditLeft := strconv.Itoa(credits)
+		if left == 1 {
+			creditLeft = "猜猜看还剩多少？"
+		}
+		msg = fmt.Sprintf("🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`", redpacketrankmap[redpacketKey+":sender"], creditLeft, left)
 		btns = []string{fmt.Sprintf("🤏 我要抢红包|rp/%d/1/%d", chatId, packetId)}
 	}
 
@@ -994,31 +1010,41 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			}
 		} else if usrStatus == UIGOut {
 			chatId, userId := m.Chat.ID, user.ID
-			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf("[🎉](tg://user?id=%d) 欢迎 `%s` 加入群组，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～", userId, usrName), "", []string{
-				fmt.Sprintf("👉👉 跳转频道 👈👈|https://t.me/%s", strings.TrimLeft(gc.MustFollow, "@")),
-				fmt.Sprintf("👉👉 点我验证 👈👈|check/%d/%d", chatId, userId),
+			joinVerificationId := fmt.Sprintf("join,%d,%d", chatId, userId)
+			if joinmap.Add(joinVerificationId) > 1 {
+				// already in verification process
+				Bot.Delete(m)
+				return false
+			}
+			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf("[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～", userId, usrName), "", []string{
+				fmt.Sprintf("👉 第一步：关注频道 👈|https://t.me/%s", strings.TrimLeft(gc.MustFollow, "@")),
+				fmt.Sprintf("👉 第二波：点我验证 👈|check/%d/%d", chatId, userId),
 				fmt.Sprintf("🚩 解封[管理]|unban/%d/%d||🚮 清退[管理]|kick/%d/%d", chatId, userId, chatId, userId),
 			})
 			if msg == nil || err != nil {
 				if showExceptDialog {
 					SmartSendDelete(m.Chat, "❌ 无法发送验证消息，请管理员检查群组权限 ～")
 				}
+				joinmap.Unset(joinVerificationId)
 			} else {
 				if Ban(chatId, userId, 0) != nil {
 					LazyDelete(msg)
 					if showExceptDialog {
 						SmartSendDelete(m.Chat, "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～")
 					}
+					joinmap.Unset(joinVerificationId)
 				} else {
 					time.AfterFunc(time.Minute*5, func() {
 						Bot.Delete(msg)
-						cm, err := Bot.ChatMemberOf(&tb.Chat{ID: chatId}, &tb.User{ID: userId})
-						if err != nil || cm.Role == tb.Restricted || cm.Role == tb.Kicked || cm.Role == tb.Left {
-							Kick(chatId, userId)
-							SmartSend(m.Chat, fmt.Sprintf("👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～", userId), &tb.SendOptions{
-								ParseMode:             "Markdown",
-								DisableWebPagePreview: true,
-							})
+						if joinmap.Exist(joinVerificationId) {
+							cm, err := Bot.ChatMemberOf(&tb.Chat{ID: chatId}, &tb.User{ID: userId})
+							if err != nil || cm.Role == tb.Restricted || cm.Role == tb.Kicked || cm.Role == tb.Left {
+								Kick(chatId, userId)
+								SmartSend(m.Chat, fmt.Sprintf("👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～", userId), &tb.SendOptions{
+									ParseMode:             "Markdown",
+									DisableWebPagePreview: true,
+								})
+							}
 						}
 					})
 					Bot.Delete(m)
@@ -1420,6 +1446,8 @@ func init() {
 	zcomap = NewOMap(60*60*1000, true)
 	creditomap = NewOMap(60*60*1000, false)
 	votemap = NewOMap(30*60*1000, false)
+
+	joinmap = NewOMap(5*60*1000+30*1000, false)
 
 	redpacketrankmap = make(map[string]string)
 	redpacketmap = NewOMap(24*60*60*1000, false)

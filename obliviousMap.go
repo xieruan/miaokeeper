@@ -28,10 +28,7 @@ func NewOMap(duration int64, updateTimeIfWrite bool) *ObliviousMap {
 	}
 }
 
-func (om *ObliviousMap) Get(key string) (int, bool) {
-	om.lock.Lock()
-	defer om.lock.Unlock()
-
+func (om *ObliviousMap) unsafeGet(key string) (int, bool) {
 	now := NowTS()
 	v, ok := om.inner[key]
 	if ok {
@@ -50,10 +47,14 @@ func (om *ObliviousMap) Get(key string) (int, bool) {
 	return 0, false
 }
 
-func (om *ObliviousMap) Set(key string, value int) int {
+func (om *ObliviousMap) Get(key string) (int, bool) {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
+	return om.unsafeGet(key)
+}
+
+func (om *ObliviousMap) unsafeSet(key string, value int) int {
 	now := NowTS()
 	_, ok := om.inner[key]
 	om.inner[key] = value
@@ -61,6 +62,13 @@ func (om *ObliviousMap) Set(key string, value int) int {
 		om.timer[key] = now + om.duration
 	}
 	return value
+}
+
+func (om *ObliviousMap) Set(key string, value int) int {
+	om.lock.Lock()
+	defer om.lock.Unlock()
+
+	return om.unsafeSet(key, value)
 }
 
 func (om *ObliviousMap) Unset(key string) {
@@ -77,7 +85,18 @@ func (om *ObliviousMap) Unset(key string) {
 	}
 }
 
+func (om *ObliviousMap) Exist(key string) bool {
+	om.lock.Lock()
+	defer om.lock.Unlock()
+
+	_, ok := om.inner[key]
+	return ok
+}
+
 func (om *ObliviousMap) Add(key string) int {
-	v, _ := om.Get(key)
-	return om.Set(key, v+1)
+	om.lock.Lock()
+	defer om.lock.Unlock()
+
+	v, _ := om.unsafeGet(key)
+	return om.unsafeSet(key, v+1)
 }

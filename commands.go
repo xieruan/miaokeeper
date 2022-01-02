@@ -15,10 +15,17 @@ func CMDWarnUser(m *tb.Message) {
 				SmartSend(m, "我拿它没办法呢 ...")
 			} else {
 				token := fmt.Sprintf("%d,%d,%d", m.Chat.ID, m.Sender.ID, m.ReplyTo.Sender.ID)
+				limSenderToken := fmt.Sprintf("lim%d,%d,%d", m.Chat.ID, m.Sender.ID)
+				limReciverToken := fmt.Sprintf("lim%d,%d,%d", m.Chat.ID, m.ReplyTo.Sender.ID)
 				if _, ok := zcomap.Get(token); ok {
 					addCredit(m.Chat.ID, m.Sender, -10, true)
 					SmartSend(m, "😠 你自己先漱漱口呢，不要连续臭别人哦！扣 10 分警告一下")
+				} else if senderLimit, _ := zcomap.Get(limSenderToken); senderLimit >= 2 {
+					zcomap.Add(limReciverToken)
+					SmartSend(m, "😳 用指令对线是不对的，请大家都冷静下呢～")
 				} else {
+					zcomap.Add(limSenderToken)
+					zcomap.Add(limReciverToken)
 					zcomap.Set(token, 1)
 					ci := addCredit(m.Chat.ID, m.ReplyTo.Sender, -25, true)
 					SmartSend(m.ReplyTo, fmt.Sprintf("%s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。", GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender)))
