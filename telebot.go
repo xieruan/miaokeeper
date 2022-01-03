@@ -319,6 +319,35 @@ func InitTelegram() {
 			LazyDelete(m)
 		})
 
+		Bot.Handle("/set_antispoiler", func(m *tb.Message) {
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				gc := GetGroupConfig(m.Chat.ID)
+				if gc != nil {
+					status := false
+
+					if m.Payload == "on" {
+						status = true
+					} else if m.Payload == "off" {
+						status = false
+					} else {
+						SmartSendDelete(m, "❌ 使用方法错误：/set_antispoiler <on|off>")
+						LazyDelete(m)
+						return
+					}
+
+					gc.AntiSpoiler = status
+					SetGroupConfig(m.Chat.ID, gc)
+					SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好反·反剧透消息啦 `(Status=%v)` ～", gc.AntiSpoiler), &tb.SendOptions{
+						ParseMode:             "Markdown",
+						DisableWebPagePreview: true,
+					})
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
 		Bot.Handle("/add_credit", func(m *tb.Message) {
 			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 				addons := ParseStrToInt64Arr(strings.Join(strings.Fields(strings.TrimSpace(m.Payload)), ","))
@@ -871,7 +900,14 @@ func InitTelegram() {
 				if !CheckChannelForward(m) {
 					return
 				}
+
 				if !CheckChannelFollow(m, m.Sender, false) {
+					return
+				}
+
+				if CheckSpoiler(m) {
+					RevealSpoiler(m)
+					addCreditToMsgSender(m.Chat.ID, m, -2, true)
 					return
 				}
 
@@ -977,6 +1013,17 @@ func CheckChannelForward(m *tb.Message) bool {
 		}
 	}
 	return true
+}
+
+func CheckSpoiler(m *tb.Message) bool {
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil && gc.AntiSpoiler {
+		for _, e := range m.Entities {
+			if e.Type == "spoiler" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
@@ -1216,6 +1263,41 @@ func SmartSend(to interface{}, what interface{}, options ...interface{}) (*tb.Me
 		})
 	}
 	return SmartSendInner(to, what, options...)
+}
+
+func extractMessage(data []byte) (*tb.Message, error) {
+	var resp struct {
+		Result *tb.Message
+	}
+	if err := jsoniter.Unmarshal(data, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Result, nil
+}
+
+func RevealSpoiler(msg *tb.Message) (*tb.Message, error) {
+	var params = make(map[string]interface{})
+	msgID, chatID := msg.MessageSig()
+	params["chat_id"] = strconv.FormatInt(chatID, 10)
+	params["reply_to_message_id"] = msgID
+	params["disable_web_page_preview"] = true
+	params["allow_sending_without_reply"] = true
+	params["protect_content"] = true
+	params["text"] = msg.Text
+
+	for i, e := range msg.Entities {
+		if e.Type == "spoiler" {
+			msg.Entities[i].Type = tb.EntityStrikethrough
+		}
+	}
+	params["entities"] = msg.Entities
+
+	data, err := Bot.Raw("sendMessage", params)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractMessage(data)
 }
 
 func SmartSendInner(to interface{}, what interface{}, options ...interface{}) (*tb.Message, error) {

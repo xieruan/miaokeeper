@@ -41,6 +41,8 @@ type GroupConfig struct {
 	MustFollow       string
 	MustFollowOnJoin bool
 	MustFollowOnMsg  bool
+
+	AntiSpoiler bool
 }
 
 func InitDatabase() (err error) {
@@ -150,8 +152,8 @@ func InitGroupTable(groupId int64) {
 
 func NewGroupConfig(groupId int64) *GroupConfig {
 	return SetGroupConfig(groupId, &GroupConfig{
-		ID:     groupId,
-		Admins: make([]int64, 0),
+		ID:            groupId,
+		Admins:        make([]int64, 0),
 		BannedForward: make([]int64, 0),
 	})
 }
