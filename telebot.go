@@ -720,11 +720,22 @@ func InitTelegram() {
 
 		Bot.Handle("口臭", CMDWarnUser)
 		Bot.Handle("口 臭", CMDWarnUser)
+		Bot.Handle("口  臭", CMDWarnUser)
+		Bot.Handle("口臭!", CMDWarnUser)
+		Bot.Handle("口臭！", CMDWarnUser)
 		Bot.Handle("嘴臭", CMDWarnUser)
 		Bot.Handle("嘴 臭", CMDWarnUser)
+		Bot.Handle("嘴  臭", CMDWarnUser)
+		Bot.Handle("嘴臭!", CMDWarnUser)
+		Bot.Handle("嘴臭！", CMDWarnUser)
 
 		Bot.Handle("恶意广告", CMDBanUser)
+		Bot.Handle("惡意廣告", CMDBanUser)
 		Bot.Handle("恶意发言", CMDBanUser)
+		Bot.Handle("惡意發言", CMDBanUser)
+		Bot.Handle("恶意举报", CMDBanUser)
+		Bot.Handle("惡意舉報", CMDBanUser)
+		Bot.Handle("惡意檢舉", CMDBanUser)
 
 		Bot.Handle(tb.OnCallback, func(c *tb.Callback) {
 			m := c.Message
@@ -1065,7 +1076,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			}
 			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf("[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～", userId, usrName), "", []string{
 				fmt.Sprintf("👉 第一步：关注频道 👈|https://t.me/%s", strings.TrimLeft(gc.MustFollow, "@")),
-				fmt.Sprintf("👉 第二波：点我验证 👈|check/%d/%d", chatId, userId),
+				fmt.Sprintf("👉 第二步：点我验证 👈|check/%d/%d", chatId, userId),
 				fmt.Sprintf("🚩 解封[管理]|unban/%d/%d||🚮 清退[管理]|kick/%d/%d", chatId, userId, chatId, userId),
 			})
 			if msg == nil || err != nil {
