@@ -443,7 +443,7 @@ func (li *LotteryInstance) GenText() string {
 	}
 
 	return fmt.Sprintf(
-		"🤖️ 抽奖任务: `%s`.\n\n*抽奖配置:*\n积分要求: `%d`\n积分消耗: `%v`\n奖品数量: `%d`\n开奖方式: `%s`\n\n*任务状态:* %s",
+		"🤖️ *抽奖任务:* `%s`.\n\n*抽奖配置:*\n积分要求: `%d`\n积分消耗: `%v`\n奖品数量: `%d`\n开奖方式: `%s`\n\n*任务状态:* %s",
 		GetQuotableStr(li.Payload), li.Limit, li.Consume, li.Num, drawMsg, status,
 	)
 }
@@ -523,7 +523,7 @@ func (li *LotteryInstance) CheckDraw(force bool) bool {
 		if force {
 			// manual draw
 			li.Status = 2
-		} else if li.Duration >= 0 && li.CreatedAt+int64(li.Duration)*3600 < time.Now().Unix() {
+		} else if li.Duration > 0 && li.CreatedAt+int64(li.Duration)*3600 < time.Now().Unix() {
 			// timeout draw
 			li.Status = 2
 		} else if li.Participant >= 0 && li.Participants() >= li.Participant {

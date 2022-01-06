@@ -797,6 +797,7 @@ func InitTelegram() {
 				vtToken := fmt.Sprintf("vt-%d,%d", gid, uid)
 				joinVerificationId := fmt.Sprintf("join,%d,%d", gid, uid)
 				isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
+				isMiaoGroupAdmin := IsGroupAdminMiaoKo(m.Chat, c.Sender)
 				if strings.Contains("vt unban kick check rp lt", cmd) && IsGroup(gid) && uid > 0 {
 					if cmd == "unban" && isGroupAdmin {
 						if Unban(gid, uid, 0) == nil {
@@ -913,12 +914,12 @@ func InitTelegram() {
 						lotteryId := cmds[3]
 						li := GetLottery(lotteryId)
 						if li != nil {
-							if cmdtype == 2 && isGroupAdmin {
+							if cmdtype == 2 && isMiaoGroupAdmin {
 								li.Status = 0
 								li.Update()
 								li.UpdateTelegramMsg()
 								Rsp(c, "🎉 活动已确认，请号召群友踊跃参与哦！")
-							} else if cmdtype == 3 && isGroupAdmin {
+							} else if cmdtype == 3 && isMiaoGroupAdmin {
 								li.CheckDraw(true)
 							} else if cmdtype == 1 {
 								ci := GetCredit(li.GroupID, triggerUid)
@@ -951,7 +952,7 @@ func InitTelegram() {
 									Rsp(c, "❌ 请加群后再参与活动哦！")
 								}
 							} else {
-								Rsp(c, "❌ 请不要乱玩管理员指令！")
+								Rsp(c, "❌ 请不要乱玩喵组管理员指令！")
 							}
 						} else {
 							Rsp(c, "❌ 未找到这个活动，请联系管理员解决！")

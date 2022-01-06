@@ -18,9 +18,9 @@ func (ah *ArgHolder) Parse(payload string) string {
 		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) == 2 && strings.HasPrefix(kv[0], ":") {
 			k := kv[0][1:]
-			if strings.Contains("y Y yes YES true TRUE on ON", kv[1]) {
+			if strings.Contains("y Y yes YES true TRUE", kv[1]) {
 				ah.storage[k] = true
-			} else if strings.Contains("n N no NO false FALSE off OFF", kv[1]) {
+			} else if strings.Contains("n N no NO false FALSE", kv[1]) {
 				ah.storage[k] = false
 			} else if i, err := strconv.Atoi(kv[1]); err == nil {
 				ah.storage[k] = i
