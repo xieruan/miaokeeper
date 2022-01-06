@@ -3,6 +3,7 @@ module github.com/dl0im/miaokeeper
 go 1.17
 
 require (
+	github.com/bep/debounce v1.2.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect

@@ -91,7 +91,7 @@ func InitTables() {
 		participant BIGINT NOT NULL,
 		username TEXT NOT NULL,
 		createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
-		INDEX (id)
+		INDEX (id),
 		UNIQUE KEY uniq_participant (id, participant)
 	) DEFAULT CHARSET=utf8mb4`)
 	if err != nil {
@@ -377,16 +377,24 @@ type LotteryInstance struct {
 
 func (li *LotteryInstance) UpdateTelegramMsg() *tb.Message {
 	btns := []string{}
-	if li.Status >= 0 {
-		btns = append(btns, fmt.Sprintf("🤏 我要抽奖|lt/%d/0/%s", li.GroupID, li.ID))
-		btns = append(btns, fmt.Sprintf("📦 手动开奖[管理]|lt/%d/2/%s", li.GroupID, li.ID))
-	} else {
-		btns = append(btns, fmt.Sprintf("🎡 开启活动[管理]|lt/%d/1/%s", li.GroupID, li.ID))
+	if li.Status == 0 {
+		btns = append(btns, fmt.Sprintf("🤏 我要抽奖|lt/%d/1/%s", li.GroupID, li.ID))
+	}
+	if li.Status >= 0 && li.Status < 2 {
+		btns = append(btns, fmt.Sprintf("📦 手动开奖[管理]|lt/%d/3/%s", li.GroupID, li.ID))
+	}
+	if li.Status == -1 {
+		btns = append(btns, fmt.Sprintf("🎡 开启活动[管理]|lt/%d/2/%s", li.GroupID, li.ID))
+	}
+	if li.MsgID > 0 && li.Status == 2 {
+		Bot.Delete(&tb.Message{ID: li.MsgID, Chat: &tb.Chat{ID: li.GroupID}})
+		li.MsgID = 0
 	}
 	if li.MsgID <= 0 {
 		msg, _ := SendBtnsMarkdown(&tb.Chat{ID: li.GroupID}, li.GenText(), "", btns)
 		if msg != nil {
 			li.MsgID = msg.ID
+			li.Update()
 		}
 		return msg
 	} else {
@@ -427,9 +435,15 @@ func (li *LotteryInstance) GenText() string {
 	if li.Status >= 0 {
 		status += fmt.Sprintf("\n*参与人数:* %d", li.Participants())
 	}
+	if len(li.Winners) > 0 && len(li.Winners) <= len(li.WinnersName) {
+		status += "\n\n*🏆 获奖者:*"
+		for i := range li.Winners {
+			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))\n", i+1, GetQuotableStr(li.WinnersName[i]), li.Winners[i], fmt.Sprintf("tg://user?id=%d", li.Winners[i]))
+		}
+	}
 
 	return fmt.Sprintf(
-		"🤖️ 抽奖任务已创建: `%s`.\n\n*抽奖配置:*\n积分要求: `%d`\n积分消耗: `%v`\n奖品数量: `%d`\n开奖方式: `%s`\n\n*任务状态:* %s",
+		"🤖️ 抽奖任务: `%s`.\n\n*抽奖配置:*\n积分要求: `%d`\n积分消耗: `%v`\n奖品数量: `%d`\n开奖方式: `%s`\n\n*任务状态:* %s",
 		GetQuotableStr(li.Payload), li.Limit, li.Consume, li.Num, drawMsg, status,
 	)
 }
@@ -475,7 +489,9 @@ func (li *LotteryInstance) Join(userId int64, username string) error {
 		return errors.New("❌ 您已经参加过这个活动了，请不要重复参加哦 ~")
 	}
 
-	li.ParticipantCache = li.Participants() + 1
+	if li.ParticipantCache > 0 {
+		li.ParticipantCache += 1
+	}
 
 	return nil
 }
@@ -519,16 +535,20 @@ func (li *LotteryInstance) CheckDraw(force bool) bool {
 		if li.Status == 2 {
 			li.Winners = []int64{}
 			li.WinnersName = []string{}
-			row, _ := MYSQLDB.Query(`SELECT userid, username FROM MiaoKeeper_Lottery_Participation ORDER BY RAND() LIMIT ?;`, li.Limit)
+			row, _ := MYSQLDB.Query(`SELECT participant, username FROM MiaoKeeper_Lottery_Participation WHERE id = ? ORDER BY RAND() LIMIT ?;`, li.ID, li.Num)
 			for row.Next() {
 				userid, username := int64(0), ""
 				row.Scan(&userid, &username)
-				li.Winners = append(li.Winners, userid)
-				li.WinnersName = append(li.WinnersName, username)
+				if userid > 0 {
+					li.Winners = append(li.Winners, userid)
+					li.WinnersName = append(li.WinnersName, username)
+				}
 			}
+
 			row.Close()
 			li.Update()
 
+			li.UpdateTelegramMsg()
 			return true
 		}
 	}

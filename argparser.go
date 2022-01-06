@@ -42,14 +42,14 @@ func (ah *ArgHolder) Int(key string) (int, bool) {
 }
 
 func (ah *ArgHolder) Bool(key string) (bool, bool) {
-	if Type(ah.storage[key]) == reflect.Int.String() {
+	if Type(ah.storage[key]) == reflect.Bool.String() {
 		return ah.storage[key].(bool), true
 	}
 	return false, false
 }
 
 func (ah *ArgHolder) Str(key string) (string, bool) {
-	if Type(ah.storage[key]) == reflect.Int.String() {
+	if Type(ah.storage[key]) == reflect.String.String() {
 		return ah.storage[key].(string), true
 	}
 	return "", false
