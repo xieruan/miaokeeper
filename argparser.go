@@ -1,0 +1,61 @@
+package main
+
+import (
+	"reflect"
+	"strconv"
+	"strings"
+)
+
+type ArgHolder struct {
+	storage map[string]interface{}
+}
+
+func (ah *ArgHolder) Parse(payload string) string {
+	ah.storage = make(map[string]interface{})
+	args := strings.Fields(payload)
+	keptArgs := []string{}
+	for _, arg := range args {
+		kv := strings.SplitN(arg, "=", 2)
+		if len(kv) == 2 && strings.HasPrefix(kv[0], ":") {
+			k := kv[0][1:]
+			if strings.Contains("y Y yes YES true TRUE on ON", kv[1]) {
+				ah.storage[k] = true
+			} else if strings.Contains("n N no NO false FALSE off OFF", kv[1]) {
+				ah.storage[k] = false
+			} else if i, err := strconv.Atoi(kv[1]); err == nil {
+				ah.storage[k] = i
+			} else {
+				ah.storage[k] = kv[1]
+			}
+		} else {
+			keptArgs = append(keptArgs, arg)
+		}
+	}
+	return strings.TrimSpace(strings.Join(keptArgs, " "))
+}
+
+func (ah *ArgHolder) Int(key string) (int, bool) {
+	if Type(ah.storage[key]) == reflect.Int.String() {
+		return ah.storage[key].(int), true
+	}
+	return 0, false
+}
+
+func (ah *ArgHolder) Bool(key string) (bool, bool) {
+	if Type(ah.storage[key]) == reflect.Int.String() {
+		return ah.storage[key].(bool), true
+	}
+	return false, false
+}
+
+func (ah *ArgHolder) Str(key string) (string, bool) {
+	if Type(ah.storage[key]) == reflect.Int.String() {
+		return ah.storage[key].(string), true
+	}
+	return "", false
+}
+
+func ArgParse(payload string) (string, *ArgHolder) {
+	ah := &ArgHolder{}
+	return ah.Parse(payload), ah
+}

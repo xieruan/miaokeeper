@@ -36,15 +36,15 @@ var lastID = int64(-1)
 var lastText = ""
 var puncReg *regexp.Regexp
 
-var zcomap *ObliviousMap
-var creditomap *ObliviousMap
-var votemap *ObliviousMap
+var zcomap *ObliviousMapInt
+var creditomap *ObliviousMapInt
+var votemap *ObliviousMapInt
 
-var joinmap *ObliviousMap
+var joinmap *ObliviousMapInt
 
-var redpacketrankmap map[string]string
-var redpacketmap *ObliviousMap
-var redpacketnmap *ObliviousMap
+var redpacketrankmap *ObliviousMapStr
+var redpacketmap *ObliviousMapInt
+var redpacketnmap *ObliviousMapInt
 
 var redpacketlock sync.Mutex
 var userredpacketlock sync.Mutex
@@ -452,7 +452,7 @@ func InitTelegram() {
 				chatId := m.Chat.ID
 				redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
 				redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
-				redpacketrankmap[redpacketKey+":sender"] = "管理员-" + GetQuotableUserName(m.Sender)
+				redpacketrankmap.Set(redpacketKey+":sender", "管理员-"+GetQuotableUserName(m.Sender))
 				redpacketmap.Set(redpacketKey, mc)
 				redpacketnmap.Set(redpacketKey, n)
 				SendRedPacket(m.Chat, chatId, redpacketId)
@@ -516,12 +516,47 @@ func InitTelegram() {
 					addCredit(chatId, m.Sender, -Abs(int64(mc)), true)
 					redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
 					redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
-					redpacketrankmap[redpacketKey+":sender"] = GetQuotableUserName(m.Sender)
+					redpacketrankmap.Set(redpacketKey+":sender", GetQuotableUserName(m.Sender))
 					redpacketmap.Set(redpacketKey, mc)
 					redpacketnmap.Set(redpacketKey, n)
 					SendRedPacket(m.Chat, chatId, redpacketId)
 				} else {
 					SmartSendDelete(m, "❌ 您的积分不够发这个红包哦，请在努力赚积分吧～")
+				}
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+			LazyDelete(m)
+		})
+
+		Bot.Handle("/create_lottery", func(m *tb.Message) {
+			// :limit=(0-inf)
+			// :consume=n|y
+			// :num=1|100
+			// :draw=manual|>num
+			if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
+				payload, ah := ArgParse(m.Payload)
+				limit, _ := ah.Int("limit")
+				consume, _ := ah.Bool("consume")
+				num, _ := ah.Int("num")
+				if num <= 0 || num >= 100 {
+					num = 1
+				}
+				duration, _ := ah.Int("duration")
+				if duration <= 0 || duration >= 72 {
+					duration = 0
+				}
+				participant, _ := ah.Int("participant")
+				if participant < num {
+					participant = 0
+				}
+
+				li := CreateLottery(m.Chat.ID, payload, limit, consume, num, duration, participant)
+
+				if li != nil {
+					li.UpdateTelegramMsg()
+				} else {
+					SmartSendDelete(m, "❌ 无法创建抽奖任务，请检查服务器错误日志")
 				}
 			} else {
 				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
@@ -857,7 +892,7 @@ func InitTelegram() {
 									lastBest, _ := redpacketmap.Get(redpacketBestKey)
 									if amount > lastBest {
 										redpacketmap.Set(redpacketBestKey, amount)
-										redpacketrankmap[redpacketBestKey] = GetQuotableUserName(c.Sender)
+										redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(c.Sender))
 									}
 									Rsp(c, "🎉 恭喜获得 "+strconv.Itoa(amount)+" 积分，积分已经实时到账～")
 									addCredit(gid, c.Sender, int64(amount), true)
@@ -986,8 +1021,9 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 	redpacketKey := fmt.Sprintf("%d-%d", chatId, packetId)
 	credits, _ := redpacketmap.Get(redpacketKey)
 	left, _ := redpacketnmap.Get(redpacketKey)
+	sender, _ := redpacketrankmap.Get(redpacketKey + ":sender")
 
-	msg := fmt.Sprintf("🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～", redpacketrankmap[redpacketKey+":sender"])
+	msg := fmt.Sprintf("🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～", sender)
 	btns := []string{}
 
 	if credits > 0 && left > 0 {
@@ -995,13 +1031,14 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 		if left == 1 {
 			creditLeft = "猜猜看还剩多少？"
 		}
-		msg = fmt.Sprintf("🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`", redpacketrankmap[redpacketKey+":sender"], creditLeft, left)
+		msg = fmt.Sprintf("🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`", sender, creditLeft, left)
 		btns = []string{fmt.Sprintf("🤏 我要抢红包|rp/%d/1/%d", chatId, packetId)}
 	}
 
 	redpacketBestKey := fmt.Sprintf("%d-%d:best", chatId, packetId)
 	if lastBest, _ := redpacketmap.Get(redpacketBestKey); lastBest > 0 {
-		msg += fmt.Sprintf("\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~", redpacketrankmap[redpacketBestKey], lastBest)
+		bestDrawer, _ := redpacketrankmap.Get(redpacketBestKey)
+		msg += fmt.Sprintf("\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~", bestDrawer, lastBest)
 	}
 
 	if Type(to) == "*telebot.Message" {
@@ -1355,8 +1392,12 @@ func GetUserName(u *tb.User) string {
 	return s
 }
 
+func GetQuotableStr(s string) string {
+	return strings.ReplaceAll(s, "`", "'")
+}
+
 func GetQuotableUserName(u *tb.User) string {
-	return strings.ReplaceAll(GetUserName(u), "`", "'")
+	return GetQuotableStr(GetUserName(u))
 }
 
 func GetChatName(u *tb.Chat) string {
@@ -1536,13 +1577,13 @@ func BanChannel(chatId, channelId int64) error {
 func init() {
 	rand.Seed(time.Now().UnixNano())
 	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
-	zcomap = NewOMap(60*60*1000, true)
-	creditomap = NewOMap(60*60*1000, false)
-	votemap = NewOMap(30*60*1000, false)
+	zcomap = NewOMapInt(60*60*1000, true)
+	creditomap = NewOMapInt(60*60*1000, false)
+	votemap = NewOMapInt(30*60*1000, false)
 
-	joinmap = NewOMap(5*60*1000+30*1000, false)
+	joinmap = NewOMapInt(5*60*1000+30*1000, false)
 
-	redpacketrankmap = make(map[string]string)
-	redpacketmap = NewOMap(24*60*60*1000, false)
-	redpacketnmap = NewOMap(24*60*60*1000, false)
+	redpacketrankmap = NewOMapStr(24*60*60*1000, false)
+	redpacketmap = NewOMapInt(24*60*60*1000, false)
+	redpacketnmap = NewOMapInt(24*60*60*1000, false)
 }

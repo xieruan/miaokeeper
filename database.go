@@ -2,18 +2,23 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"sync"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	jsoniter "github.com/json-iterator/go"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 var DBCONN = ""
 var MYSQLDB *sql.DB
 var UpdateLock sync.Mutex
 var GroupConfigLock sync.Mutex
+var LotteryConfigLock sync.Mutex
 
 type UpdateMethod int
 
@@ -32,6 +37,7 @@ type CreditInfo struct {
 }
 
 var GroupConfigCache map[int64]*GroupConfig
+var LotteryConfigCache map[string]*LotteryInstance
 
 type GroupConfig struct {
 	ID            int64
@@ -60,7 +66,36 @@ func InitTables() {
 		v TEXT NOT NULL
 	) DEFAULT CHARSET=utf8mb4`)
 	if err != nil {
-		DErrorf("Table Creation Error | error=%v", err.Error())
+		DErrorf("Config Table Creation Error | error=%v", err.Error())
+		os.Exit(1)
+	}
+	if q != nil {
+		q.Close()
+	}
+
+	q, err = MYSQLDB.Query(`CREATE TABLE IF NOT EXISTS MiaoKeeper_Lottery (
+		id VARCHAR(128) NOT NULL PRIMARY KEY,
+		config TEXT NOT NULL,
+		createdat DATETIME DEFAULT CURRENT_TIMESTAMP
+	) DEFAULT CHARSET=utf8mb4`)
+	if err != nil {
+		DErrorf("Lottery Table Creation Error | error=%v", err.Error())
+		os.Exit(1)
+	}
+	if q != nil {
+		q.Close()
+	}
+
+	q, err = MYSQLDB.Query(`CREATE TABLE IF NOT EXISTS MiaoKeeper_Lottery_Participation (
+		id VARCHAR(128) NOT NULL,
+		participant BIGINT NOT NULL,
+		username TEXT NOT NULL,
+		createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
+		INDEX (id)
+		UNIQUE KEY uniq_participant (id, participant)
+	) DEFAULT CHARSET=utf8mb4`)
+	if err != nil {
+		DErrorf("Lottery Participation Table Creation Error | error=%v", err.Error())
 		os.Exit(1)
 	}
 	if q != nil {
@@ -319,6 +354,238 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInf
 	return user
 }
 
+// status: -1 not start, 0 start, 1 stopped, 2 finished
+type LotteryInstance struct {
+	ID        string
+	Status    int
+	GroupID   int64
+	MsgID     int
+	CreatedAt int64
+
+	Payload     string
+	Limit       int
+	Consume     bool
+	Num         int
+	Duration    int
+	Participant int
+
+	Winners          []int64
+	WinnersName      []string
+	ParticipantCache int        `json:"-"`
+	JoinLock         sync.Mutex `json:"-"`
+}
+
+func (li *LotteryInstance) UpdateTelegramMsg() *tb.Message {
+	btns := []string{}
+	if li.Status >= 0 {
+		btns = append(btns, fmt.Sprintf("🤏 我要抽奖|lt/%d/0/%s", li.GroupID, li.ID))
+		btns = append(btns, fmt.Sprintf("📦 手动开奖[管理]|lt/%d/2/%s", li.GroupID, li.ID))
+	} else {
+		btns = append(btns, fmt.Sprintf("🎡 开启活动[管理]|lt/%d/1/%s", li.GroupID, li.ID))
+	}
+	if li.MsgID <= 0 {
+		msg, _ := SendBtnsMarkdown(&tb.Chat{ID: li.GroupID}, li.GenText(), "", btns)
+		if msg != nil {
+			li.MsgID = msg.ID
+		}
+		return msg
+	} else {
+		msg, _ := EditBtnsMarkdown(&tb.Message{ID: li.MsgID, Chat: &tb.Chat{ID: li.GroupID}}, li.GenText(), "", btns)
+		if msg == nil {
+			li.MsgID = 0
+			return li.UpdateTelegramMsg()
+		}
+		return msg
+	}
+}
+
+func (li *LotteryInstance) GenText() string {
+	drawMsg := ""
+	if li.Participant > 0 {
+		drawMsg = fmt.Sprintf("参与人数达 %d 人", li.Participant)
+	}
+	if li.Duration > 0 {
+		if drawMsg != "" {
+			drawMsg += " *或* "
+		}
+		drawMsg += fmt.Sprintf("%d 小时后自动开奖", li.Duration)
+	}
+	if drawMsg == "" {
+		drawMsg = "手动开奖"
+	}
+
+	status := "`未知`"
+	if li.Status == -1 {
+		status = "`待验证`"
+	} else if li.Status == 0 {
+		status = "`进行中`"
+	} else if li.Status == 1 {
+		status = "`待手动开奖`"
+	} else if li.Status == 2 {
+		status = "`已开奖`"
+	}
+	if li.Status >= 0 {
+		status += fmt.Sprintf("\n*参与人数:* %d", li.Participants())
+	}
+
+	return fmt.Sprintf(
+		"🤖️ 抽奖任务已创建: `%s`.\n\n*抽奖配置:*\n积分要求: `%d`\n积分消耗: `%v`\n奖品数量: `%d`\n开奖方式: `%s`\n\n*任务状态:* %s",
+		GetQuotableStr(li.Payload), li.Limit, li.Consume, li.Num, drawMsg, status,
+	)
+}
+
+func (li *LotteryInstance) Update() bool {
+	cfg, _ := jsoniter.Marshal(li)
+	q, err := MYSQLDB.Query(`INSERT INTO MiaoKeeper_Lottery
+		(id, config)
+	VALUES
+		(?, ?)
+	ON DUPLICATE KEY UPDATE
+		config = VALUES(config)
+	`, li.ID, string(cfg))
+
+	if q != nil {
+		q.Close()
+	}
+	if err != nil {
+		DErrorf("Update Lottery Error | id=%s value=%s error=%v", li.ID, string(cfg), err.Error())
+		return false
+	}
+
+	return true
+}
+
+func (li *LotteryInstance) Join(userId int64, username string) error {
+	li.JoinLock.Lock()
+	defer li.JoinLock.Unlock()
+
+	if li.Status != 0 {
+		return errors.New("❌ 抽奖活动不在有效时间范围内，请检查后再试 ~")
+	}
+
+	q, err := MYSQLDB.Query(`INSERT INTO MiaoKeeper_Lottery_Participation
+			(id, participant, username)
+		VALUES
+			(?, ?, ?)`, li.ID, userId, username)
+	if q != nil {
+		q.Close()
+	}
+	if err != nil {
+		DLogf("Join Lottery Error | id=%s user=%d error=%v", li.ID, userId, err.Error())
+		return errors.New("❌ 您已经参加过这个活动了，请不要重复参加哦 ~")
+	}
+
+	li.ParticipantCache = li.Participants() + 1
+
+	return nil
+}
+
+func (li *LotteryInstance) Participants() int {
+	if li.Status >= 0 {
+		if li.ParticipantCache > 0 {
+			return li.ParticipantCache
+		}
+
+		ret := 0
+		err := MYSQLDB.QueryRow(`SELECT count(*) FROM MiaoKeeper_Lottery_Participation WHERE id = ?;`, li.ID).Scan(&ret)
+		if err != nil {
+			DLogf("Fetch Lottery Participants Number Error | id=%s error=%v", li.ID, err.Error())
+			return -1
+		}
+
+		li.ParticipantCache = ret
+		return ret
+	}
+	return -1
+}
+
+func (li *LotteryInstance) CheckDraw(force bool) bool {
+	li.JoinLock.Lock()
+	defer li.JoinLock.Unlock()
+
+	if li.Status == 0 {
+		if force {
+			// manual draw
+			li.Status = 2
+		} else if li.Duration >= 0 && li.CreatedAt+int64(li.Duration)*3600 < time.Now().Unix() {
+			// timeout draw
+			li.Status = 2
+		} else if li.Participant >= 0 && li.Participants() >= li.Participant {
+			// participant exceeding draw
+			li.Status = 2
+		}
+
+		// draw
+		if li.Status == 2 {
+			li.Winners = []int64{}
+			li.WinnersName = []string{}
+			row, _ := MYSQLDB.Query(`SELECT userid, username FROM MiaoKeeper_Lottery_Participation ORDER BY RAND() LIMIT ?;`, li.Limit)
+			for row.Next() {
+				userid, username := int64(0), ""
+				row.Scan(&userid, &username)
+				li.Winners = append(li.Winners, userid)
+				li.WinnersName = append(li.WinnersName, username)
+			}
+			row.Close()
+			li.Update()
+
+			return true
+		}
+	}
+
+	return false
+}
+
+func GetLottery(lotteryId string) *LotteryInstance {
+	LotteryConfigLock.Lock()
+	defer LotteryConfigLock.Unlock()
+	if li, ok := LotteryConfigCache[lotteryId]; ok && li != nil {
+		return li
+	}
+
+	ret := ""
+	err := MYSQLDB.QueryRow(`SELECT config FROM MiaoKeeper_Lottery WHERE id = ?;`, lotteryId).Scan(&ret)
+	if err != nil {
+		DErrorf("Fetch Lottery Error | id=%s error=%v", lotteryId, err.Error())
+		return nil
+	}
+
+	li := LotteryInstance{}
+	err = jsoniter.Unmarshal([]byte(ret), &li)
+	if err != nil {
+		DErrorf("Unmarshal Lottery Error | id=%s error=%v", lotteryId, err.Error())
+		return nil
+	}
+
+	LotteryConfigCache[li.ID] = &li
+	return &li
+}
+
+func CreateLottery(groupId int64, payload string, limit int, consume bool, num int, duration int, participant int) *LotteryInstance {
+	li := LotteryInstance{
+		ID:        fmt.Sprintf("%d:%d:%d", Abs(groupId), time.Now().Unix(), rand.Intn(9999)),
+		Status:    -1,
+		GroupID:   groupId,
+		CreatedAt: time.Now().Unix(),
+
+		Payload:     payload,
+		Limit:       limit,
+		Consume:     consume,
+		Num:         num,
+		Duration:    duration,
+		Participant: participant,
+	}
+
+	if li.Update() {
+		LotteryConfigLock.Lock()
+		LotteryConfigCache[li.ID] = &li
+		LotteryConfigLock.Unlock()
+		return &li
+	}
+	return nil
+}
+
 func init() {
 	GroupConfigCache = make(map[int64]*GroupConfig)
+	LotteryConfigCache = make(map[string]*LotteryInstance)
 }

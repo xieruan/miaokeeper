@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type ObliviousMap struct {
+type ObliviousMapIfce struct {
 	duration int64
 	timer    map[string]int64
-	inner    map[string]int
+	inner    map[string]interface{}
 
 	utif bool
 
@@ -19,16 +19,7 @@ func NowTS() int64 {
 	return time.Now().UnixMilli()
 }
 
-func NewOMap(duration int64, updateTimeIfWrite bool) *ObliviousMap {
-	return &ObliviousMap{
-		duration: duration,
-		timer:    make(map[string]int64),
-		inner:    make(map[string]int),
-		utif:     updateTimeIfWrite,
-	}
-}
-
-func (om *ObliviousMap) unsafeGet(key string) (int, bool) {
+func (om *ObliviousMapIfce) unsafeGet(key string) (interface{}, bool) {
 	now := NowTS()
 	v, ok := om.inner[key]
 	if ok {
@@ -47,14 +38,14 @@ func (om *ObliviousMap) unsafeGet(key string) (int, bool) {
 	return 0, false
 }
 
-func (om *ObliviousMap) Get(key string) (int, bool) {
+func (om *ObliviousMapIfce) Get(key string) (interface{}, bool) {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
 	return om.unsafeGet(key)
 }
 
-func (om *ObliviousMap) unsafeSet(key string, value int) int {
+func (om *ObliviousMapIfce) unsafeSet(key string, value interface{}) interface{} {
 	now := NowTS()
 	_, ok := om.inner[key]
 	om.inner[key] = value
@@ -64,14 +55,14 @@ func (om *ObliviousMap) unsafeSet(key string, value int) int {
 	return value
 }
 
-func (om *ObliviousMap) Set(key string, value int) int {
+func (om *ObliviousMapIfce) Set(key string, value interface{}) interface{} {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
 	return om.unsafeSet(key, value)
 }
 
-func (om *ObliviousMap) Unset(key string) {
+func (om *ObliviousMapIfce) Unset(key string) {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
@@ -85,7 +76,7 @@ func (om *ObliviousMap) Unset(key string) {
 	}
 }
 
-func (om *ObliviousMap) Exist(key string) bool {
+func (om *ObliviousMapIfce) Exist(key string) bool {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
@@ -93,10 +84,57 @@ func (om *ObliviousMap) Exist(key string) bool {
 	return ok
 }
 
-func (om *ObliviousMap) Add(key string) int {
+type ObliviousMapInt struct {
+	*ObliviousMapIfce
+}
+
+func (om *ObliviousMapInt) Add(key string) int {
 	om.lock.Lock()
 	defer om.lock.Unlock()
 
 	v, _ := om.unsafeGet(key)
-	return om.unsafeSet(key, v+1)
+	return om.unsafeSet(key, v.(int)+1).(int)
+}
+
+func (om *ObliviousMapInt) Get(key string) (int, bool) {
+	a, b := om.ObliviousMapIfce.Get(key)
+	return a.(int), b
+}
+
+func (om *ObliviousMapInt) Set(key string, value int) int {
+	return om.ObliviousMapIfce.Set(key, value).(int)
+}
+
+type ObliviousMapStr struct {
+	*ObliviousMapIfce
+}
+
+func (om *ObliviousMapStr) Get(key string) (string, bool) {
+	a, b := om.ObliviousMapIfce.Get(key)
+	return a.(string), b
+}
+
+func (om *ObliviousMapStr) Set(key string, value string) string {
+	return om.ObliviousMapIfce.Set(key, value).(string)
+}
+
+func NewOMapIfce(duration int64, updateTimeIfWrite bool) *ObliviousMapIfce {
+	return &ObliviousMapIfce{
+		duration: duration,
+		timer:    make(map[string]int64),
+		inner:    make(map[string]interface{}),
+		utif:     updateTimeIfWrite,
+	}
+}
+
+func NewOMapInt(duration int64, updateTimeIfWrite bool) *ObliviousMapInt {
+	return &ObliviousMapInt{
+		ObliviousMapIfce: NewOMapIfce(duration, updateTimeIfWrite),
+	}
+}
+
+func NewOMapStr(duration int64, updateTimeIfWrite bool) *ObliviousMapStr {
+	return &ObliviousMapStr{
+		ObliviousMapIfce: NewOMapIfce(duration, updateTimeIfWrite),
+	}
 }
