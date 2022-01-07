@@ -49,6 +49,7 @@ type GroupConfig struct {
 	MustFollowOnMsg  bool
 
 	AntiSpoiler bool
+	DisableWarn bool
 }
 
 func InitDatabase() (err error) {

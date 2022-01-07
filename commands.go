@@ -7,7 +7,12 @@ import (
 )
 
 func CMDWarnUser(m *tb.Message) {
-	if IsGroup(m.Chat.ID) && m.ReplyTo != nil {
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && m.ReplyTo != nil {
+		if gc.DisableWarn {
+			SmartSendDelete(m.ReplyTo, "当前群组不允许互相臭嘴哦 ~")
+			return
+		}
 		if m.Sender.ID > 0 && m.Sender.Username != "Channel_Bot" {
 			if m.ReplyTo.Sender.ID == m.Sender.ID {
 				SmartSend(m, "确实")
