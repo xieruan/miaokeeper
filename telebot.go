@@ -132,7 +132,7 @@ func InitTelegram() {
 		URL: TELEGRAMURL,
 	})
 
-	if !ping {
+	if !ping && !escape {
 
 		if !Bot.Me.CanJoinGroups {
 			DErrorf("TeleBot Error | bot cannot be added to group, please check with @botfather")
@@ -1128,6 +1128,10 @@ func InitTelegram() {
 	if !ping {
 		// go StartCountDown()
 		DInfo("MiaoKeeper is up.")
+	}
+
+	if escape {
+		DInfo("Escape mode is on.")
 	}
 }
 

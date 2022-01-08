@@ -9,6 +9,7 @@ import (
 
 var version = false
 var ping = false
+var escape = false
 var setadmin = int64(0)
 
 func main() {
@@ -59,6 +60,7 @@ func init() {
 	flag.BoolVar(&VerboseMode, "verbose", false, "display all logs")
 	flag.BoolVar(&version, "version", false, "display current version and exit")
 	flag.BoolVar(&ping, "ping", false, "test the round time trip between bot and telegram server")
+	flag.BoolVar(&escape, "escape", false, "ignore all messages from polling")
 	flag.Int64Var(&setadmin, "setadmin", 0, "set admin and delete all the other existing admins")
 
 	flag.Parse()
