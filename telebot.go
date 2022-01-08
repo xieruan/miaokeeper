@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -153,6 +155,60 @@ func InitTelegram() {
 		}
 
 		// ---------------- Super Admin ----------------
+
+		Bot.Handle("/su_export_credit", func(m *tb.Message) {
+			defer LazyDelete(m)
+			gc := GetGroupConfig(m.Chat.ID)
+			if gc != nil && IsAdmin(m.Sender.ID) {
+				err := Bot.Notify(m.Sender, tb.UploadingDocument)
+				if err != nil {
+					SmartSendDelete(m, "❌ 请先私聊我然后再运行这个命令哦")
+					return
+				}
+				records := DumpCredits(m.Chat.ID)
+				ioBuffer := bytes.Buffer{}
+				w := csv.NewWriter(&ioBuffer)
+				w.WriteAll(records)
+				Bot.Send(m.Sender, &tb.Document{
+					File:     tb.FromReader(&ioBuffer),
+					MIME:     "text/csv",
+					FileName: "CreditDump" + time.Now().Format(time.RFC3339) + ".csv",
+				})
+				SmartSendDelete(m, "\u200d 导出成功，请在私聊查看结果")
+			} else {
+				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+			}
+		})
+
+		Bot.Handle(tb.OnDocument, func(m *tb.Message) {
+			if m.Caption == "/su_import_credit" && m.Document != nil {
+				Bot.Delete(m)
+				gc := GetGroupConfig(m.Chat.ID)
+				if gc != nil && IsAdmin(m.Sender.ID) {
+					Bot.Notify(m.Chat, tb.UploadingDocument)
+					ioHandler, err := Bot.GetFile(&m.Document.File)
+					if err != nil {
+						SmartSendDelete(m, "❌ 无法下载积分备份，请确定您上传的文件格式正确且小于 20MB，大文件请联系管理员手动导入")
+						DErrorE(err, "Import Credit Error | not downloaded")
+						return
+					}
+					csvHandler := csv.NewReader(ioHandler)
+					records, err := csvHandler.ReadAll()
+					if err != nil {
+						SmartSendDelete(m, "❌ 解析积分备份，请确定您上传的文件格式正确")
+						DErrorE(err, "Import Credit Error | not parsed")
+						return
+					}
+					FlushCredits(m.Chat.ID, records)
+					SmartSendDelete(m, "\u200d 导入成功，您可以输入 /creditrank 查看导入后积分详情")
+				} else {
+					SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
+				}
+			} else {
+				CheckChannelForward(m)
+				CheckChannelFollow(m, m.Sender, false)
+			}
+		})
 
 		Bot.Handle("/su_add_group", func(m *tb.Message) {
 			if IsAdmin(m.Sender.ID) && m.Chat.ID < 0 {
@@ -343,6 +399,7 @@ func InitTelegram() {
 					SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好反·反剧透消息啦 `(Status=%v)` ～", gc.AntiSpoiler), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
+						AllowWithoutReply:     true,
 					})
 				}
 			} else {
@@ -418,6 +475,7 @@ func InitTelegram() {
 							SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
 								ParseMode:             "Markdown",
 								DisableWebPagePreview: true,
+								AllowWithoutReply:     true,
 							})
 						}
 					}
@@ -471,8 +529,8 @@ func InitTelegram() {
 				rank, _ := strconv.Atoi(m.Payload)
 				if rank <= 0 {
 					rank = 10
-				} else if rank > 30 {
-					rank = 30
+				} else if rank > 50 {
+					rank = 50
 				}
 				ranks := GetCreditRank(m.Chat.ID, rank)
 				rankStr := ""
@@ -482,6 +540,7 @@ func InitTelegram() {
 				SmartSend(m, "#开榜 当前的积分墙为: \n\n"+rankStr, &tb.SendOptions{
 					ParseMode:             "Markdown",
 					DisableWebPagePreview: true,
+					AllowWithoutReply:     true,
 				})
 			} else {
 				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
@@ -600,6 +659,7 @@ func InitTelegram() {
 				SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
 					ParseMode:             "Markdown",
 					DisableWebPagePreview: true,
+					AllowWithoutReply:     true,
 				})
 			} else {
 				SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
@@ -617,6 +677,7 @@ func InitTelegram() {
 					SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
+						AllowWithoutReply:     true,
 					})
 				}
 			} else {
@@ -633,6 +694,7 @@ func InitTelegram() {
 					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
+						AllowWithoutReply:     true,
 					})
 				} else {
 					DErrorE(err, "Perm Update | Fail to ban user")
@@ -650,6 +712,7 @@ func InitTelegram() {
 					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
+						AllowWithoutReply:     true,
 					})
 				} else {
 					DErrorE(err, "Perm Update | Fail to unban user")
@@ -667,6 +730,7 @@ func InitTelegram() {
 					SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
+						AllowWithoutReply:     true,
 					})
 				} else {
 					DErrorE(err, "Perm Update | Fail to kick user once")
@@ -685,6 +749,7 @@ func InitTelegram() {
 				SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
 					ParseMode:             "Markdown",
 					DisableWebPagePreview: true,
+					AllowWithoutReply:     true,
 				})
 			}
 			LazyDelete(m)
@@ -702,11 +767,13 @@ func InitTelegram() {
 			msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`", t1), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
+				AllowWithoutReply:     true,
 			})
 			t2 := time.Now().UnixMilli() - t - t1
 			SmartEdit(msg, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`", t1, t2), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
+				AllowWithoutReply:     true,
 			})
 			LazyDelete(m)
 		})
@@ -973,11 +1040,6 @@ func InitTelegram() {
 			CheckChannelFollow(m, m.Sender, false)
 		})
 
-		Bot.Handle(tb.OnDocument, func(m *tb.Message) {
-			CheckChannelForward(m)
-			CheckChannelFollow(m, m.Sender, false)
-		})
-
 		Bot.Handle(tb.OnAnimation, func(m *tb.Message) {
 			CheckChannelForward(m)
 			CheckChannelFollow(m, m.Sender, false)
@@ -1190,6 +1252,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 								SmartSend(m.Chat, fmt.Sprintf("👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～", userId), &tb.SendOptions{
 									ParseMode:             "Markdown",
 									DisableWebPagePreview: true,
+									AllowWithoutReply:     true,
 								})
 							}
 						}
@@ -1265,6 +1328,7 @@ func SmartEdit(to *tb.Message, what interface{}, options ...interface{}) (*tb.Me
 		options = append([]interface{}{&tb.SendOptions{
 			// ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
+			AllowWithoutReply:     true,
 		}}, options...)
 	}
 	m, err := Bot.Edit(to, what, options...)
@@ -1314,6 +1378,7 @@ func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*
 	return SmartSendInner(to, what, &tb.SendOptions{
 		// ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
+		AllowWithoutReply:     true,
 	}, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
@@ -1326,6 +1391,7 @@ func SendBtnsMarkdown(to interface{}, what interface{}, prefix string, btns []st
 	return SmartSendInner(to, what, &tb.SendOptions{
 		ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
+		AllowWithoutReply:     true,
 	}, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
@@ -1347,6 +1413,7 @@ func EditBtnsMarkdown(to *tb.Message, what interface{}, prefix string, btns []st
 	return SmartEdit(to, what, &tb.SendOptions{
 		ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
+		AllowWithoutReply:     true,
 	}, &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
@@ -1360,6 +1427,7 @@ func SmartSend(to interface{}, what interface{}, options ...interface{}) (*tb.Me
 		return SmartSendInner(to, what, &tb.SendOptions{
 			// ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
+			AllowWithoutReply:     true,
 		})
 	}
 	return SmartSendInner(to, what, options...)

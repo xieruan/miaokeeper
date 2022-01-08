@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -307,6 +308,52 @@ func GetCreditRank(groupId int64, limit int) []*CreditInfo {
 	}
 	row.Close()
 	return returns
+}
+
+func DumpCredits(groupId int64) [][]string {
+	ret := [][]string{}
+	id, name, username, credit := int64(0), "", "", int64(0)
+	row, _ := MYSQLDB.Query(fmt.Sprintf(`SELECT userid, name, username, credit FROM MiaoKeeper_Credit_%d WHERE credit > 0 ORDER BY credit;`, Abs(groupId)))
+	for row.Next() {
+		row.Scan(&id, &name, &username, &credit)
+		if id > 0 && credit > 0 {
+			ret = append(ret, []string{strconv.FormatInt(id, 10), name, username, strconv.FormatInt(credit, 10)})
+		}
+	}
+	row.Close()
+
+	DInfof("Credit Dump | group=%d columns=%d", groupId, len(ret))
+	return ret
+}
+
+func FlushCredits(groupId int64, records [][]string) {
+	if len(records) == 0 {
+		return
+	}
+
+	params := []interface{}{}
+	sqlCmd := fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_%d (userid, name, username, credit) VALUES`, Abs(groupId))
+	for _, r := range records {
+		sqlCmd += ` (?, ?, ?, ?),`
+		for _, rc := range r {
+			params = append(params, rc)
+		}
+	}
+	sqlCmd = sqlCmd[0 : len(sqlCmd)-1]
+	sqlCmd += ` ON DUPLICATE KEY UPDATE
+		name = VALUES(name),
+		username = VALUES(username),
+		credit = VALUES(credit) + credit`
+
+	query, err := MYSQLDB.Query(sqlCmd, params...)
+	if err != nil {
+		DErrorE(err, "Database Credit Flush Error")
+	}
+	if query != nil {
+		query.Close()
+	}
+
+	DInfof("Flush Credit | group=%d columns=%d", groupId, len(records))
 }
 
 func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInfo {
