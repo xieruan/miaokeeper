@@ -182,17 +182,16 @@ func InitTelegram() {
 
 		Bot.Handle(tb.OnDocument, func(m *tb.Message) {
 			if m.Caption == "/su_import_credit" && m.Document != nil {
-				LazyDelete(m)
+				Bot.Delete(m)
 				gc := GetGroupConfig(m.Chat.ID)
 				if gc != nil && IsAdmin(m.Sender.ID) {
 					Bot.Notify(m.Chat, tb.UploadingDocument)
 					ioHandler, err := Bot.GetFile(&m.Document.File)
 					if err != nil {
 						SmartSendDelete(m, "❌ 无法下载积分备份，请确定您上传的文件格式正确且小于 20MB，大文件请联系管理员手动导入")
-						DErrorE(err, "Import Credit Error | not downloaded")
+						DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
 						return
 					}
-					Bot.Delete(m)
 					csvHandler := csv.NewReader(ioHandler)
 					records, err := csvHandler.ReadAll()
 					if err != nil {
