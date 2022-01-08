@@ -182,7 +182,7 @@ func InitTelegram() {
 
 		Bot.Handle(tb.OnDocument, func(m *tb.Message) {
 			if m.Caption == "/su_import_credit" && m.Document != nil {
-				Bot.Delete(m)
+				LazyDelete(m)
 				gc := GetGroupConfig(m.Chat.ID)
 				if gc != nil && IsAdmin(m.Sender.ID) {
 					Bot.Notify(m.Chat, tb.UploadingDocument)
@@ -192,6 +192,7 @@ func InitTelegram() {
 						DErrorE(err, "Import Credit Error | not downloaded")
 						return
 					}
+					Bot.Delete(m)
 					csvHandler := csv.NewReader(ioHandler)
 					records, err := csvHandler.ReadAll()
 					if err != nil {
@@ -200,7 +201,7 @@ func InitTelegram() {
 						return
 					}
 					FlushCredits(m.Chat.ID, records)
-					SmartSendDelete(m, "\u200d 导入成功，您可以输入 /creditrank 查看导入后积分详情")
+					SmartSendDelete(m, fmt.Sprintf("\u200d 导入 %d 条成功，您可以输入 /creditrank 查看导入后积分详情", len(records)))
 				} else {
 					SmartSendDelete(m, "❌ 您没有权限，亦或是您未再对应群组使用这个命令")
 				}
