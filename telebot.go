@@ -51,7 +51,7 @@ var redpacketnmap *ObliviousMapInt
 
 var debouncer func(func())
 
-var redpacketlock sync.Mutex
+var callbacklock sync.Mutex
 var userredpacketlock sync.Mutex
 
 func SetCommands() error {
@@ -846,6 +846,9 @@ func InitTelegram() {
 			m := c.Message
 			gc := GetGroupConfig(m.Chat.ID)
 			if gc != nil {
+				callbacklock.Lock()
+				defer callbacklock.Unlock()
+
 				cmds := strings.Split(strings.TrimSpace(c.Data), "/")
 				cmd, gid, uid, secuid := "", int64(0), int64(0), int64(0)
 				if len(cmds) > 0 {
@@ -874,7 +877,7 @@ func InitTelegram() {
 						}
 						SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
 						joinmap.Unset(joinVerificationId)
-						if secuid > 0 {
+						if secuid > 0 && votemap.Exist(vtToken) {
 							addCredit(gid, &tb.User{ID: uid}, 50, true)
 							votemap.Unset(vtToken)
 							addCredit(gid, &tb.User{ID: secuid}, -15, true)
@@ -930,9 +933,6 @@ func InitTelegram() {
 						}
 					} else if cmd == "rp" {
 						redpacketKey := fmt.Sprintf("%d-%d", gid, secuid)
-
-						redpacketlock.Lock()
-						defer redpacketlock.Unlock()
 
 						credits, _ := redpacketmap.Get(redpacketKey)
 						left, _ := redpacketnmap.Get(redpacketKey)
