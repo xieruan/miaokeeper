@@ -38,11 +38,11 @@ func CmdOnCallback(c *tb.Callback) {
 		if strings.Contains("vt unban kick check rp lt", cmd) && IsGroup(gid) && uid > 0 {
 			if cmd == "unban" && isGroupAdmin {
 				if Unban(gid, uid, 0) == nil {
-					Rsp(c, "✔️ 已解除封禁，请您手动处理后续事宜 ~")
+					Rsp(c, "cb.unban.success")
 				} else {
-					Rsp(c, "❌ 解封失败，TA 可能已经被解封或者已经退群啦 ~")
+					Rsp(c, "cb.unban.failure")
 				}
-				SmartEdit(m, m.Text+"\n\nTA 已被管理员解封 👊")
+				SmartEdit(m, m.Text+Locale("cb.unblock.byadmin", c.Sender.LanguageCode))
 				joinmap.Unset(joinVerificationId)
 				if secuid > 0 && votemap.Exist(vtToken) {
 					addCredit(gid, &tb.User{ID: uid}, 50, true)
@@ -51,29 +51,29 @@ func CmdOnCallback(c *tb.Callback) {
 				}
 			} else if cmd == "kick" && isGroupAdmin {
 				if Kick(gid, uid) == nil {
-					Rsp(c, "✔️ 已将 TA 送出群留学去啦 ~")
+					Rsp(c, "cb.kick.success")
 				} else {
-					Rsp(c, "❌ 踢出失败，可能 TA 已经退群啦 ~")
+					Rsp(c, "cb.kick.failure")
 				}
 				joinmap.Unset(joinVerificationId)
 				votemap.Unset(vtToken)
-				SmartEdit(m, m.Text+"\n\nTA 已被管理员踢出群聊 🦶")
+				SmartEdit(m, m.Text+Locale("cb.kicked.byadmin", c.Sender.LanguageCode))
 			} else if cmd == "check" {
 				if uid == c.Sender.ID {
 					usrStatus := UserIsInGroup(gc.MustFollow, uid)
 					if usrStatus == UIGIn {
 						if Unban(gid, uid, 0) == nil {
 							Bot.Delete(m)
-							Rsp(c, "✔️ 验证成功，欢迎您的加入 ~")
+							Rsp(c, "cb.validate.success")
 							joinmap.Unset(joinVerificationId)
 						} else {
-							Rsp(c, "❌ 验证成功，但是解禁失败，请联系管理员处理 ~")
+							Rsp(c, "cb.validate.success.cannotUnban")
 						}
 					} else {
-						Rsp(c, "❌ 验证失败，请确认自己已经加入对应群组 ~")
+						Rsp(c, "cb.validate.failure")
 					}
 				} else {
-					Rsp(c, "😠 人家的验证不要乱点哦！！！")
+					Rsp(c, "cb.validate.others")
 				}
 			} else if cmd == "vt" {
 				userVtToken := fmt.Sprintf("vu-%d,%d,%d", gid, uid, c.Sender.ID)
@@ -83,7 +83,7 @@ func CmdOnCallback(c *tb.Callback) {
 						if votes >= 6 {
 							Unban(gid, uid, 0)
 							votemap.Unset(vtToken)
-							SmartEdit(m, m.Text+"\n\n于多名用户投票后决定，该用户不是恶意广告，用户已解封，积分已原路返回。")
+							SmartEdit(m, m.Text+Locale("cb.unblock.byvote", c.Sender.LanguageCode))
 							addCredit(gid, &tb.User{ID: uid}, 50, true)
 							if secuid > 0 {
 								addCredit(gid, &tb.User{ID: secuid}, -15, true)
@@ -91,12 +91,12 @@ func CmdOnCallback(c *tb.Callback) {
 						} else {
 							EditBtns(m, m.Text, "", GenVMBtns(votes, gid, uid, secuid))
 						}
-						Rsp(c, "✔️ 投票成功，感谢您的参与 ~")
+						Rsp(c, "cb.vote.success")
 					} else {
-						Rsp(c, "❌ 您已经参与过投票了，请不要多次投票哦 ~")
+						Rsp(c, "cb.vote.failure")
 					}
 				} else {
-					Rsp(c, "❌ 投票时间已过，请联系管理员处理 ~")
+					Rsp(c, "cb.vote.notExists")
 				}
 			} else if cmd == "rp" {
 				redpacketKey := fmt.Sprintf("%d-%d", gid, secuid)
@@ -125,23 +125,23 @@ func CmdOnCallback(c *tb.Callback) {
 						redpacketmap.Set(redpacketKey, credits-amount)
 
 						if amount == 0 {
-							Rsp(c, "🐢 您的运气也太差啦！什么都没有抽到哦...")
+							Rsp(c, "cb.rp.nothing")
 						} else {
 							lastBest, _ := redpacketmap.Get(redpacketBestKey)
 							if amount > lastBest {
 								redpacketmap.Set(redpacketBestKey, amount)
 								redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(c.Sender))
 							}
-							Rsp(c, "🎉 恭喜获得 "+strconv.Itoa(amount)+" 积分，积分已经实时到账～")
+							Rsp(c, Locale("cb.rp.get.1", c.Sender.LanguageCode)+strconv.Itoa(amount)+Locale("cb.rp.get.2", c.Sender.LanguageCode))
 							addCredit(gid, c.Sender, int64(amount), true)
 						}
 
 						SendRedPacket(m, gid, secuid)
 					} else {
-						Rsp(c, "❌ 您已经参与过这次活动了，不能太贪心哦！")
+						Rsp(c, "cb.rp.duplicated")
 					}
 				} else {
-					Rsp(c, "❌ 抽奖活动已经结束啦！请期待下一次活动～")
+					Rsp(c, "cb.rp.notExists")
 				}
 			} else if cmd == "lt" {
 				cmdtype := uid // 做了转换 1: lottery, 2: start, 3: draw
@@ -152,7 +152,7 @@ func CmdOnCallback(c *tb.Callback) {
 						li.Status = 0
 						li.Update()
 						li.UpdateTelegramMsg()
-						Rsp(c, "🎉 活动已确认，请号召群友踊跃参与哦！")
+						Rsp(c, "cb.lottery.start")
 					} else if cmdtype == 3 && isMiaoGroupAdmin {
 						li.CheckDraw(true)
 					} else if cmdtype == 1 {
@@ -163,7 +163,7 @@ func CmdOnCallback(c *tb.Callback) {
 									addCredit(li.GroupID, c.Sender, -int64(li.Limit), true)
 								}
 								if err := li.Join(triggerUid, GetQuotableUserName(c.Sender)); err == nil {
-									Rsp(c, "🎉 参与成功 ~ 请耐心等待开奖呀 ~")
+									Rsp(c, "cb.lottery.enroll")
 									if li.Participant > 0 {
 										// check draw by particitant
 										li.CheckDraw(false)
@@ -180,24 +180,24 @@ func CmdOnCallback(c *tb.Callback) {
 									Rsp(c, err.Error())
 								}
 							} else {
-								Rsp(c, "❌ 你的积分不满足活动要求哦！")
+								Rsp(c, "cb.lottery.noEnoughCredit")
 							}
 						} else {
-							Rsp(c, "❌ 请加群后再参与活动哦！")
+							Rsp(c, "cb.lottery.checkFailed")
 						}
 					} else {
-						Rsp(c, "❌ 请不要乱玩喵组管理员指令！")
+						Rsp(c, "cb.notMiaoAdmin")
 					}
 				} else {
-					Rsp(c, "❌ 未找到这个活动，请联系管理员解决！")
+					Rsp(c, "cb.noEvent")
 				}
 			} else {
-				Rsp(c, "❌ 请不要乱玩管理员指令！")
+				Rsp(c, "cb.notAdmin")
 			}
 		} else {
-			Rsp(c, "❌ 指令解析出错，请联系管理员解决 ~")
+			Rsp(c, "cb.notParsed")
 		}
 	} else {
-		Rsp(c, "❌ 这个群组还没有被授权哦 ~")
+		Rsp(c, "cb.disabled")
 	}
 }

@@ -18,22 +18,22 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 	left, _ := redpacketnmap.Get(redpacketKey)
 	sender, _ := redpacketrankmap.Get(redpacketKey + ":sender")
 
-	msg := fmt.Sprintf("🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～", sender)
+	msg := fmt.Sprintf(Locale("rp.complete", "zh"), sender)
 	btns := []string{}
 
 	if credits > 0 && left > 0 {
 		creditLeft := strconv.Itoa(credits)
 		if left == 1 {
-			creditLeft = "猜猜看还剩多少？"
+			creditLeft = Locale("rp.guessLeft", "zh")
 		}
-		msg = fmt.Sprintf("🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`", sender, creditLeft, left)
-		btns = []string{fmt.Sprintf("🤏 我要抢红包|rp/%d/1/%d", chatId, packetId)}
+		msg = fmt.Sprintf(Locale("rp.text", "zh"), sender, creditLeft, left)
+		btns = []string{fmt.Sprintf(Locale("btn.rp.draw", "zh"), chatId, packetId)}
 	}
 
 	redpacketBestKey := fmt.Sprintf("%d-%d:best", chatId, packetId)
 	if lastBest, _ := redpacketmap.Get(redpacketBestKey); lastBest > 0 {
 		bestDrawer, _ := redpacketrankmap.Get(redpacketBestKey)
-		msg += fmt.Sprintf("\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~", bestDrawer, lastBest)
+		msg += fmt.Sprintf(Locale("rp.lucky", "zh"), bestDrawer, lastBest)
 	}
 
 	if Type(to) == "*telebot.Message" {
@@ -83,7 +83,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 		// ignore bot
 		if user.IsBot {
 			if showExceptDialog {
-				SmartSendDelete(m.Chat, fmt.Sprintf("👏 欢迎 %s 加入群组，已为机器人自动放行 ～", usrName))
+				SmartSendDelete(m.Chat, fmt.Sprintf(Locale("channel.bot.permit", user.LanguageCode), usrName))
 			}
 			return true
 		}
@@ -96,7 +96,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 		usrStatus := UserIsInGroup(gc.MustFollow, user.ID)
 		if usrStatus == UIGIn {
 			if showExceptDialog {
-				SmartSendDelete(m.Chat, fmt.Sprintf("👏 欢迎 %s 加入群组，您已关注频道自动放行 ～", usrName))
+				SmartSendDelete(m.Chat, fmt.Sprintf(Locale("channel.user.alreadyFollowed", user.LanguageCode), usrName))
 			}
 		} else if usrStatus == UIGOut {
 			chatId, userId := m.Chat.ID, user.ID
@@ -106,21 +106,21 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 				Bot.Delete(m)
 				return false
 			}
-			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf("[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～", userId, usrName), "", []string{
-				fmt.Sprintf("👉 第一步：关注频道 👈|https://t.me/%s", strings.TrimLeft(gc.MustFollow, "@")),
-				fmt.Sprintf("👉 第二步：点我验证 👈|check/%d/%d", chatId, userId),
-				fmt.Sprintf("🚩 解封[管理]|unban/%d/%d||🚮 清退[管理]|kick/%d/%d", chatId, userId, chatId, userId),
+			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", user.LanguageCode), userId, usrName), "", []string{
+				fmt.Sprintf(Locale("btn.channel.step1", user.LanguageCode), strings.TrimLeft(gc.MustFollow, "@")),
+				fmt.Sprintf(Locale("btn.channel.step2", user.LanguageCode), chatId, userId),
+				fmt.Sprintf(Locale("btn.adminPanel", user.LanguageCode), chatId, userId, 0, chatId, userId, 0),
 			})
 			if msg == nil || err != nil {
 				if showExceptDialog {
-					SmartSendDelete(m.Chat, "❌ 无法发送验证消息，请管理员检查群组权限 ～")
+					SmartSendDelete(m.Chat, Locale("channel.cannotSendMsg", user.LanguageCode))
 				}
 				joinmap.Unset(joinVerificationId)
 			} else {
 				if Ban(chatId, userId, 0) != nil {
 					LazyDelete(msg)
 					if showExceptDialog {
-						SmartSendDelete(m.Chat, "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～")
+						SmartSendDelete(m.Chat, Locale("channel.cannotBanUser", user.LanguageCode))
 					}
 					joinmap.Unset(joinVerificationId)
 				} else {
@@ -130,7 +130,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 							cm, err := Bot.ChatMemberOf(&tb.Chat{ID: chatId}, &tb.User{ID: userId})
 							if err != nil || cm.Role == tb.Restricted || cm.Role == tb.Kicked || cm.Role == tb.Left {
 								Kick(chatId, userId)
-								SmartSend(m.Chat, fmt.Sprintf("👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～", userId), &tb.SendOptions{
+								SmartSend(m.Chat, fmt.Sprintf(Locale("channel.kicked", user.LanguageCode), userId), &tb.SendOptions{
 									ParseMode:             "Markdown",
 									DisableWebPagePreview: true,
 									AllowWithoutReply:     true,
@@ -144,7 +144,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			}
 		} else {
 			if showExceptDialog {
-				SmartSendDelete(m.Chat, "❌ 无法检测用户是否在群组内，请管理员检查机器人权限 ～")
+				SmartSendDelete(m.Chat, Locale("channel.cannotCheckChannel", user.LanguageCode))
 			}
 		}
 	}
@@ -153,15 +153,15 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 
 func Rsp(c *tb.Callback, msg string) {
 	Bot.Respond(c, &tb.CallbackResponse{
-		Text:      msg,
+		Text:      Locale(msg, c.Sender.LanguageCode),
 		ShowAlert: true,
 	})
 }
 
 func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	return []string{
-		fmt.Sprintf("😠 这不公平 (%d)|vt/%d/%d/%d", votes, chatId, userId, secondUserId),
-		fmt.Sprintf("🚩 解封[管理]|unban/%d/%d/%d||🚮 清退[管理]|kick/%d/%d/%d", chatId, userId, secondUserId, chatId, userId, secondUserId),
+		fmt.Sprintf(Locale("btn.notFair", "zh"), votes, chatId, userId, secondUserId),
+		fmt.Sprintf(Locale("btn.adminPanel", "zh"), chatId, userId, secondUserId, chatId, userId, secondUserId),
 	}
 }
 
