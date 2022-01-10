@@ -6,7 +6,7 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func CMDWarnUser(m *tb.Message) {
+func CmdWarnUser(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && m.ReplyTo != nil {
 		if gc.DisableWarn {
@@ -46,7 +46,7 @@ func CMDWarnUser(m *tb.Message) {
 	}
 }
 
-func CMDBanUser(m *tb.Message) {
+func CmdBanUser(m *tb.Message) {
 	if IsGroup(m.Chat.ID) && m.ReplyTo != nil {
 		if m.Sender.ID > 0 && m.Sender.Username != "Channel_Bot" {
 			if m.ReplyTo.Sender.ID == m.Sender.ID {
