@@ -33,7 +33,7 @@ func CmdWarnUser(m *tb.Message) {
 					zcomap.Add(limReciverToken)
 					zcomap.Set(token, 1)
 					ci := addCredit(m.Chat.ID, m.ReplyTo.Sender, -25, true)
-					SmartSend(m.ReplyTo, fmt.Sprintf(Locale("cmd.zc.cooldown", m.Sender.LanguageCode), GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender)))
+					SmartSend(m.ReplyTo, fmt.Sprintf(Locale("cmd.zc.exec", m.Sender.LanguageCode), GetUserName(m.ReplyTo.Sender), GetUserName(m.Sender)))
 					LazyDelete(m)
 					if ci.Credit < -50 {
 						Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0)

@@ -596,7 +596,7 @@ func CmdMyCredit(m *tb.Message) {
 	if m.Chat.ID > 0 {
 		SmartSendDelete(m, Locale("cmd.mustInGroup", m.Sender.LanguageCode))
 	} else if IsGroup(m.Chat.ID) {
-		SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
+		SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.my", m.Sender.LanguageCode), GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
 			ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,

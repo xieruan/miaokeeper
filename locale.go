@@ -1,5 +1,10 @@
 package main
 
+var LocaleAlias = map[string]string{
+	"zh-hans": "zh",
+	"zh-hant": "zh",
+}
+
 var LocaleMap = map[string]map[string]string{
 	"zh": {
 		"system.unexpected": "❌ 无法完成任务，请检查服务器错误日志",
@@ -51,6 +56,7 @@ var LocaleMap = map[string]map[string]string{
 		"credit.importError":      "❌ 无法下载积分备份，请确定您上传的文件格式正确且小于 20MB，大文件请联系管理员手动导入",
 		"credit.importParseError": "❌ 解析积分备份错误，请确定您上传的文件格式正确",
 		"credit.check.success":    "👀 `%s`, TA 当前的积分为: %d",
+		"credit.check.my":         "👀 `%s`, 您当前的积分为: %d",
 		"credit.rank.info":        "#开榜 当前的积分墙为: \n\n",
 		"credit.lottery.info":     "🎉 恭喜以下用户中奖：\n\n",
 
@@ -177,6 +183,7 @@ var LocaleMap = map[string]map[string]string{
 		"credit.importError":      "❌ Unable to fetch the file, please make sure the file is valid and less than 20MB.",
 		"credit.importParseError": "❌ Unable to decode the file, please try again.",
 		"credit.check.success":    "👀 `%s` has %d credit points",
+		"credit.check.my":         "👀 `%s`, you have %d credit points",
 		"credit.rank.info":        "#RANK The credit rank of the group: \n\n",
 		"credit.lottery.info":     "🎉 Congrats to the following users:\n\n",
 
@@ -255,9 +262,15 @@ var LocaleMap = map[string]map[string]string{
 	},
 }
 
-const DEFAULT_LANG = "zh"
+const DEFAULT_LANG = "en"
 
 func Locale(identifier string, locale string) string {
+	// process alias
+	if alias, ok := LocaleAlias[locale]; ok && alias != "" {
+		locale = alias
+	}
+
+	// find keywords
 	if locales, ok := LocaleMap[locale]; ok && locales != nil {
 		if text, ok := locales[identifier]; ok && text != "" {
 			return text
