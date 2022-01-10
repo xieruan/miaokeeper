@@ -1,30 +1,61 @@
 package main
 
 var LocaleMap = map[string]map[string]string{
-	"default": {
+	"zh": {
+		"system.unexpected": "❌ 无法完成任务，请检查服务器错误日志",
+
 		"cmd.zc.notAllowed":  "当前群组不允许互相臭嘴哦 ~",
 		"cmd.zc.indeed":      "确实",
 		"cmd.zc.cantBan":     "我拿它没办法呢 ...",
 		"cmd.zc.cooldown10":  "😠 你自己先漱漱口呢，不要连续臭别人哦！扣 10 分警告一下",
 		"cmd.zc.cooldown":    "😳 用指令对线是不对的，请大家都冷静下呢～",
-		"cmd.zc.exec":        "%s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。",
+		"cmd.zc.exec":        "👮 %s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。",
 		"cmd.zc.noAnonymous": "😠 匿名就不要乱啵啵啦！叭了个叭叭了个叭叭了个叭 ...",
 
-		"cmd.ey.selfReport":  "举报自己？那没办法...只好把你 🫒 半小时哦～",
-		"cmd.ey.notSuccess":  "呜呜呜，封不掉 ～",
-		"cmd.ey.unexpected":  "叭了个叭叭了个叭叭了个叭 ～",
-		"cmd.ey.killChannel": "好的！这就把这个频道封掉啦～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
-		"cmd.ey.killBot":     "好的！这就把这个机器人封禁半小时～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
+		"cmd.ey.selfReport":  "👮 举报自己？那没办法...只好把你 🫒 半小时哦～",
+		"cmd.ey.notSuccess":  "😭 呜呜呜，封不掉 ～",
+		"cmd.ey.unexpected":  "😠 叭了个叭叭了个叭叭了个叭 ～",
+		"cmd.ey.killChannel": "👮 好的！这就把这个频道封掉啦～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
+		"cmd.ey.killBot":     "👮 好的！这就把这个机器人封禁半小时～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
 		"cmd.ey.cooldown5":   "😠 消停一下消停一下，举报太多次啦，扣 5 分缓一缓",
-		"cmd.ey.exec":        "%s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。",
-		"cmd.ey.duplicated":  "他已经被检察官带走啦，不要鞭尸啦 ～",
+		"cmd.ey.exec":        "👮 %s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。",
+		"cmd.ey.duplicated":  "👮 他已经被检察官带走啦，不要鞭尸啦 ～",
 
-		"cmd.privateChatFirst": "❌ 请先私聊我然后再运行这个命令哦",
-		"cmd.noGroupPerm":      "❌ 您没有权限，亦或是您未再对应群组使用这个命令",
+		"cmd.privateChatFirst":        "❌ 请先私聊我然后再运行这个命令哦",
+		"cmd.noPerm":                  "❌ 您没有使用这个命令的权限呢",
+		"cmd.mustReply":               "❌ 请在群组内回复一个有效用户使用这个命令哦 ～",
+		"cmd.noGroupPerm":             "❌ 您没有权限，亦或是您未再对应群组使用这个命令",
+		"cmd.noMiaoPerm":              "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令",
+		"cmd.mustReplyChannelOrInput": "❌ 请回复一则转发的频道消息或者手动加上频道 id ～",
+		"cmd.mustInGroup":             "❌ 请在群组发送这条命令哦 ～",
 
-		"credit.exportSuccess":    "\u200d 导出成功，请在私聊查看结果",
+		"cmd.misc.version": "👀 当前版本为: %s",
+		"cmd.misc.ping.1":  "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`",
+		"cmd.misc.ping.2":  "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`",
+
+		"grant.assign.success":  "✔️ TA 已经成为管理员啦 ～",
+		"grant.assign.failure":  "❌ TA 已经是管理员啦 ～",
+		"grant.dismiss.success": "✔️ 已将 TA 的管理员移除 ～",
+		"grant.dismiss.failure": "❌ TA 本来就不是管理员呢 ～",
+
+		"forward.ban.success":   "✔️ TA 已经被我封掉啦 ～",
+		"forward.ban.failure":   "❌ TA 已经被封禁过啦 ～",
+		"forward.unban.success": "✔️ TA 已经被我解封啦 ～",
+		"forward.unban.failure": "❌ TA 还没有被封禁哦 ～",
+
+		"credit.set.invalid":      "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>",
+		"credit.add.invalid":      "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>",
+		"credit.set.success":      "✔️ 设置成功，TA 的积分为: %d",
+		"credit.importSuccess":    "✔️ 导入 %d 条成功，您可以输入 /creditrank 查看导入后积分详情",
+		"credit.exportSuccess":    "✔️ 导出成功，请在私聊查看结果",
 		"credit.importError":      "❌ 无法下载积分备份，请确定您上传的文件格式正确且小于 20MB，大文件请联系管理员手动导入",
 		"credit.importParseError": "❌ 解析积分备份错误，请确定您上传的文件格式正确",
+		"credit.check.success":    "👀 `%s`, TA 当前的积分为: %d",
+		"credit.rank.info":        "#开榜 当前的积分墙为: \n\n",
+		"credit.lottery.info":     "🎉 恭喜以下用户中奖：\n\n",
+
+		"spoiler.invalid": "❌ 使用方法错误：/set_antispoiler <on|off>",
+		"spoiler.success": "✔️ 已经设置好反·反剧透消息啦 `(Status=%v)` ～",
 
 		"su.group.addSuccess":   "✔️ 已将该组加入积分统计 ～",
 		"su.group.addDuplicate": "❌ 该组已经开启积分统计啦 ～",
@@ -37,12 +68,25 @@ var LocaleMap = map[string]map[string]string{
 		"rp.text":      "🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`",
 		"rp.lucky":     "\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~",
 
+		"rp.admin":              "管理员-",
+		"rp.set.invalid":        "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 1000 之间，红包个数需在 1 ~ 20 之间，且红包大小不能低于参与人数哦～",
+		"rp.set.noEnoughCredit": "❌ 您的积分不够发这个红包哦，请在努力赚积分吧～",
+
+		"gp.ban.success":   "🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！",
+		"gp.ban.failure":   "❌ 您没有办法禁言 TA 呢",
+		"gp.unban.success": "🎉 恭喜 `%s` 重新获得了自由 ～",
+		"gp.unban.failure": "❌ 您没有办法解禁 TA 呢",
+		"gp.kick.success":  "🎉 恭喜 `%s` 被踢出去啦！",
+		"gp.kick.failure":  "❌ 您没有踢掉 TA 呢",
+
+		"channel.set.cancel":           "✔️ 已经取消加群频道验证啦 ～",
+		"channel.set.success":          "✔️ 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～",
 		"channel.bot.permit":           "👏 欢迎 %s 加入群组，已为机器人自动放行 ～",
 		"channel.user.alreadyFollowed": "👏 欢迎 %s 加入群组，您已关注频道自动放行 ～",
 		"channel.request":              "[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～",
 		"channel.cannotSendMsg":        "❌ 无法发送验证消息，请管理员检查群组权限 ～",
 		"channel.cannotBanUser":        "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～",
-		"channel.cannotCheckChannel":   "❌ 无法检测用户是否在群组内，请管理员检查机器人权限 ～",
+		"channel.cannotCheckChannel":   "❌ 无法检测用户是否在目标频道内，请管理员检查机器人权限 ～",
 		"channel.kicked":               "👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～",
 
 		// not support yet
@@ -86,6 +130,8 @@ var LocaleMap = map[string]map[string]string{
 	"en": {},
 }
 
+const DEFAULT_LANG = "zh"
+
 func Locale(identifier string, locale string) string {
 	if locales, ok := LocaleMap[locale]; ok && locales != nil {
 		if text, ok := locales[identifier]; ok && text != "" {
@@ -94,7 +140,7 @@ func Locale(identifier string, locale string) string {
 	}
 
 	// fallback
-	if text, ok := LocaleMap["default"][identifier]; ok && text != "" {
+	if text, ok := LocaleMap[DEFAULT_LANG][identifier]; ok && text != "" {
 		return text
 	}
 

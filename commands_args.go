@@ -56,7 +56,7 @@ func CmdSuImportCredit(m *tb.Message) {
 			return
 		}
 		FlushCredits(m.Chat.ID, records)
-		SmartSendDelete(m, fmt.Sprintf("\u200d 导入 %d 条成功，您可以输入 /creditrank 查看导入后积分详情", len(records)))
+		SmartSendDelete(m, fmt.Sprintf(Locale("credit.importSuccess", m.Sender.LanguageCode), len(records)))
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
 	}
@@ -92,15 +92,15 @@ func CmdSuAddAdmin(m *tb.Message) {
 	if IsAdmin(m.Sender.ID) {
 		if ValidMessageUser(m.ReplyTo) {
 			if UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-				SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, Locale("grant.assign.success", m.Sender.LanguageCode))
 			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 已经是管理员啦 ～")
+				SmartSendDelete(m.ReplyTo, Locale("grant.assign.failure", m.Sender.LanguageCode))
 			}
 		} else {
-			SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
+			SmartSendDelete(m, Locale("cmd.mustReply", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -109,15 +109,15 @@ func CmdSuDelAdmin(m *tb.Message) {
 	if IsAdmin(m.Sender.ID) {
 		if ValidMessageUser(m.ReplyTo) {
 			if UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-				SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的管理员移除 ～")
+				SmartSendDelete(m.ReplyTo, Locale("grant.dismiss.success", m.Sender.LanguageCode))
 			} else {
-				SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是管理员呢 ～")
+				SmartSendDelete(m.ReplyTo, Locale("grant.dismiss.failure", m.Sender.LanguageCode))
 			}
 		} else {
-			SmartSendDelete(m, "❌ 请在群组内回复一个有效用户使用这个命令哦 ～")
+			SmartSendDelete(m, Locale("cmd.mustReply", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -126,28 +126,28 @@ func CmdSuDelAdmin(m *tb.Message) {
 
 func CmdAddAdmin(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
-	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) && m.ReplyTo != nil {
 		if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMAdd) {
-			SmartSendDelete(m.ReplyTo, "✔️ TA 已经成为群管理员啦 ～")
+			SmartSendDelete(m.ReplyTo, Locale("grant.assign.success", m.Sender.LanguageCode))
 		} else {
-			SmartSendDelete(m.ReplyTo, "❌ TA 已经是群管理员啦 ～")
+			SmartSendDelete(m.ReplyTo, Locale("grant.assign.failure", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
 
 func CmdDelAdmin(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
-	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) && m.ReplyTo != nil {
 		if gc.UpdateAdmin(m.ReplyTo.Sender.ID, UMDel) {
-			SmartSendDelete(m.ReplyTo, "✔️ 已将 TA 的群管理员移除 ～")
+			SmartSendDelete(m.ReplyTo, Locale("grant.dismiss.success", m.Sender.LanguageCode))
 		} else {
-			SmartSendDelete(m.ReplyTo, "❌ TA 本来就不是群管理员呢 ～")
+			SmartSendDelete(m.ReplyTo, Locale("grant.dismiss.failure", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -166,15 +166,15 @@ func CmdBanForward(m *tb.Message) {
 				if isReply {
 					Bot.Delete(m.ReplyTo)
 				}
-				SmartSendDelete(m, "✔️ TA 已经被我封掉啦 ～")
+				SmartSendDelete(m, Locale("forward.ban.success", m.Sender.LanguageCode))
 			} else {
-				SmartSendDelete(m, "❌ TA 已经被封禁过啦 ～")
+				SmartSendDelete(m, Locale("forward.ban.failure", m.Sender.LanguageCode))
 			}
 		} else {
-			SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+			SmartSendDelete(m, Locale("cmd.mustReplyChannelOrInput", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -188,15 +188,15 @@ func CmdUnbanForward(m *tb.Message) {
 		}
 		if id != 0 {
 			if gc.UpdateBannedForward(id, UMDel) {
-				SmartSendDelete(m, "✔️ TA 已经被我解封啦 ～")
+				SmartSendDelete(m, Locale("forward.unban.success", m.Sender.LanguageCode))
 			} else {
-				SmartSendDelete(m, "❌ TA 还没有被封禁哦 ～")
+				SmartSendDelete(m, Locale("forward.unban.failure", m.Sender.LanguageCode))
 			}
 		} else {
-			SmartSendDelete(m, "❌ 错误的使用方式，请回复一则转发的频道消息或者手动加上频道 id ～")
+			SmartSendDelete(m, Locale("cmd.mustReplyChannelOrInput", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 当前群组没有开启统计，或是您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -208,7 +208,7 @@ func CmdSetCredit(m *tb.Message) {
 		credit := int64(0)
 
 		if len(addons) == 0 {
-			SmartSendDelete(m, "❌ 使用方法错误：/setcredit <UserId:Optional> <Credit>")
+			SmartSendDelete(m, Locale("credit.set.invalid", m.Sender.LanguageCode))
 			return
 		}
 
@@ -223,9 +223,9 @@ func CmdSetCredit(m *tb.Message) {
 			target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 		}
 		target = UpdateCredit(target, UMSet, credit)
-		SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+		SmartSendDelete(m, fmt.Sprintf(Locale("credit.set.success", m.Sender.LanguageCode), target.Credit))
 	} else {
-		SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+		SmartSendDelete(m, Locale("cmd.noMiaoPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -237,7 +237,7 @@ func CmdAddCredit(m *tb.Message) {
 		credit := int64(0)
 
 		if len(addons) == 0 {
-			SmartSendDelete(m, "❌ 使用方法错误：/addcredit <UserId:Optional> <Credit>")
+			SmartSendDelete(m, Locale("credit.add.invalid", m.Sender.LanguageCode))
 			return
 		}
 
@@ -252,21 +252,19 @@ func CmdAddCredit(m *tb.Message) {
 			target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 		}
 		target = UpdateCredit(target, UMAdd, credit)
-		SmartSendDelete(m, fmt.Sprintf("\u200d 设置成功，TA 的积分为: %d", target.Credit))
+		SmartSendDelete(m, fmt.Sprintf(Locale("credit.set.success", m.Sender.LanguageCode), target.Credit))
 	} else {
-		SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+		SmartSendDelete(m, Locale("cmd.noMiaoPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
 
 func CmdCheckCredit(m *tb.Message) {
 	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-		if m.Chat.ID > 0 {
-			SmartSendDelete(m, "❌ 请在群组回复一个用户这条命令来查询 TA 的积分哦 ～")
-		} else if !m.IsReply() {
-			SmartSendDelete(m, "❌ 请回复一个用户这条命令来查询 TA 的积分哦 ～")
+		if m.Chat.ID > 0 || !m.IsReply() {
+			SmartSendDelete(m, Locale("cmd.mustReply", m.Sender.LanguageCode))
 		} else {
-			SmartSendDelete(m, fmt.Sprintf("👀 `%s`, TA 当前的积分为: %d", GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
+			SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.success", m.Sender.LanguageCode), GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
@@ -289,21 +287,21 @@ func CmdSetAntiSpoiler(m *tb.Message) {
 			} else if m.Payload == "off" {
 				status = false
 			} else {
-				SmartSendDelete(m, "❌ 使用方法错误：/set_antispoiler <on|off>")
+				SmartSendDelete(m, Locale("spoiler.invalid", m.Sender.LanguageCode))
 				LazyDelete(m)
 				return
 			}
 
 			gc.AntiSpoiler = status
 			SetGroupConfig(m.Chat.ID, gc)
-			SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好反·反剧透消息啦 `(Status=%v)` ～", gc.AntiSpoiler), &tb.SendOptions{
+			SmartSendDelete(m, fmt.Sprintf(Locale("spoiler.success", m.Sender.LanguageCode), gc.AntiSpoiler), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
 			})
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+		SmartSendDelete(m, Locale("cmd.noMiaoPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -326,10 +324,10 @@ func CmdSetChannel(m *tb.Message) {
 				gc.MustFollowOnJoin = false
 				gc.MustFollowOnMsg = false
 				SetGroupConfig(m.Chat.ID, gc)
-				SmartSendDelete(m, "\u200d 已经取消加群频道验证啦 ～")
+				SmartSendDelete(m, Locale("channel.set.cancel", m.Sender.LanguageCode))
 			} else {
 				if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
-					SmartSendDelete(m, "❌ 您还没有在辣个频道给我权限呢 TAT")
+					SmartSendDelete(m, Locale("channel.cannotCheckChannel", m.Sender.LanguageCode))
 				} else {
 					gc.MustFollow = groupName
 					gc.MustFollowOnJoin = false
@@ -343,7 +341,7 @@ func CmdSetChannel(m *tb.Message) {
 						gc.MustFollowOnMsg = true
 					}
 					SetGroupConfig(m.Chat.ID, gc)
-					SmartSendDelete(m, fmt.Sprintf("\u200d 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～", gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
+					SmartSendDelete(m, fmt.Sprintf(Locale("channel.set.success", m.Sender.LanguageCode), gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
 						AllowWithoutReply:     true,
@@ -352,7 +350,7 @@ func CmdSetChannel(m *tb.Message) {
 			}
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令")
+		SmartSendDelete(m, Locale("cmd.noMiaoPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -384,7 +382,7 @@ func CmdSendRedpacket(m *tb.Message) {
 		chatId := m.Chat.ID
 		redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
 		redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
-		redpacketrankmap.Set(redpacketKey+":sender", "管理员-"+GetQuotableUserName(m.Sender))
+		redpacketrankmap.Set(redpacketKey+":sender", Locale("rp.admin", m.Sender.LanguageCode)+GetQuotableUserName(m.Sender))
 		redpacketmap.Set(redpacketKey, mc)
 		redpacketnmap.Set(redpacketKey, n)
 		SendRedPacket(m.Chat, chatId, redpacketId)
@@ -408,7 +406,7 @@ func CmdCreditRank(m *tb.Message) {
 		for i, c := range ranks {
 			rankStr += fmt.Sprintf("`%2d`. `%s`: `%d`\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.Credit)
 		}
-		SmartSend(m, "#开榜 当前的积分墙为: \n\n"+rankStr, &tb.SendOptions{
+		SmartSend(m, Locale("credit.rank.info", m.Sender.LanguageCode)+rankStr, &tb.SendOptions{
 			ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
@@ -446,7 +444,7 @@ func CmdCreateLottery(m *tb.Message) {
 		if li != nil {
 			li.UpdateTelegramMsg()
 		} else {
-			SmartSendDelete(m, "❌ 无法创建抽奖任务，请检查服务器错误日志")
+			SmartSendDelete(m, Locale("system.unexpected", m.Sender.LanguageCode))
 		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
@@ -468,7 +466,7 @@ func CmdRedpacket(m *tb.Message) {
 		}
 
 		if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
-			SmartSendDelete(m, "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 1000 之间，红包个数需在 1 ~ 20 之间，且红包大小不能低于参与人数哦～", &tb.SendOptions{
+			SmartSendDelete(m, Locale("rp.set.invalid", m.Sender.LanguageCode), &tb.SendOptions{
 				ParseMode: "Markdown",
 			})
 			LazyDelete(m)
@@ -489,7 +487,7 @@ func CmdRedpacket(m *tb.Message) {
 			redpacketnmap.Set(redpacketKey, n)
 			SendRedPacket(m.Chat, chatId, redpacketId)
 		} else {
-			SmartSendDelete(m, "❌ 您的积分不够发这个红包哦，请在努力赚积分吧～")
+			SmartSendDelete(m, Locale("rp.set.noEnoughCredit", m.Sender.LanguageCode))
 		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", m.Sender.LanguageCode))
@@ -527,7 +525,7 @@ func CmdLottery(m *tb.Message) {
 		for i, c := range ranks[:n] {
 			rankStr += fmt.Sprintf("`%2d.` `%s` ([%d](%s))\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.ID, fmt.Sprintf("tg://user?id=%d", c.ID))
 		}
-		SmartSend(m, fmt.Sprintf("🎉 恭喜以下用户中奖：\n\n"+rankStr), &tb.SendOptions{
+		SmartSend(m, fmt.Sprintf(Locale("credit.lottery.info", m.Sender.LanguageCode)+rankStr), &tb.SendOptions{
 			ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
@@ -543,17 +541,17 @@ func CmdLottery(m *tb.Message) {
 func CmdBanUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-			SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.ban.success", m.Sender.LanguageCode), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
 			})
 		} else {
 			DErrorE(err, "Perm Update | Fail to ban user")
-			SmartSendDelete(m, "❌ 您没有办法禁言 TA 呢")
+			SmartSendDelete(m, Locale("gp.ban.failure", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -561,17 +559,17 @@ func CmdBanUserCommand(m *tb.Message) {
 func CmdUnbanUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-			SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 重新获得了自由 ～", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.unban.success", m.Sender.LanguageCode), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
 			})
 		} else {
 			DErrorE(err, "Perm Update | Fail to unban user")
-			SmartSendDelete(m, "❌ 您没有办法解禁 TA 呢")
+			SmartSendDelete(m, Locale("gp.unban.failure", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
@@ -579,24 +577,24 @@ func CmdUnbanUserCommand(m *tb.Message) {
 func CmdKickUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
-			SmartSendDelete(m, fmt.Sprintf("🎉 恭喜 `%s` 被踢出去啦！", GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.kick.success", m.Sender.LanguageCode), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
 			})
 		} else {
 			DErrorE(err, "Perm Update | Fail to kick user once")
-			SmartSendDelete(m, "❌ 您没有踢掉 TA 呢")
+			SmartSendDelete(m, Locale("gp.kick.failure", m.Sender.LanguageCode))
 		}
 	} else {
-		SmartSendDelete(m, "❌ 您没有使用这个命令的权限呢")
+		SmartSendDelete(m, Locale("cmd.noPerm", m.Sender.LanguageCode))
 	}
 	LazyDelete(m)
 }
 
 func CmdMyCredit(m *tb.Message) {
 	if m.Chat.ID > 0 {
-		SmartSendDelete(m, "❌ 请在群组发送这条命令来查看积分哦 ～")
+		SmartSendDelete(m, Locale("cmd.mustInGroup", m.Sender.LanguageCode))
 	} else if IsGroup(m.Chat.ID) {
 		SmartSendDelete(m, fmt.Sprintf("👀 `%s`, 您当前的积分为: %d", GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
 			ParseMode:             "Markdown",
@@ -608,7 +606,7 @@ func CmdMyCredit(m *tb.Message) {
 }
 
 func CmdVersion(m *tb.Message) {
-	SmartSendDelete(m, fmt.Sprintf("👀 当前版本为: %s", VERSION))
+	SmartSendDelete(m, fmt.Sprintf(Locale("cmd.misc.version", m.Sender.LanguageCode), VERSION))
 	LazyDelete(m)
 }
 
@@ -616,13 +614,13 @@ func CmdPing(m *tb.Message) {
 	t := time.Now().UnixMilli()
 	Bot.GetCommands()
 	t1 := time.Now().UnixMilli() - t
-	msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`", t1), &tb.SendOptions{
+	msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf(Locale("cmd.misc.ping.1", m.Sender.LanguageCode), t1), &tb.SendOptions{
 		ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
 		AllowWithoutReply:     true,
 	})
 	t2 := time.Now().UnixMilli() - t - t1
-	SmartEdit(msg, fmt.Sprintf("🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`", t1, t2), &tb.SendOptions{
+	SmartEdit(msg, fmt.Sprintf(Locale("cmd.misc.ping.2", m.Sender.LanguageCode), t1, t2), &tb.SendOptions{
 		ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
 		AllowWithoutReply:     true,
