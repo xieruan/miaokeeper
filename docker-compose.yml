@@ -1,0 +1,40 @@
+version: "3"
+services:
+  miaokeeper:
+    image: ghcr.io/bballiance/miaokeeper:latest
+    networks:
+      - miaokeeper
+    links:
+      - mariadb
+    depends_on:
+      - mariadb
+    command: -token <YOUR_TOKEN> -database root:miaokeeper2022@tcp(mariadb:3306)/miaokeeper
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: miaokeeper2022
+      MYSQL_DATABASE: miaokeeper
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - miaokeeper
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - miaokeeper
+    networks:
+      - miaokeeper
+    command: --interval 30 miaokeeper
+    restart: unless-stopped
+
+volumes:
+  db-data:
+
+networks:
+  miaokeeper:
