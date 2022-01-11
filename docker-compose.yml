@@ -10,6 +10,8 @@ services:
       - mariadb
     command: -token <YOUR_TOKEN> -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   mariadb:
     image: mariadb
@@ -26,12 +28,14 @@ services:
     image: containrrr/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - miaokeeper
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_POLL_INTERVAL=60
     networks:
       - miaokeeper
-    command: --interval 30 miaokeeper
-    restart: unless-stopped
+    restart: always
 
 volumes:
   db-data:
