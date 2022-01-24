@@ -16,7 +16,6 @@
 
 1.自行前往<a href="https://github.com/BBAlliance/miaokeeper/releases" target="_blank">release</a>，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
 2.自行安装数据库，并设置好用户、密码、数据库名。  
-3.首次启动需要添加机器人全局管理。  
 
 ```bash
 ./miaokeeper -token 机器人Token -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
@@ -28,7 +27,7 @@
 ./miaokeeper -token 123456:XXXXXXXXXXXXXXXX -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 ```
 
-4.若无报错说明启动成功。  
+3.若无报错说明启动成功。  
 
 ### 2.Docker安装  
 
