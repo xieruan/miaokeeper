@@ -1,25 +1,33 @@
 # Miaokeeper  
 
 > Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。  
+>
 > ## 前期准备  
+>
 > 1.会使用 `Screen、Pm2、Systemd、Supervisor` 其中任意一直进程守护方式。  
 > 2.会搭建`Go语言编译环境`、或`Docker的基础用法`。  
 > 3.会使用 `MySQL` 或其他数据库。  
+>
 > ## 如何安装  
+>
 > 目前支持  `直接安装` 和 `docker` 安装两种模式    
 >
 > ### 1.直接安装  
 
-1.自行前往release，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
+1.自行前往<a href="https://github.com/BBAlliance/miaokeeper/releases" target="_blank">release</a>，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
 2.自行安装数据库，并设置好用户、密码、数据库名。  
 3.首次启动需要添加机器人全局管理。  
+
 ```bash
 ./miaokeeper -token 机器人Token -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
 ```
+
 例如：  
+
 ```bash  
 ./miaokeeper -token 123456:XXXXXXXXXXXXXXXX -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 ```
+
 4.若无报错说明启动成功。  
 
 ### 2.Docker安装  
@@ -41,6 +49,7 @@ wget https://raw.githubusercontent.com/BBAlliance/miaokeeper/master/docker-compo
 
 4.使用 `Docker-compose`  命令启动Docker容器。  
 .
+
 ```bash
 docker命令：
 	docker ps                           # 查看正在运行的容器
@@ -61,18 +70,22 @@ docker-compose命令：
 
 
 ```
+
 ## 如何后台运行  
 
 > 本文以 `Systemd` 为例教你如何保持机器人后台执行，请自行学习 `screen / pm2 / supervisor` 等工具。  
 
 
 1.各系统启动服务保存文件夹如下。如需创建请根据自己系统选择。  
+
 ```bash	
 Centos:systemctlDIR="/usr/lib/systemd/system/"
 Debian:systemctlDIR="/etc/systemd/system/"
 Ubuntu:systemctlDIR="/etc/systemd/system/"
 ```
+
 2.自行创建启动服务文件  
+
 ```bash	
 [Unit]
 Description=miaokeeper Tunnel Service          #进程名称miaokeeper
@@ -86,7 +99,9 @@ ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -upstream https://api
 [Install]
 WantedBy=multi-user.target
 ```
+
 3.常用 `Systemd命令`  
+
 ```bash	
 systemctl daemon-reload                        #首次添加服务需要执行
 systemctl start miaokeeper.service             #启动miaokeeper
@@ -106,6 +121,7 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 ## 启动核心参数  
 
 > 如果想熟练启动机器人，请务必看这一部分。  
+
 ```bash
 `-database string`  #mysql或其兼容的数据库连接URL
 `-ping`             #测试bot和电报服务器之间的往返时间
@@ -120,15 +136,18 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 > 如果想熟练使用机器人，请务必看这一部分。  
 
 ### `Super Admin`  
-```
-/su_export_credit 导出积分
-/su_add_group 开启积分统计
-/su_del_group 删除当前群组统计积分
-/su_add_admin 添加全局管理
-/su_del_admin 删除全局管理员
 
 ```
+/su_export_credit 导出积分
+/su_add_group     开启积分统计
+/su_del_group     删除当前群组统计积分
+/su_add_admin     添加全局管理
+/su_del_admin     删除全局管理员
+
+```
+
 ### `Group Admin`  
+
 ```
 /add_admin       提权群组管理
 /del_admin       删除群组管理
@@ -146,10 +165,11 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 /lottery         抽奖（可加A B两个参数，从A总人数中抽B人数）
 
 ```
+
 ### `用户可用命令`  
 
 ```
 /mycredit 我的积分
-/version 版本查询
-/ping 检测bot和群组响应速度
+/version  版本查询
+/ping     检测bot和群组响应速度
 ```
