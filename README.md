@@ -13,11 +13,11 @@
 2.自行安装数据库，并设置好用户、密码、数据库名。  
 3.首次启动需要添加机器人全局管理。  
 ```bash
-	./miaokeeper -token 机器人Token  -setadmin 用户ID  -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
+./miaokeeper -token 机器人Token  -setadmin 用户ID  -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
 ```
 例如：
 ```bash  
-	./miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
+./miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 ```
 4.首次启动后会自动退出，若无报错说明启动成功。机器人全局管理添加成功。
 
@@ -51,34 +51,34 @@ docker-compose命令：
 
 1.各系统启动服务保存文件夹如下。如需创建请根据自己系统选择。
 ```bash	
-	Centos:systemctlDIR="/usr/lib/systemd/system/"
-	Debian:systemctlDIR="/etc/systemd/system/"
-	Ubuntu:systemctlDIR="/etc/systemd/system/"
+Centos:systemctlDIR="/usr/lib/systemd/system/"
+Debian:systemctlDIR="/etc/systemd/system/"
+Ubuntu:systemctlDIR="/etc/systemd/system/"
 ```
 2.自行创建启动服务文件
 ```bash	
-	[Unit]
-	Description=miaokeeper Tunnel Service          #进程名称miaokeeper
-	After=network.target
-	[Service]
-	Type=simple
-	Restart=always
+[Unit]
+Description=miaokeeper Tunnel Service          #进程名称miaokeeper
+After=network.target
+[Service]
+Type=simple
+Restart=always
  
-	WoringDirectory=/root                          #miaokeeper文件保存路径
-	ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
-	[Install]
-	WantedBy=multi-user.target
+WoringDirectory=/root                          #miaokeeper文件保存路径
+ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
+[Install]
+WantedBy=multi-user.target
 ```
 3.常用`Systemd命令`
 ```bash	
-	systemctl daemon-reload                        #首次添加服务需要执行
-	systemctl start miaokeeper.service             #启动miaokeeper
-	systemctl stop miaokeeper.service              #停止miaokeeper
-	systemctl enable miaokeeper.service            #将服务设置为每次开机启动
-	systemctl enable --now miaokeeper.service      #立即启动且每次重启也启动
-	systemctl restart miaokeeper.service           #重启miaokeeper
-	systemctl disable miaokeeper.service           #关闭miaokeeper开机自启
-	systemctl status miaokeeper.service            #查看miaokeeper状态
+systemctl daemon-reload                        #首次添加服务需要执行
+systemctl start miaokeeper.service             #启动miaokeeper
+systemctl stop miaokeeper.service              #停止miaokeeper
+systemctl enable miaokeeper.service            #将服务设置为每次开机启动
+systemctl enable --now miaokeeper.service      #立即启动且每次重启也启动
+systemctl restart miaokeeper.service           #重启miaokeeper
+systemctl disable miaokeeper.service           #关闭miaokeeper开机自启
+systemctl status miaokeeper.service            #查看miaokeeper状态
 
 ```
 
