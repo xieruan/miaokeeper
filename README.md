@@ -23,9 +23,9 @@
 
 ```
 ### 2.Docker安装
-```bash
-待定
 
+待定
+```bash
 docker命令：
 	docker ps                           # 查看正在运行的容器
 	docker ps -a                        # 查看所有容器，包括已运行和未运行的
@@ -49,12 +49,15 @@ docker-compose命令：
 
 > 本文以 `Systemd` 为例教你如何保持机器人后台执行，请自行学习 `screen / pm2 / supervisor` 等工具。
 
-```bash
+
 1.各系统启动服务保存文件夹如下。如需创建请根据自己系统选择。
+```bash	
 	Centos:systemctlDIR="/usr/lib/systemd/system/"
 	Debian:systemctlDIR="/etc/systemd/system/"
 	Ubuntu:systemctlDIR="/etc/systemd/system/"
+```
 2.自行创建启动服务文件
+```bash	
 	[Unit]
 	Description=miaokeeper Tunnel Service          #进程名称miaokeeper
 	After=network.target
@@ -66,8 +69,9 @@ docker-compose命令：
 	ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 	[Install]
 	WantedBy=multi-user.target
-
+```
 3.常用`Systemd命令`
+```bash	
 	systemctl daemon-reload                        #首次添加服务需要执行
 	systemctl start miaokeeper.service             #启动miaokeeper
 	systemctl stop miaokeeper.service              #停止miaokeeper
