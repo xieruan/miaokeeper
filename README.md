@@ -103,14 +103,14 @@ WantedBy=multi-user.target
 3.常用 `Systemd命令`  
 
 ```bash	
-systemctl daemon-reload                        #首次添加服务需要执行
-systemctl start miaokeeper.service             #启动miaokeeper
-systemctl stop miaokeeper.service              #停止miaokeeper
-systemctl enable miaokeeper.service            #将服务设置为每次开机启动
-systemctl enable --now miaokeeper.service      #立即启动且每次重启也启动
-systemctl restart miaokeeper.service           #重启miaokeeper
-systemctl disable miaokeeper.service           #关闭miaokeeper开机自启
-systemctl status miaokeeper.service            #查看miaokeeper状态
+systemctl daemon-reload                             #首次添加服务需要执行
+systemctl start miaokeeper.service                  #启动miaokeeper
+systemctl stop miaokeeper.service                   #停止miaokeeper
+systemctl enable miaokeeper.service                 #将服务设置为每次开机启动
+systemctl enable --now miaokeeper.service           #立即启动且每次重启也启动
+systemctl restart miaokeeper.service                #重启miaokeeper
+systemctl disable miaokeeper.service                #关闭miaokeeper开机自启
+systemctl status miaokeeper.service                 #查看miaokeeper状态
 
 ```
 
@@ -123,12 +123,12 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 > 如果想熟练启动机器人，请务必看这一部分。  
 
 ```bash
--database string  #mysql或其兼容的数据库连接URL
--ping             #测试bot和电报服务器之间的往返时间
--token string     #电报机器人令牌
--upstream string  #电报上游api url
--verbose          #显示所有日志
--version          #显示当前版本并退出
+-database string       #mysql或其兼容的数据库连接URL
+-ping                  #测试bot和电报服务器之间的往返时间
+-token string          #电报机器人令牌
+-upstream string       #电报上游api url
+-verbose               #显示所有日志
+-version               #显示当前版本并退出
 ```
 
 ## 机器人常用命令参数  
@@ -138,38 +138,38 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 ### `Super Admin`  
 
 ```
-/su_export_credit 导出积分
-/su_add_group     开启积分统计
-/su_del_group     删除当前群组统计积分
-/su_add_admin     添加全局管理
-/su_del_admin     删除全局管理员
+/su_export_credit      导出积分
+/su_add_group          开启积分统计
+/su_del_group          删除当前群组统计积分
+/su_add_admin          添加全局管理
+/su_del_admin          删除全局管理员
 
 ```
 
 ### `Group Admin`  
 
 ```
-/add_admin       提权群组管理
-/del_admin       删除群组管理
-/ban_forward     封禁频道转发（回复转发或频道iD）
-/unban_forward   解禁频道转发（回复转发或频道iD）
-/set_credit      回复或id设置积分
-/add_credit      回复或id添加积分
-/check_credit    查看某群友积分
-/set_antispoiler 是否开启剧透
-/set_channel     绑定频道（回复空则解绑频道） 要把bot扔进频道给管理
-/send_redpacket  发运气红包
-/create_lottery  开启抽奖  create_lottery 奖品名称 :limit=所需积分:consume=（n|y）是否扣除积分 :num=奖品数量 :participant=参与人数
-/creditrank      开榜获取积分排行榜
-/redpacket       积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
-/lottery         抽奖（可加A B两个参数，从A总人数中抽B人数）
+/add_admin            提权群组管理
+/del_admin            删除群组管理
+/ban_forward          封禁频道转发（回复转发或频道iD）
+/unban_forward        解禁频道转发（回复转发或频道iD）
+/set_credit           回复或id设置积分
+/add_credit           回复或id添加积分
+/check_credit         查看某群友积分
+/set_antispoiler      是否开启剧透
+/set_channel          绑定频道（回复空则解绑频道） 要把bot扔进频道给管理
+/send_redpacket       发运气红包
+/create_lottery       开启抽奖  create_lottery 奖品名称 :limit=所需积分:consume=（n|y）是否扣除积分 :num=奖品数量 :participant=参与人数
+/creditrank           开榜获取积分排行榜
+/redpacket            积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
+/lottery              抽奖（可加A B两个参数，从A总人数中抽B人数）
 
 ```
 
 ### `用户可用命令`  
 
 ```
-/mycredit 我的积分
-/version  版本查询
-/ping     检测bot和群组响应速度
+/mycredit      我的积分
+/version       版本查询
+/ping          检测bot和群组响应速度
 ```
