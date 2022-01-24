@@ -8,15 +8,15 @@
 ## 如何安装
 > 目前支持  `直接安装` 和 `docker` 安装两种模式
 ### 1.直接安装
-```bash
+
 1.自行前往release，下载对应架构源码，自行编译并赋予权限。
 2.自行安装数据库，并设置好用户、密码、数据库名。
 3.首次启动需要添加机器人全局管理。
-
+```bash
 	./miaokeeper -token 机器人Token  -setadmin 用户ID  -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
-
+```
 例如：
-  
+```bash  
 	./miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 
 4.首次启动后会自动退出，若无报错说明启动成功。机器人全局管理添加成功。
