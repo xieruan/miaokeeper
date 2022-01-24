@@ -138,38 +138,38 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 ### `Super Admin`  
 
 ```
-/su_export_credit      导出积分
-/su_add_group          开启积分统计
-/su_del_group          删除当前群组统计积分
-/su_add_admin          添加全局管理
-/su_del_admin          删除全局管理员
+/su_export_credit      #导出积分
+/su_add_group          #开启积分统计
+/su_del_group          #删除当前群组统计积分
+/su_add_admin          #添加全局管理
+/su_del_admin          #删除全局管理员
 
 ```
 
 ### `Group Admin`  
 
 ```
-/add_admin            提权群组管理
-/del_admin            删除群组管理
-/ban_forward          封禁频道转发（回复转发或频道iD）
-/unban_forward        解禁频道转发（回复转发或频道iD）
-/set_credit           回复或id设置积分
-/add_credit           回复或id添加积分
-/check_credit         查看某群友积分
-/set_antispoiler      是否开启剧透
-/set_channel          绑定频道（回复空则解绑频道） 要把bot扔进频道给管理
-/send_redpacket       发运气红包
-/create_lottery       开启抽奖  create_lottery 奖品名称 :limit=所需积分:consume=（n|y）是否扣除积分 :num=奖品数量 :participant=参与人数
-/creditrank           开榜获取积分排行榜
-/redpacket            积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
-/lottery              抽奖（可加A B两个参数，从A总人数中抽B人数）
+/add_admin            #提权群组管理
+/del_admin            #删除群组管理
+/ban_forward          #封禁频道转发（回复转发或频道iD）
+/unban_forward        #解禁频道转发（回复转发或频道iD）
+/set_credit           #回复或id设置积分
+/add_credit           #回复或id添加积分
+/check_credit         #查看某群友积分
+/set_antispoiler      #是否开启剧透
+/set_channel          #绑定频道（回复空则解绑频道） 要把bot扔进频道给管理
+/send_redpacket       #发运气红包
+/create_lottery       #开启抽奖  create_lottery 奖品名称 :limit=所需积分:consume=（n|y）是否扣除积分 :num=奖品数量 :participant=参与人数
+/creditrank           #开榜获取积分排行榜
+/redpacket            #积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
+/lottery              #抽奖（可加A B两个参数，从A总人数中抽B人数）
 
 ```
 
 ### `用户可用命令`  
 
 ```
-/mycredit      我的积分
-/version       版本查询
-/ping          检测bot和群组响应速度
+/mycredit      #我的积分
+/version       #版本查询
+/ping          #检测bot和群组响应速度
 ```
