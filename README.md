@@ -18,10 +18,9 @@
 例如：
 ```bash  
 	./miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
-
+```
 4.首次启动后会自动退出，若无报错说明启动成功。机器人全局管理添加成功。
 
-```
 ### 2.Docker安装
 
 待定
