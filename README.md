@@ -123,12 +123,12 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 > 如果想熟练启动机器人，请务必看这一部分。  
 
 ```bash
-`-database string`  #mysql或其兼容的数据库连接URL
-`-ping`             #测试bot和电报服务器之间的往返时间
-`-token string`     #电报机器人令牌
-`-upstream string`  #电报上游api url
-`-verbose`          #显示所有日志
-`-version`          #显示当前版本并退出
+-database string  #mysql或其兼容的数据库连接URL
+-ping             #测试bot和电报服务器之间的往返时间
+-token string     #电报机器人令牌
+-upstream string  #电报上游api url
+-verbose          #显示所有日志
+-version          #显示当前版本并退出
 ```
 
 ## 机器人常用命令参数  
