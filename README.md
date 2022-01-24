@@ -65,7 +65,7 @@ Type=simple
 Restart=always
  
 WoringDirectory=/root                          #miaokeeper文件保存路径
-ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -setadmin 123456  - ping -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
+ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 [Install]
 WantedBy=multi-user.target
 ```
