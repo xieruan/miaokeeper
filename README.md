@@ -86,7 +86,7 @@ systemctl status miaokeeper.service            #查看miaokeeper状态
 
 配合已有机器人（鲁小迅）做到群员自主管理，进行广告封杀。群积分内部抽奖等。
 
-## 核心参数
+## 启动核心参数
 
 > 如果想熟练启动机器人，请务必看这一部分。
 ```bash
