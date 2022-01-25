@@ -15,7 +15,7 @@
 
 ### 1.直接安装  
 
-> 1.自行前往<a href="https://github.com/BBAlliance/miaokeeper/releases" target="_blank">release</a>，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
+> 1.自行前往[release](https://github.com/BBAlliance/miaokeeper/releases)，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
 > 2.自行安装数据库，并设置好用户、密码、数据库名。  
 
 ```bash
