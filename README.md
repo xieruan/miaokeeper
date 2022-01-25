@@ -12,43 +12,51 @@
 >
 > 目前支持  `直接安装` 和 `docker` 安装两种模式    
 >
-> ### 1.直接安装  
 
-1.自行前往<a href="https://github.com/BBAlliance/miaokeeper/releases" target="_blank">release</a>，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
-2.自行安装数据库，并设置好用户、密码、数据库名。  
+### 1.直接安装  
+
+> 1.自行前往<a href="https://github.com/BBAlliance/miaokeeper/releases" target="_blank">release</a>，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
+> 2.自行安装数据库，并设置好用户、密码、数据库名。  
 
 ```bash
 ./miaokeeper -token 机器人Token -upstream TG官方API或反代API网址 -database '数据库用户名:数据库密码@tcp(127.0.0.1:3306)/数据库名'
 ```
 
-例如：  
+>例如：  
 
 ```bash  
 ./miaokeeper -token 123456:XXXXXXXXXXXXXXXX -upstream https://api.telegram.org -database 'miaokeeper:miaokeeper@tcp(127.0.0.1:3306)/miaokeeper'
 ```
 
-3.若无报错说明启动成功。  
-4.启动成功后通过 `-setadmin 用户ID` 添加管理。或者在启动时填入参数，若在启动时添加将会自动退出程序。若无报错，请去掉 `-setadmin 用户ID` 后再次启动。
+> 3.若无报错说明启动成功。  
+> 4.启动成功后通过 `-setadmin 用户ID` 添加管理。或者在启动时填入参数，若在启动时添加将会自动退出程序。若无报错，请去掉 `-setadmin 用户ID` 后再次启动。
 
 ### 2.Docker安装  
 
-1.创建miaokeeper文件夹并进去。  
+> 1.创建miaokeeper文件夹并进去。  
 
 ```bash  
 mkdir miaokeeper && chmod +x miaokeeper && cd miaokeeper/
 ```
 
-2.下载miaokeeper的docker启动文件 `docker-compose.yml`  
+> 2.下载miaokeeper的docker启动文件 `docker-compose.yml`  
 
 ```bash
 wget https://raw.githubusercontent.com/BBAlliance/miaokeeper/master/docker-compose.yml
 
 ```
 
-3.修改 `docker-compose.yml` 中的 `<YOUR_TOKEN>` 为你自己的机器人Token。  
+> 3.修改 `docker-compose.yml` 中的 `<YOUR_TOKEN>` 为你自己的机器人Token。  
 
-4.使用 `Docker-compose`  命令启动Docker容器。  
-5.使用 `docker exec -it 容器名or ID bash` 进入容器，进入容器后通过 `-setadmin 用户ID` 添加管理。
+> 4.使用 `Docker-compose`  命令启动Docker容器。  
+> 5.使用 `docker exec -it 容器名 or ID bash` 进入容器，进入容器后通过 `./miaokeeper  -setadmin 123456 -token <YOUR_TOKEN> -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper`  添加管理。其中 `-setadmin   `  后加上TG用户ID。若无报错，说明添加成功，重启容器即可。  
+> 
+> 例如：  
+
+```bash
+./miaokeeper  -setadmin 123456 -token 123456:XXXXXXXXXXXXXXXX -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper 
+
+```
 
 ```bash
 docker命令：
@@ -76,7 +84,7 @@ docker-compose命令：
 > 本文以 `Systemd` 为例教你如何保持机器人后台执行，请自行学习 `screen / pm2 / supervisor` 等工具。  
 
 
-1.各系统启动服务保存文件夹如下。如需创建请根据自己系统选择。  
+> 1.各系统启动服务保存文件夹如下。如需创建请根据自己系统选择。  
 
 ```bash	
 Centos:systemctlDIR="/usr/lib/systemd/system/"
@@ -84,7 +92,7 @@ Debian:systemctlDIR="/etc/systemd/system/"
 Ubuntu:systemctlDIR="/etc/systemd/system/"
 ```
 
-2.自行创建启动服务文件  
+> 2.自行创建启动服务文件  
 
 ```bash	
 [Unit]
@@ -100,7 +108,7 @@ ExecStart=/root/miaokeeper -token 123456:XXXXXXXXXXXXXXXX  -upstream https://api
 WantedBy=multi-user.target
 ```
 
-3.常用 `Systemd命令`  
+> 3.常用 `Systemd命令`  
 
 ```bash	
 systemctl daemon-reload                             #首次添加服务需要执行
@@ -116,7 +124,7 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 
 ## 关于这个机器人的使用场景  
 
-配合已有机器人（鲁小迅）做到群员自主管理，进行广告封杀。群积分内部抽奖等。  
+> 配合已有机器人（鲁小迅）做到群员自主管理，进行广告封杀。群积分内部抽奖等。  
 
 ## 启动核心参数  
 
