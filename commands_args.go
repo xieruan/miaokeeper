@@ -422,6 +422,7 @@ func CmdCreateLottery(m *tb.Message) {
 	// :consume=n|y
 	// :num=1|100
 	// :draw=manual|>num
+	// :pin=y|n
 	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 		payload, ah := ArgParse(m.Payload)
 		limit, _ := ah.Int("limit")
@@ -438,11 +439,18 @@ func CmdCreateLottery(m *tb.Message) {
 		if participant < num {
 			participant = 0
 		}
+		pin, setPin := ah.Bool("pin")
+		if !setPin {
+			pin = true
+		}
 
 		li := CreateLottery(m.Chat.ID, payload, limit, consume, num, duration, participant)
 
 		if li != nil {
-			li.UpdateTelegramMsg()
+			msg := li.UpdateTelegramMsg()
+			if msg != nil && pin {
+				Bot.Pin(msg)
+			}
 		} else {
 			SmartSendDelete(m, Locale("system.unexpected", m.Sender.LanguageCode))
 		}
