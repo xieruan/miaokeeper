@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -45,6 +46,7 @@ type GroupConfig struct {
 	Admins        []int64
 	BannedForward []int64
 
+	Locale           string
 	MustFollow       string
 	MustFollowOnJoin bool
 	MustFollowOnMsg  bool
@@ -56,7 +58,9 @@ type GroupConfig struct {
 func InitDatabase() (err error) {
 	MYSQLDB, err = sql.Open("mysql", DBCONN)
 	if err == nil {
-		err = MYSQLDB.Ping()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		err = MYSQLDB.PingContext(ctx)
+		cancel()
 	}
 
 	return
