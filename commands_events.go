@@ -31,21 +31,21 @@ func CmdOnText(m *tb.Message) {
 		userId := m.Sender.ID
 
 		if puncReg.MatchString(text) {
+			// commands
 			addCreditToMsgSender(m.Chat.ID, m, -5, true)
-			lastID = userId
-		} else if textLen >= 2 {
-			if lastID == userId && text == lastText {
-				addCreditToMsgSender(m.Chat.ID, m, -2, true)
-			} else if lastID != userId || (textLen >= 14 && text != lastText) {
-				addCreditToMsgSender(m.Chat.ID, m, 1, false)
+		} else if lastID == userId && text == lastText {
+			// duplicated messages
+			addCreditToMsgSender(m.Chat.ID, m, -2, true)
+		} else if textLen >= 2 && (lastID != userId || (textLen >= 14 && text != lastText)) {
+			// valid messages
+			addCreditToMsgSender(m.Chat.ID, m, 1, false)
+			if ValidReplyUser(m) {
+				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
 			}
-			lastID = userId
-			lastText = text
 		}
 
-		if ValidReplyUser(m) {
-			addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
-		}
+		lastID = userId
+		lastText = text
 	}
 }
 
