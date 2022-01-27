@@ -20,8 +20,8 @@ func CmdWarnUser(m *tb.Message) {
 				SmartSend(m, Locale("cmd.zc.cantBan", GetSenderLocale(m)))
 			} else {
 				token := fmt.Sprintf("%d,%d,%d", m.Chat.ID, m.Sender.ID, m.ReplyTo.Sender.ID)
-				limSenderToken := fmt.Sprintf("lim%d,%d,%d", m.Chat.ID, m.Sender.ID)
-				limReciverToken := fmt.Sprintf("lim%d,%d,%d", m.Chat.ID, m.ReplyTo.Sender.ID)
+				limSenderToken := fmt.Sprintf("lim%d,%d", m.Chat.ID, m.Sender.ID)
+				limReciverToken := fmt.Sprintf("lim%d,%d", m.Chat.ID, m.ReplyTo.Sender.ID)
 				if _, ok := zcomap.Get(token); ok {
 					addCredit(m.Chat.ID, m.Sender, -10, true)
 					SmartSend(m, Locale("cmd.zc.cooldown10", GetSenderLocale(m)))

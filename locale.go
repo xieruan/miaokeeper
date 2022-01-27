@@ -62,6 +62,10 @@ var LocaleMap = map[string]map[string]string{
 		"credit.rank.info":        "#开榜 当前的积分墙为: \n\n",
 		"credit.lottery.info":     "🎉 恭喜以下用户中奖：\n\n",
 
+		"transfer.invalidParam": "❌ 错误的用法，请回复一个用户 /transfer <积分额度> 来完成积分转移",
+		"transfer.success":      "✔️ 您已成功向 TA 转移了 %d 积分",
+		"transfer.noBalance":    "❌ 您没有足够的余额哦",
+
 		"spoiler.invalid": "❌ 使用方法错误：/set_antispoiler <on|off>",
 		"spoiler.success": "✔️ 已经设置好反·反剧透消息啦 `(Status=%v)` ～",
 
@@ -191,6 +195,10 @@ var LocaleMap = map[string]map[string]string{
 		"credit.check.my":         "👀 `%s`, you have %d credit points",
 		"credit.rank.info":        "#RANK The credit rank of the group: \n\n",
 		"credit.lottery.info":     "🎉 Congrats to the following users:\n\n",
+
+		"transfer.invalidParam": "❌ Invalid Params. Please reply a user with /transfer <amount> to transfer your credit.",
+		"transfer.success":      "✔️ You have transferred %d credit points to the user.",
+		"transfer.noBalance":    "❌ You do not have enough balance to complete the transfer.",
 
 		"spoiler.invalid": "❌ Invalid Params. Please refer to: /set_antispoiler <on|off>",
 		"spoiler.success": "✔️ Anti-spoiler settings has been updated `(Status=%v)` ～",

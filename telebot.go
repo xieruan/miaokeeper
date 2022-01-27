@@ -46,7 +46,7 @@ var redpacketnmap *ObliviousMapInt
 var debouncer func(func())
 
 var callbacklock sync.Mutex
-var userredpacketlock sync.Mutex
+var usercreditlock sync.Mutex
 
 func InitTelegram() {
 	var err error
@@ -122,6 +122,7 @@ func InitTelegram() {
 		Bot.Handle("/creditrank", CmdCreditRank)
 		Bot.Handle("/redpacket", CmdRedpacket)
 		Bot.Handle("/lottery", CmdLottery)
+		Bot.Handle("/transfer", CmdCreditTransfer)
 
 		// ---------------- Normal User ----------------
 
@@ -185,7 +186,8 @@ func InitTelegram() {
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
+	puncReg = regexp.MustCompile(`^[!$%&"'*+,\-.{}[\]():;=?^_|~\\][a-zA-Z0-9]+`)
+	// puncReg = regexp.MustCompile(`^[!"#$%&'()*+,\-./:;<=>?@[\]^_{|}~\\` + "`" + `][a-zA-Z0-9]+`)
 	zcomap = NewOMapInt(60*60*1000, true)
 	creditomap = NewOMapInt(60*60*1000, false)
 	votemap = NewOMapInt(30*60*1000, false)
