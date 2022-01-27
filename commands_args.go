@@ -504,8 +504,8 @@ func CmdRedpacket(m *tb.Message) {
 			return
 		}
 
-		userredpacketlock.Lock()
-		defer userredpacketlock.Unlock()
+		usercreditlock.Lock()
+		defer usercreditlock.Unlock()
 		ci := GetCredit(m.Chat.ID, m.Sender.ID)
 
 		if ci != nil && ci.Credit >= int64(mc) {
@@ -632,6 +632,31 @@ func CmdMyCredit(m *tb.Message) {
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
 		})
+	}
+	LazyDelete(m)
+}
+
+func CmdCreditTransfer(m *tb.Message) {
+	if m.Chat.ID > 0 {
+		SmartSendDelete(m, Locale("cmd.mustInGroup", GetSenderLocale(m)))
+	} else if IsGroup(m.Chat.ID) {
+		credit, _ := strconv.Atoi(m.Payload)
+		if credit <= 0 || !ValidReplyUser(m) {
+			SmartSendDelete(m, Locale("transfer.invalidParam", GetSenderLocale(m)))
+		} else {
+			usercreditlock.Lock()
+			defer usercreditlock.Unlock()
+
+			ci := GetCredit(m.Chat.ID, m.Sender.ID)
+			if ci.Credit >= int64(credit) {
+				addCredit(m.Chat.ID, m.Sender, -int64(credit), true)
+				addCredit(m.Chat.ID, m.ReplyTo.Sender, int64(credit), true)
+
+				SmartSendDelete(m, fmt.Sprintf(Locale("transfer.success", GetSenderLocale(m)), credit))
+			} else {
+				SmartSendDelete(m, Locale("transfer.noBalance", GetSenderLocale(m)))
+			}
+		}
 	}
 	LazyDelete(m)
 }

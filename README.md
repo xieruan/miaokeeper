@@ -175,6 +175,7 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 /creditrank           #开榜获取积分排行榜
 /redpacket            #积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
 /lottery              #抽奖（可加A B两个参数，从A总人数中抽B人数）
+/transfer             #积分转移，回复一个用户 /transfer <分数> 可以实现积分迁移
 
 ```
 

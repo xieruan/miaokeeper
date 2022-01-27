@@ -46,7 +46,7 @@ var redpacketnmap *ObliviousMapInt
 var debouncer func(func())
 
 var callbacklock sync.Mutex
-var userredpacketlock sync.Mutex
+var usercreditlock sync.Mutex
 
 func InitTelegram() {
 	var err error
@@ -122,6 +122,7 @@ func InitTelegram() {
 		Bot.Handle("/creditrank", CmdCreditRank)
 		Bot.Handle("/redpacket", CmdRedpacket)
 		Bot.Handle("/lottery", CmdLottery)
+		Bot.Handle("/transfer", CmdCreditTransfer)
 
 		// ---------------- Normal User ----------------
 

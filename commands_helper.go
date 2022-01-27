@@ -544,6 +544,7 @@ func SetCommands() error {
 		{"redpacket", "用自己的积分发红包，发 N (10~1000) 分给 K (1~20) 个人"},
 		{"creditrank", "获取积分排行榜前 N 名"},
 		{"lottery", "在积分排行榜前 N 名内抽出 K 名幸运儿"},
+		{"transfer", "回复一个用户将自己的积分转移 N 分给 TA"},
 	}
 	cmds := []tb.Command{}
 	for _, cmd := range allCommands {
