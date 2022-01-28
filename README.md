@@ -1,6 +1,6 @@
 # Miaokeeper  
 
-> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。使用案例：[品云](https://t.me/PinYunYes)、项目群组：[喵屋](https://t.me/MiaoGroup)   
+> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。使用案例：[品云](https://t.me/PinYunYes)、项目群组：[喵屋](https://t.me/MiaoGroup)。   
 >
 > ## 前期准备  
 >
@@ -10,7 +10,7 @@
 >
 > ## 如何安装  
 >
-> 目前支持  `直接安装` 和 `docker` 安装两种模式    
+> 目前支持  `直接安装` 和 `docker` 安装两种模式。    
 >
 
 ### 1.直接安装  
