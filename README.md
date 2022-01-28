@@ -1,6 +1,6 @@
 # Miaokeeper  
 
-> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。  
+> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。使用案例：[品云](https://t.me/PinYunYes)、项目群组：[喵屋](https://t.me/MiaoGroup)   
 >
 > ## 前期准备  
 >
@@ -179,5 +179,6 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 ```
 /mycredit      #我的积分
 /version       #版本查询
+/transfer      #回复一个用户来完成积分转移
 /ping          #检测bot和群组响应速度
 ```
