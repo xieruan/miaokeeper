@@ -23,6 +23,9 @@ var Bot *tb.Bot
 var TOKEN = ""
 var TELEGRAMURL = ""
 
+var APIBind = 0
+var APIToken = ""
+
 var GROUPS = []int64{}
 var ADMINS = []int64{}
 
@@ -43,7 +46,7 @@ var redpacketnmap *ObliviousMapInt
 var debouncer func(func())
 
 var callbacklock sync.Mutex
-var userredpacketlock sync.Mutex
+var usercreditlock sync.Mutex
 
 func InitTelegram() {
 	var err error
@@ -71,7 +74,7 @@ func InitTelegram() {
 		URL: TELEGRAMURL,
 	})
 
-	if !ping && !escape {
+	if !PingArg && !CleanArg {
 
 		if !Bot.Me.CanJoinGroups {
 			DErrorf("TeleBot Error | bot cannot be added to group, please check with @botfather")
@@ -112,12 +115,14 @@ func InitTelegram() {
 		Bot.Handle("/check_credit", CmdCheckCredit)
 		Bot.Handle("/set_antispoiler", CmdSetAntiSpoiler)
 		Bot.Handle("/set_channel", CmdSetChannel)
+		Bot.Handle("/set_locale", CmdSetLocale)
 		Bot.Handle("/send_redpacket", CmdSendRedpacket)
 		Bot.Handle("/create_lottery", CmdCreateLottery)
 
 		Bot.Handle("/creditrank", CmdCreditRank)
 		Bot.Handle("/redpacket", CmdRedpacket)
 		Bot.Handle("/lottery", CmdLottery)
+		Bot.Handle("/transfer", CmdCreditTransfer)
 
 		// ---------------- Normal User ----------------
 
@@ -169,19 +174,20 @@ func InitTelegram() {
 
 	go Bot.Start()
 
-	if !ping {
+	if !PingArg {
 		// go StartCountDown()
 		DInfo("MiaoKeeper is up.")
 	}
 
-	if escape {
-		DInfo("Escape mode is on.")
+	if CleanArg {
+		DInfo("Clean mode is on.")
 	}
 }
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-	puncReg = regexp.MustCompile(`^[!"#$%&'()*+,-./:;<=>?@[\]^_{|}~` + "`" + `][a-zA-Z0-9]+`)
+	puncReg = regexp.MustCompile(`^[!$%&"'*+,\-.{}[\]():;=?^_|~\\][a-zA-Z0-9]+`)
+	// puncReg = regexp.MustCompile(`^[!"#$%&'()*+,\-./:;<=>?@[\]^_{|}~\\` + "`" + `][a-zA-Z0-9]+`)
 	zcomap = NewOMapInt(60*60*1000, true)
 	creditomap = NewOMapInt(60*60*1000, false)
 	votemap = NewOMapInt(30*60*1000, false)

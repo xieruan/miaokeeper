@@ -1,5 +1,7 @@
 package main
 
+import tb "gopkg.in/tucnak/telebot.v2"
+
 var LocaleAlias = map[string]string{
 	"zh-hans": "zh",
 	"zh-hant": "zh",
@@ -60,6 +62,10 @@ var LocaleMap = map[string]map[string]string{
 		"credit.rank.info":        "#开榜 当前的积分墙为: \n\n",
 		"credit.lottery.info":     "🎉 恭喜以下用户中奖：\n\n",
 
+		"transfer.invalidParam": "❌ 错误的用法，请回复一个用户 /transfer <积分额度> 来完成积分转移",
+		"transfer.success":      "✔️ 您已成功向 TA 转移了 %d 积分",
+		"transfer.noBalance":    "❌ 您没有足够的余额哦",
+
 		"spoiler.invalid": "❌ 使用方法错误：/set_antispoiler <on|off>",
 		"spoiler.success": "✔️ 已经设置好反·反剧透消息啦 `(Status=%v)` ～",
 
@@ -94,6 +100,9 @@ var LocaleMap = map[string]map[string]string{
 		"channel.cannotBanUser":        "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～",
 		"channel.cannotCheckChannel":   "❌ 无法检测用户是否在目标频道内，请管理员检查机器人权限 ～",
 		"channel.kicked":               "👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～",
+
+		"locale.set": "✔️ 设置成功，当前群组的默认语言为: %s ～",
+		"locale.get": "👀 当前群组的默认语言为: %s ～",
 
 		// not support yet
 		"btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
@@ -187,6 +196,10 @@ var LocaleMap = map[string]map[string]string{
 		"credit.rank.info":        "#RANK The credit rank of the group: \n\n",
 		"credit.lottery.info":     "🎉 Congrats to the following users:\n\n",
 
+		"transfer.invalidParam": "❌ Invalid Params. Please reply a user with /transfer <amount> to transfer your credit.",
+		"transfer.success":      "✔️ You have transferred %d credit points to the user.",
+		"transfer.noBalance":    "❌ You do not have enough balance to complete the transfer.",
+
 		"spoiler.invalid": "❌ Invalid Params. Please refer to: /set_antispoiler <on|off>",
 		"spoiler.success": "✔️ Anti-spoiler settings has been updated `(Status=%v)` ～",
 
@@ -221,6 +234,9 @@ var LocaleMap = map[string]map[string]string{
 		"channel.cannotBanUser":        "❌ Cannot complete the CAPTCHA, please check my permission ～",
 		"channel.cannotCheckChannel":   "❌ Cannot read the user list of targetted channel, please make sure the bot has enough permission in the channel ～",
 		"channel.kicked":               "👀 [The user](tg://user?id=%d) did not pass the MFC verification, so it is banned ～",
+
+		"locale.set": "✔️ The default language of this group has been changed to: %s ～",
+		"locale.get": "👀 The default language of this group is: %s ～",
 
 		// not support yet
 		// "btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
@@ -264,6 +280,16 @@ var LocaleMap = map[string]map[string]string{
 
 const DEFAULT_LANG = "en"
 
+func HasLocale(identifier string) bool {
+	if _, ok := LocaleAlias[identifier]; ok {
+		return true
+	}
+	if _, ok := LocaleMap[identifier]; ok {
+		return true
+	}
+	return false
+}
+
 func Locale(identifier string, locale string) string {
 	// process alias
 	if alias, ok := LocaleAlias[locale]; ok && alias != "" {
@@ -283,4 +309,32 @@ func Locale(identifier string, locale string) string {
 	}
 
 	return identifier
+}
+
+func GetUserLocale(c *tb.Chat, u *tb.User) string {
+	if u != nil && u.LanguageCode != "" && HasLocale(u.LanguageCode) {
+		return u.LanguageCode
+	}
+
+	if c != nil {
+		gc := GetGroupConfig(c.ID)
+		if gc.Locale != "" && HasLocale(gc.Locale) {
+			return gc.Locale
+		}
+	}
+
+	return DEFAULT_LANG
+}
+
+func GetSenderLocale(m *tb.Message) string {
+	user := m.Sender
+	if m.UserJoined != nil {
+		user = m.UserJoined
+	}
+
+	return GetUserLocale(m.Chat, user)
+}
+
+func GetSenderLocaleCallback(c *tb.Callback) string {
+	return GetUserLocale(c.Message.Chat, c.Sender)
 }

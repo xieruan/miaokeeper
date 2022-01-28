@@ -1,6 +1,6 @@
 # Miaokeeper  
 
-> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。使用案例：[品云](https://t.me/PinYunYes)、项目群组：[喵屋](https://t.me/MiaoGroup)。   
+> Miaokeeper 是一个群成员自主管理机器人，可以在 telegram 群组中实现：群成员自主管理、入群验证、积分统计、积分抽奖等功能。  
 >
 > ## 前期准备  
 >
@@ -10,7 +10,7 @@
 >
 > ## 如何安装  
 >
-> 目前支持  `直接安装` 和 `docker` 安装两种模式。    
+> 目前支持  `直接安装` 和 `docker` 安装两种模式    
 >
 
 ### 1.直接安装  
@@ -137,6 +137,9 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 -upstream string       #电报上游api url
 -verbose               #显示所有日志
 -version               #显示当前版本并退出
+
+-bind                  #启用API服务器并绑定端口
+-api-token             #给API服务器增加验证，建议前置增加 https 反向代理来确保安全性
 ```
 
 ## 机器人常用命令参数  
@@ -166,11 +169,13 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 /check_credit         #查看某群友积分
 /set_antispoiler      #是否开启剧透
 /set_channel          #绑定频道（回复空则解绑频道） 要把bot扔进频道给管理
+/set_locale           #设置群组的默认语言，可加一个参数，如果是 - 则为清空设置
 /send_redpacket       #发运气红包
 /create_lottery       #开启抽奖  create_lottery 奖品名称 :limit=所需积分:consume=（n|y）是否扣除积分 :num=奖品数量 :participant=参与人数
 /creditrank           #开榜获取积分排行榜
 /redpacket            #积分红包请输入 /redpacket <总分数> <红包个数> 来发红包哦～
 /lottery              #抽奖（可加A B两个参数，从A总人数中抽B人数）
+/transfer             #积分转移，回复一个用户 /transfer <分数> 可以实现积分迁移
 
 ```
 
@@ -179,6 +184,5 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 ```
 /mycredit      #我的积分
 /version       #版本查询
-/transfer      #回复一个用户来完成积分转移
 /ping          #检测bot和群组响应速度
 ```

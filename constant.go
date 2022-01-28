@@ -1,5 +1,5 @@
 package main
 
-const (
-	VERSION = "1.2.0"
+var (
+	version = "1.3.2"
 )
