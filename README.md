@@ -13,6 +13,10 @@
 > 目前支持  `直接安装` 和 `docker` 安装两种模式。    
 >
 
+### 0.在线开发
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/BBAlliance/miaokeeper)
+
 ### 1.直接安装  
 
 > 1.自行前往[release](https://github.com/BBAlliance/miaokeeper/releases)，下载对源码，自行编译并赋予权限，或下载服务器对应架构二进制文件。  
