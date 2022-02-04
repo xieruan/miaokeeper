@@ -136,6 +136,7 @@ systemctl status miaokeeper.service                 #查看miaokeeper状态
 
 ```bash
 -database string       #mysql或其兼容的数据库连接URL
+-redis string          #redis连接地址，通过redis提升后台计时器的可用性和容错率，例如 'password@your.ip.address:port'
 -ping                  #测试bot和电报服务器之间的往返时间
 -token string          #电报机器人令牌
 -upstream string       #电报上游api url

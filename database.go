@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BBAlliance/miaokeeper/memutils"
 	_ "github.com/go-sql-driver/mysql"
 	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -419,12 +420,13 @@ type LotteryInstance struct {
 	GroupID   int64
 	MsgID     int
 	CreatedAt int64
+	StartedAt int64
 
 	Payload     string
 	Limit       int
 	Consume     bool
 	Num         int
-	Duration    int
+	Duration    time.Duration
 	Participant int
 
 	Winners          []int64
@@ -472,9 +474,15 @@ func (li *LotteryInstance) GenText() string {
 	}
 	if li.Duration > 0 {
 		if drawMsg != "" {
-			drawMsg += " *或* "
+			drawMsg += " 或 "
 		}
-		drawMsg += fmt.Sprintf("%d 小时后自动开奖", li.Duration)
+		durationStr := ""
+		if li.Duration >= time.Hour {
+			durationStr = fmt.Sprintf("%.1f 小时", li.Duration.Hours())
+		} else {
+			durationStr = fmt.Sprintf("%d 分钟", int(li.Duration.Minutes()))
+		}
+		drawMsg += fmt.Sprintf("%s后自动开奖", durationStr)
 	}
 	if drawMsg == "" {
 		drawMsg = "手动开奖"
@@ -496,7 +504,7 @@ func (li *LotteryInstance) GenText() string {
 	if len(li.Winners) > 0 && len(li.Winners) <= len(li.WinnersName) {
 		status += "\n\n*🏆 获奖者:*"
 		for i := range li.Winners {
-			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))\n", i+1, GetQuotableStr(li.WinnersName[i]), li.Winners[i], fmt.Sprintf("tg://user?id=%d", li.Winners[i]))
+			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))", i+1, GetQuotableStr(li.WinnersName[i]), li.Winners[i], fmt.Sprintf("tg://user?id=%d", li.Winners[i]))
 		}
 	}
 
@@ -573,6 +581,24 @@ func (li *LotteryInstance) Participants() int {
 	return -1
 }
 
+func (li *LotteryInstance) StartLottery() {
+	li.JoinLock.Lock()
+	defer li.JoinLock.Unlock()
+
+	if li.Status == -1 {
+		li.Status = 0
+		li.StartedAt = time.Now().Unix()
+		li.Update()
+		li.UpdateTelegramMsg()
+
+		if li.Duration > 0 {
+			lazyScheduler.After(li.Duration+time.Second, memutils.LSC("checkDraw", &CheckDrawArgs{
+				LotteryId: li.ID,
+			}))
+		}
+	}
+}
+
 func (li *LotteryInstance) CheckDraw(force bool) bool {
 	li.JoinLock.Lock()
 	defer li.JoinLock.Unlock()
@@ -581,7 +607,7 @@ func (li *LotteryInstance) CheckDraw(force bool) bool {
 		if force {
 			// manual draw
 			li.Status = 2
-		} else if li.Duration > 0 && li.CreatedAt+int64(li.Duration)*3600 < time.Now().Unix() {
+		} else if li.Duration > 0 && li.StartedAt > 0 && li.StartedAt+int64(li.Duration/time.Second) < time.Now().Unix() {
 			// timeout draw
 			li.Status = 2
 		} else if li.Participant >= 0 && li.Participants() >= li.Participant {
@@ -645,12 +671,13 @@ func CreateLottery(groupId int64, payload string, limit int, consume bool, num i
 		Status:    -1,
 		GroupID:   groupId,
 		CreatedAt: time.Now().Unix(),
+		StartedAt: 0,
 
 		Payload:     payload,
 		Limit:       limit,
 		Consume:     consume,
 		Num:         num,
-		Duration:    duration,
+		Duration:    time.Minute * time.Duration(duration),
 		Participant: participant,
 	}
 
