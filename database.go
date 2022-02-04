@@ -474,9 +474,15 @@ func (li *LotteryInstance) GenText() string {
 	}
 	if li.Duration > 0 {
 		if drawMsg != "" {
-			drawMsg += " *或* "
+			drawMsg += " 或 "
 		}
-		drawMsg += fmt.Sprintf("%.1f 小时后自动开奖", li.Duration.Hours())
+		durationStr := ""
+		if li.Duration >= time.Hour {
+			durationStr = fmt.Sprintf("%.1f 小时", li.Duration.Hours())
+		} else {
+			durationStr = fmt.Sprintf("%d 分钟", int(li.Duration.Minutes()))
+		}
+		drawMsg += fmt.Sprintf("%s后自动开奖", durationStr)
 	}
 	if drawMsg == "" {
 		drawMsg = "手动开奖"
@@ -498,7 +504,7 @@ func (li *LotteryInstance) GenText() string {
 	if len(li.Winners) > 0 && len(li.Winners) <= len(li.WinnersName) {
 		status += "\n\n*🏆 获奖者:*"
 		for i := range li.Winners {
-			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))\n", i+1, GetQuotableStr(li.WinnersName[i]), li.Winners[i], fmt.Sprintf("tg://user?id=%d", li.Winners[i]))
+			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))", i+1, GetQuotableStr(li.WinnersName[i]), li.Winners[i], fmt.Sprintf("tg://user?id=%d", li.Winners[i]))
 		}
 	}
 
