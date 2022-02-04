@@ -9,6 +9,7 @@ type MemDriver interface {
 	Write(key string, value interface{}, expire int64, overwriteTTLIfExists bool) interface{}
 	Inc(key string, expire int64, overwriteTTLIfExists bool) int
 
+	List(prefix string) []string
 	Expire(key string)
 	Exists(key string) bool
 }

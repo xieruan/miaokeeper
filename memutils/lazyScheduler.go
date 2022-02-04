@@ -59,3 +59,7 @@ func (ls *LazyScheduler) Exec(call *LazySchedulerCall) (err error) {
 
 	return
 }
+
+func InitLazyScheduler() {
+
+}

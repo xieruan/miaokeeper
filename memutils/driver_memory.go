@@ -103,3 +103,17 @@ func (md *MemDriverMemory) Expire(key string) {
 		delete(md.timer, key)
 	}
 }
+
+func (md *MemDriverMemory) List(key string) []string {
+	md.lock.Lock()
+	defer md.lock.Unlock()
+
+	slice := []string{}
+	now := Now()
+	for k, v := range md.timer {
+		if now < v {
+			slice = append(slice, k)
+		}
+	}
+	return slice
+}

@@ -67,3 +67,7 @@ func (md *MemDriverRedis) Expire(key string) {
 func (md *MemDriverRedis) Exists(key string) bool {
 	return md.rdb.Exists(md.ctx, key).Val() == 1
 }
+
+func (md *MemDriverRedis) List(prefix string) []string {
+	return md.rdb.Keys(md.ctx, prefix+"*").Val()
+}
