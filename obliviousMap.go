@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/BBAlliance/miaokeeper/memutils"
 )
@@ -10,7 +11,7 @@ type ObliviousMapIfce struct {
 	prefix string
 	driver memutils.MemDriver
 
-	expire int64
+	expire time.Duration
 	utif   bool
 }
 
@@ -73,7 +74,7 @@ func (om *ObliviousMapStr) Set(key string, value string) string {
 	return om.ObliviousMapIfce.Set(key, value).(string)
 }
 
-func NewOMapIfce(prefix string, expire int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapIfce {
+func NewOMapIfce(prefix string, expire time.Duration, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapIfce {
 	return &ObliviousMapIfce{
 		prefix: prefix,
 		expire: expire,
@@ -82,13 +83,13 @@ func NewOMapIfce(prefix string, expire int64, updateTimeIfWrite bool, driver mem
 	}
 }
 
-func NewOMapInt(prefix string, duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapInt {
+func NewOMapInt(prefix string, duration time.Duration, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapInt {
 	return &ObliviousMapInt{
 		ObliviousMapIfce: NewOMapIfce(prefix, duration, updateTimeIfWrite, driver),
 	}
 }
 
-func NewOMapStr(prefix string, duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapStr {
+func NewOMapStr(prefix string, duration time.Duration, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapStr {
 	return &ObliviousMapStr{
 		ObliviousMapIfce: NewOMapIfce(prefix, duration, updateTimeIfWrite, driver),
 	}

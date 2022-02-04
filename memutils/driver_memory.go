@@ -3,6 +3,7 @@ package memutils
 import (
 	"reflect"
 	"sync"
+	"time"
 )
 
 type MemDriverMemory struct {
@@ -45,25 +46,25 @@ func (md *MemDriverMemory) Read(key string) (interface{}, bool) {
 	return md.unsafeRead(key)
 }
 
-func (md *MemDriverMemory) unsafeWrite(key string, value interface{}, expire int64, overwriteTTLIfExists bool) interface{} {
+func (md *MemDriverMemory) unsafeWrite(key string, value interface{}, expire time.Duration, overwriteTTLIfExists bool) interface{} {
 	now := Now()
 	_, ok := md.mem[key]
 	md.mem[key] = value
 	if !ok || overwriteTTLIfExists {
-		md.timer[key] = now + expire
+		md.timer[key] = now + expire.Nanoseconds()
 	}
 
 	return value
 }
 
-func (md *MemDriverMemory) Write(key string, value interface{}, expire int64, overwriteTTLIfExists bool) interface{} {
+func (md *MemDriverMemory) Write(key string, value interface{}, expire time.Duration, overwriteTTLIfExists bool) interface{} {
 	md.lock.Lock()
 	defer md.lock.Unlock()
 
 	return md.unsafeWrite(key, value, expire, overwriteTTLIfExists)
 }
 
-func (md *MemDriverMemory) Inc(key string, expire int64, overwriteTTLIfExists bool) int {
+func (md *MemDriverMemory) Inc(key string, expire time.Duration, overwriteTTLIfExists bool) int {
 	md.lock.Lock()
 	defer md.lock.Unlock()
 

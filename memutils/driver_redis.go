@@ -2,7 +2,6 @@ package memutils
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -18,7 +17,7 @@ type MemDriverRedis struct {
 
 func (md *MemDriverRedis) Init(kargs ...string) {
 	if len(kargs) < 2 {
-		fmt.Fprintln(os.Stderr, "MemDriver Error | Should have two parameters to indicate host and password")
+		Log(os.Stderr, "MemDriver Error | Should have two parameters to indicate host and password")
 		os.Exit(1)
 	}
 
@@ -28,6 +27,11 @@ func (md *MemDriverRedis) Init(kargs ...string) {
 		Password: kargs[1],
 		DB:       0,
 	})
+
+	if err := md.rdb.Ping(md.ctx).Err(); err != nil {
+		Log(os.Stderr, "MemDriver Error | Cannot ping server: "+err.Error())
+		os.Exit(1)
+	}
 }
 
 func (md *MemDriverRedis) Read(key string) (interface{}, bool) {
@@ -35,27 +39,25 @@ func (md *MemDriverRedis) Read(key string) (interface{}, bool) {
 	return val, err == nil
 }
 
-func (md *MemDriverRedis) Write(key string, value interface{}, expire int64, overwriteTTLIfExists bool) interface{} {
-	expireAfter := time.Duration(expire * int64(time.Millisecond))
+func (md *MemDriverRedis) Write(key string, value interface{}, expire time.Duration, overwriteTTLIfExists bool) interface{} {
 	if !overwriteTTLIfExists {
 		if duration, err := md.rdb.TTL(md.ctx, key).Result(); err == nil {
-			expireAfter = duration
+			expire = duration
 		}
 	}
-	md.rdb.Set(md.ctx, key, value, expireAfter)
+	md.rdb.Set(md.ctx, key, value, expire)
 
 	return value
 }
 
-func (md *MemDriverRedis) Inc(key string, expire int64, overwriteTTLIfExists bool) int {
-	expireAfter := time.Duration(expire * int64(time.Millisecond))
+func (md *MemDriverRedis) Inc(key string, expire time.Duration, overwriteTTLIfExists bool) int {
 	if !overwriteTTLIfExists {
 		if duration, err := md.rdb.TTL(md.ctx, key).Result(); err == nil {
-			expireAfter = duration
+			expire = duration
 		}
 	}
 	ret := md.rdb.Incr(md.ctx, key).Val()
-	md.rdb.Expire(md.ctx, key, expireAfter)
+	md.rdb.Expire(md.ctx, key, expire)
 
 	return int(ret)
 }

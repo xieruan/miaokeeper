@@ -6,8 +6,8 @@ type MemDriver interface {
 	Init(kargs ...string)
 
 	Read(key string) (interface{}, bool)
-	Write(key string, value interface{}, expire int64, overwriteTTLIfExists bool) interface{}
-	Inc(key string, expire int64, overwriteTTLIfExists bool) int
+	Write(key string, value interface{}, expire time.Duration, overwriteTTLIfExists bool) interface{}
+	Inc(key string, expire time.Duration, overwriteTTLIfExists bool) int
 
 	List(prefix string) []string
 	Expire(key string)
@@ -15,5 +15,5 @@ type MemDriver interface {
 }
 
 func Now() int64 {
-	return time.Now().UnixMilli()
+	return time.Now().UnixNano()
 }

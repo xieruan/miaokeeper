@@ -2,6 +2,9 @@ package memutils
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
+	"reflect"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
@@ -13,9 +16,32 @@ type LazyScheduler struct {
 	fn     map[string]LazySchedulerHandler
 }
 
+func NewLazyScheduler(driver MemDriver) *LazyScheduler {
+	return &LazyScheduler{
+		driver: driver,
+		fn:     map[string]LazySchedulerHandler{},
+	}
+}
+
 type LazySchedulerCall struct {
+	ID   string
 	Name string
-	Args map[string]interface{}
+	At   int64
+	Args string
+}
+
+func (lsc *LazySchedulerCall) Arg(to interface{}) {
+	if lsc.Args != "" {
+		jsoniter.UnmarshalFromString(lsc.Args, to)
+	}
+}
+
+func LSC(fnName string, args interface{}) *LazySchedulerCall {
+	argStr, _ := jsoniter.MarshalToString(args)
+	return &LazySchedulerCall{
+		Name: fnName,
+		Args: argStr,
+	}
 }
 
 func (ls *LazyScheduler) Reg(fnName string, handler LazySchedulerHandler) {
@@ -24,16 +50,35 @@ func (ls *LazyScheduler) Reg(fnName string, handler LazySchedulerHandler) {
 	}
 }
 
-func (ls *LazyScheduler) ToKey(timestamp int64) string {
-	return fmt.Sprintf("ls:%d", timestamp)
+func (ls *LazyScheduler) GenerateKey(timestamp int64) string {
+	return fmt.Sprintf("timer/%d/%d", timestamp, rand.Intn(10000))
+}
+
+func (ls *LazyScheduler) Recover() {
+	future := ls.driver.List("timer/")
+	counter := 0
+	for _, key := range future {
+		if s, ok := ls.driver.Read(key); ok && s != nil && reflect.TypeOf(s).Kind() == reflect.String {
+			call := &LazySchedulerCall{}
+			jsoniter.UnmarshalFromString(s.(string), call)
+			time.AfterFunc(time.Duration(call.At-Now()), func() {
+				ls.Exec(call)
+			})
+			counter += 1
+		}
+	}
+	Log(os.Stdout, fmt.Sprintf("Lazy Scheduler | Recovered %d tasks from cache\n", counter))
 }
 
 func (ls *LazyScheduler) After(duration time.Duration, call *LazySchedulerCall) {
 	if ls != nil {
-		until := Now() + duration.Milliseconds()
-
+		call.At = Now() + duration.Nanoseconds()
+		call.ID = ls.GenerateKey(call.At)
 		caller, _ := jsoniter.MarshalToString(call)
-		ls.driver.Write(ls.ToKey(until), caller, until, true)
+		ls.driver.Write(call.ID, caller, time.Hour*24*30, true)
+		time.AfterFunc(duration, func() {
+			ls.Exec(call)
+		})
 	}
 }
 
@@ -49,6 +94,9 @@ func (ls *LazyScheduler) Exec(call *LazySchedulerCall) (err error) {
 				err = fmt.Errorf("unknown error")
 			}
 		}
+
+		// remove task
+		ls.driver.Expire(call.ID)
 	}()
 
 	if ls != nil && call != nil {
@@ -58,8 +106,4 @@ func (ls *LazyScheduler) Exec(call *LazySchedulerCall) (err error) {
 	}
 
 	return
-}
-
-func InitLazyScheduler() {
-
 }
