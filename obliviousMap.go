@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"github.com/BBAlliance/miaokeeper/memutils"
 )
 
@@ -13,19 +15,19 @@ type ObliviousMapIfce struct {
 }
 
 func (om *ObliviousMapIfce) Get(key string) (interface{}, bool) {
-	return om.driver.Read(key)
+	return om.driver.Read(om.prefix + key)
 }
 
 func (om *ObliviousMapIfce) Set(key string, value interface{}) interface{} {
-	return om.driver.Write(key, value, om.expire, om.utif)
+	return om.driver.Write(om.prefix+key, value, om.expire, om.utif)
 }
 
 func (om *ObliviousMapIfce) Unset(key string) {
-	om.driver.Expire(key)
+	om.driver.Expire(om.prefix + key)
 }
 
 func (om *ObliviousMapIfce) Exist(key string) bool {
-	return om.driver.Exists(key)
+	return om.driver.Exists(om.prefix + key)
 }
 
 type ObliviousMapInt struct {
@@ -33,7 +35,7 @@ type ObliviousMapInt struct {
 }
 
 func (om *ObliviousMapInt) Add(key string) int {
-	return om.driver.Inc(key, om.expire, om.utif)
+	return om.driver.Inc(om.prefix+key, om.expire, om.utif)
 }
 
 func (om *ObliviousMapInt) Get(key string) (int, bool) {
@@ -41,7 +43,17 @@ func (om *ObliviousMapInt) Get(key string) (int, bool) {
 	if a == nil {
 		return 0, b
 	}
-	return a.(int), b
+	switch x := a.(type) {
+	case string:
+		v, err := strconv.Atoi(x)
+		return v, err == nil
+	case int64:
+		return int(x), b
+	case int:
+		return x, b
+	default:
+		return 0, false
+	}
 }
 
 func (om *ObliviousMapInt) Set(key string, value int) int {
@@ -61,22 +73,23 @@ func (om *ObliviousMapStr) Set(key string, value string) string {
 	return om.ObliviousMapIfce.Set(key, value).(string)
 }
 
-func NewOMapIfce(expire int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapIfce {
+func NewOMapIfce(prefix string, expire int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapIfce {
 	return &ObliviousMapIfce{
+		prefix: prefix,
 		expire: expire,
 		driver: driver,
 		utif:   updateTimeIfWrite,
 	}
 }
 
-func NewOMapInt(duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapInt {
+func NewOMapInt(prefix string, duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapInt {
 	return &ObliviousMapInt{
-		ObliviousMapIfce: NewOMapIfce(duration, updateTimeIfWrite, driver),
+		ObliviousMapIfce: NewOMapIfce(prefix, duration, updateTimeIfWrite, driver),
 	}
 }
 
-func NewOMapStr(duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapStr {
+func NewOMapStr(prefix string, duration int64, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapStr {
 	return &ObliviousMapStr{
-		ObliviousMapIfce: NewOMapIfce(duration, updateTimeIfWrite, driver),
+		ObliviousMapIfce: NewOMapIfce(prefix, duration, updateTimeIfWrite, driver),
 	}
 }

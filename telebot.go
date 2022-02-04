@@ -194,14 +194,14 @@ func init() {
 	memdriver := &memutils.MemDriverMemory{}
 	memdriver.Init()
 
-	zcomap = NewOMapInt(60*60*1000, true, memdriver)
-	creditomap = NewOMapInt(60*60*1000, false, memdriver)
-	votemap = NewOMapInt(30*60*1000, false, memdriver)
+	zcomap = NewOMapInt("zc/", 60*60*1000, true, memdriver)
+	creditomap = NewOMapInt("credit/", 60*60*1000, false, memdriver)
+	votemap = NewOMapInt("vote/", 30*60*1000, false, memdriver)
+	joinmap = NewOMapInt("join/", 5*60*1000+30*1000, false, memdriver)
 
-	joinmap = NewOMapInt(5*60*1000+30*1000, false, memdriver)
+	redpacketrankmap = NewOMapStr("rprank/", 24*60*60*1000, false, memdriver)
+	redpacketmap = NewOMapInt("rp/", 24*60*60*1000, false, memdriver)
+	redpacketnmap = NewOMapInt("rpname/", 24*60*60*1000, false, memdriver)
 
-	redpacketrankmap = NewOMapStr(24*60*60*1000, false, memdriver)
-	redpacketmap = NewOMapInt(24*60*60*1000, false, memdriver)
-	redpacketnmap = NewOMapInt(24*60*60*1000, false, memdriver)
 	debouncer = debounce.New(time.Second)
 }
