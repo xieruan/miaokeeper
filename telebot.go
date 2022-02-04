@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BBAlliance/miaokeeper/memutils"
 	"github.com/bep/debounce"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -188,14 +189,19 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 	puncReg = regexp.MustCompile(`^[!$%&"'*+,\-.{}[\]():;=?^_|~\\][a-zA-Z0-9]+`)
 	// puncReg = regexp.MustCompile(`^[!"#$%&'()*+,\-./:;<=>?@[\]^_{|}~\\` + "`" + `][a-zA-Z0-9]+`)
-	zcomap = NewOMapInt(60*60*1000, true)
-	creditomap = NewOMapInt(60*60*1000, false)
-	votemap = NewOMapInt(30*60*1000, false)
 
-	joinmap = NewOMapInt(5*60*1000+30*1000, false)
+	// create a memory cache driver
+	memdriver := &memutils.MemDriverMemory{}
+	memdriver.Init()
 
-	redpacketrankmap = NewOMapStr(24*60*60*1000, false)
-	redpacketmap = NewOMapInt(24*60*60*1000, false)
-	redpacketnmap = NewOMapInt(24*60*60*1000, false)
+	zcomap = NewOMapInt(60*60*1000, true, memdriver)
+	creditomap = NewOMapInt(60*60*1000, false, memdriver)
+	votemap = NewOMapInt(30*60*1000, false, memdriver)
+
+	joinmap = NewOMapInt(5*60*1000+30*1000, false, memdriver)
+
+	redpacketrankmap = NewOMapStr(24*60*60*1000, false, memdriver)
+	redpacketmap = NewOMapInt(24*60*60*1000, false, memdriver)
+	redpacketnmap = NewOMapInt(24*60*60*1000, false, memdriver)
 	debouncer = debounce.New(time.Second)
 }
