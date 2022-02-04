@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/BBAlliance/miaokeeper/memutils"
 	_ "github.com/go-sql-driver/mysql"
 	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -419,12 +420,13 @@ type LotteryInstance struct {
 	GroupID   int64
 	MsgID     int
 	CreatedAt int64
+	StartedAt int64
 
 	Payload     string
 	Limit       int
 	Consume     bool
 	Num         int
-	Duration    int
+	Duration    time.Duration
 	Participant int
 
 	Winners          []int64
@@ -474,7 +476,7 @@ func (li *LotteryInstance) GenText() string {
 		if drawMsg != "" {
 			drawMsg += " *或* "
 		}
-		drawMsg += fmt.Sprintf("%d 小时后自动开奖", li.Duration)
+		drawMsg += fmt.Sprintf("%.1f 小时后自动开奖", li.Duration.Hours())
 	}
 	if drawMsg == "" {
 		drawMsg = "手动开奖"
@@ -573,6 +575,24 @@ func (li *LotteryInstance) Participants() int {
 	return -1
 }
 
+func (li *LotteryInstance) StartLottery() {
+	li.JoinLock.Lock()
+	defer li.JoinLock.Unlock()
+
+	if li.Status == -1 {
+		li.Status = 0
+		li.StartedAt = time.Now().Unix()
+		li.Update()
+		li.UpdateTelegramMsg()
+
+		if li.Duration > 0 {
+			lazyScheduler.After(li.Duration+time.Second, memutils.LSC("checkDraw", &CheckDrawArgs{
+				LotteryId: li.ID,
+			}))
+		}
+	}
+}
+
 func (li *LotteryInstance) CheckDraw(force bool) bool {
 	li.JoinLock.Lock()
 	defer li.JoinLock.Unlock()
@@ -581,7 +601,7 @@ func (li *LotteryInstance) CheckDraw(force bool) bool {
 		if force {
 			// manual draw
 			li.Status = 2
-		} else if li.Duration > 0 && li.CreatedAt+int64(li.Duration)*3600 < time.Now().Unix() {
+		} else if li.Duration > 0 && li.StartedAt > 0 && li.StartedAt+int64(li.Duration/time.Second) < time.Now().Unix() {
 			// timeout draw
 			li.Status = 2
 		} else if li.Participant >= 0 && li.Participants() >= li.Participant {
@@ -645,12 +665,13 @@ func CreateLottery(groupId int64, payload string, limit int, consume bool, num i
 		Status:    -1,
 		GroupID:   groupId,
 		CreatedAt: time.Now().Unix(),
+		StartedAt: 0,
 
 		Payload:     payload,
 		Limit:       limit,
 		Consume:     consume,
 		Num:         num,
-		Duration:    duration,
+		Duration:    time.Minute * time.Duration(duration),
 		Participant: participant,
 	}
 

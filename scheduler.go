@@ -20,6 +20,10 @@ type InGroupVerifyArgs struct {
 	LanguageCode   string
 }
 
+type CheckDrawArgs struct {
+	LotteryId string
+}
+
 func InitScheduler() {
 	lazyScheduler.Reg("deleteMessage", func(lsc *memutils.LazySchedulerCall) {
 		args := DeleteMessageArgs{}
@@ -59,6 +63,17 @@ func InitScheduler() {
 						AllowWithoutReply:     true,
 					})
 				}
+			}
+		}
+	})
+
+	lazyScheduler.Reg("checkDraw", func(lsc *memutils.LazySchedulerCall) {
+		args := CheckDrawArgs{}
+		lsc.Arg(&args)
+		if args.LotteryId != "" {
+			li := GetLottery(args.LotteryId)
+			if li.Status != 2 {
+				li.CheckDraw(false)
 			}
 		}
 	})
