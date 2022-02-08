@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -32,6 +34,36 @@ func CmdSuExportCredit(m *tb.Message) {
 			FileName: "CreditDump" + time.Now().Format(time.RFC3339) + ".csv",
 		})
 		SmartSendDelete(m, Locale("credit.exportSuccess", GetSenderLocale(m)))
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+}
+
+func CmdImportPolicy(m *tb.Message) {
+	Bot.Delete(m)
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+		Bot.Notify(m.Chat, tb.UploadingDocument)
+		ioHandler, err := Bot.GetFile(&m.Document.File)
+		if err != nil {
+			SmartSendDelete(m, Locale("policy.importError", GetSenderLocale(m)))
+			DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
+			return
+		}
+		data, _ := io.ReadAll(ioHandler)
+		newGC := gc.Clone()
+		err = jsoniter.Unmarshal(data, &newGC)
+		if err != nil {
+			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
+			DErrorE(err, "Import Credit Error | not parsed: "+err.Error())
+			return
+		}
+		newGC.Admins, newGC.ID, newGC.NameBlackListRegEx = gc.Admins, gc.ID, nil
+		if SetGroupConfig(m.Chat.ID, newGC.Check()) != nil {
+			SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
+		} else {
+			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
+		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
@@ -123,6 +155,28 @@ func CmdSuDelAdmin(m *tb.Message) {
 }
 
 // ---------------- Group Admin ----------------
+
+func CmdGetPolicy(m *tb.Message) {
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+		err := Bot.Notify(m.Sender, tb.UploadingDocument)
+		if err != nil {
+			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
+			return
+		}
+		Bot.Notify(m.Chat, tb.UploadingDocument)
+		ioReader := strings.NewReader(gc.ToJson(true))
+		Bot.Send(m.Sender, &tb.Document{
+			File:     tb.FromReader(ioReader),
+			MIME:     "application/json",
+			FileName: fmt.Sprintf("Policy-%d-%s.json", Abs(m.Chat.ID), time.Now().Format(time.RFC3339)),
+		})
+		SmartSendDelete(m, Locale("policy.exportSuccess", GetSenderLocale(m)))
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+	LazyDelete(m)
+}
 
 func CmdAddAdmin(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)

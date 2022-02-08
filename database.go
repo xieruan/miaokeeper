@@ -42,21 +42,6 @@ type CreditInfo struct {
 var GroupConfigCache map[int64]*GroupConfig
 var LotteryConfigCache map[string]*LotteryInstance
 
-type GroupConfig struct {
-	ID            int64
-	Admins        []int64
-	BannedForward []int64
-	MergeTo       int64
-
-	Locale           string
-	MustFollow       string
-	MustFollowOnJoin bool
-	MustFollowOnMsg  bool
-
-	AntiSpoiler bool
-	DisableWarn bool
-}
-
 func InitDatabase() (err error) {
 	MYSQLDB, err = sql.Open("mysql", DBCONN)
 	if err == nil {
@@ -160,7 +145,7 @@ func GetGroupConfig(groupId int64) *GroupConfig {
 		gc := &GroupConfig{}
 		err := jsoniter.Unmarshal([]byte(cfg), gc)
 		if err == nil {
-			GroupConfigCache[groupId] = gc
+			GroupConfigCache[groupId] = gc.Check()
 			return gc
 		}
 	}
@@ -169,6 +154,10 @@ func GetGroupConfig(groupId int64) *GroupConfig {
 
 func SetGroupConfig(groupId int64, gc *GroupConfig) *GroupConfig {
 	if !IsGroup(groupId) {
+		return nil
+	}
+
+	if groupId >= 0 {
 		return nil
 	}
 
@@ -202,14 +191,6 @@ func InitGroupTable(groupId int64) {
 	}
 }
 
-func NewGroupConfig(groupId int64) *GroupConfig {
-	return SetGroupConfig(groupId, &GroupConfig{
-		ID:            groupId,
-		Admins:        make([]int64, 0),
-		BannedForward: make([]int64, 0),
-	})
-}
-
 func ReadConfigs() {
 	ADMINS = ParseStrToInt64Arr(ReadConfig("ADMINS"))
 	GROUPS = ParseStrToInt64Arr(ReadConfig("GROUPS"))
@@ -239,46 +220,6 @@ func UpdateAdmin(userId int64, method UpdateMethod) bool {
 	}
 	WriteConfigs()
 	return changed
-}
-
-func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {
-	changed := false
-	if method == UMSet {
-		if len(gc.Admins) != 1 || gc.Admins[0] != userId {
-			changed = true
-			gc.Admins = []int64{userId}
-		}
-	} else if method == UMAdd {
-		gc.Admins, changed = AddIntoInt64Arr(gc.Admins, userId)
-	} else if method == UMDel {
-		gc.Admins, changed = DelFromInt64Arr(gc.Admins, userId)
-	}
-	SetGroupConfig(gc.ID, gc)
-	return changed
-}
-
-func (gc *GroupConfig) UpdateBannedForward(id int64, method UpdateMethod) bool {
-	changed := false
-	if method == UMSet {
-		if len(gc.BannedForward) != 1 || gc.BannedForward[0] != id {
-			changed = true
-			gc.BannedForward = []int64{id}
-		}
-	} else if method == UMAdd {
-		gc.BannedForward, changed = AddIntoInt64Arr(gc.BannedForward, id)
-	} else if method == UMDel {
-		gc.BannedForward, changed = DelFromInt64Arr(gc.BannedForward, id)
-	}
-	SetGroupConfig(gc.ID, gc)
-	return changed
-}
-
-func (gc *GroupConfig) IsAdmin(userId int64) bool {
-	return I64In(&gc.Admins, userId)
-}
-
-func (gc *GroupConfig) IsBannedForward(id int64) bool {
-	return I64In(&gc.BannedForward, id)
 }
 
 func UpdateGroup(groupId int64, method UpdateMethod) bool {

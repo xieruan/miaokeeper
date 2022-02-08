@@ -464,10 +464,11 @@ func Kick(chatId, userId int64) error {
 func KickOnce(chatId, userId int64) error {
 	cm, err := Bot.ChatMemberOf(&tb.Chat{ID: chatId}, &tb.User{ID: userId})
 	if err == nil {
-		err = Bot.Ban(&tb.Chat{ID: chatId}, cm)
-		if err == nil {
-			return Bot.Unban(&tb.Chat{ID: chatId}, &tb.User{ID: userId}, true)
-		}
+		lazyScheduler.After(time.Second*15, memutils.LSC("unbanUser", &UnbanUserArgs{
+			ChatId: chatId,
+			UserId: userId,
+		}))
+		return Bot.Ban(&tb.Chat{ID: chatId}, cm)
 	}
 	return err
 }

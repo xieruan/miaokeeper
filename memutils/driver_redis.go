@@ -52,7 +52,7 @@ func (md *MemDriverRedis) Write(key string, value interface{}, expire time.Durat
 
 func (md *MemDriverRedis) Inc(key string, expire time.Duration, overwriteTTLIfExists bool) int {
 	if !overwriteTTLIfExists {
-		if duration, err := md.rdb.TTL(md.ctx, key).Result(); err == nil {
+		if duration, err := md.rdb.TTL(md.ctx, key).Result(); err == nil && duration > time.Second {
 			expire = duration
 		}
 	}

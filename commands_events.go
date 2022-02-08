@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 func CmdOnText(m *tb.Message) {
-	if IsGroup(m.Chat.ID) {
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil {
 		if !CheckChannelForward(m) {
 			return
 		}
@@ -23,6 +24,14 @@ func CmdOnText(m *tb.Message) {
 		}
 
 		if m.IsForwarded() {
+			return
+		}
+
+		if gc.IsBanKeyword(m) {
+			CmdBanUser(m)
+			return
+		} else if gc.IsWarnKeyword(m) {
+			CmdWarnUser(m)
 			return
 		}
 
@@ -76,6 +85,8 @@ func CmdOnSticker(m *tb.Message) {
 func CmdOnDocument(m *tb.Message) {
 	if m.Caption == "/su_import_credit" && m.Document != nil {
 		CmdSuImportCredit(m)
+	} else if m.Caption == "/import_policy" && m.Document != nil {
+		CmdImportPolicy(m)
 	} else {
 		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)
@@ -104,6 +115,17 @@ func CmdOnChatMember(cmu *tb.ChatMemberUpdated) {
 }
 
 func CmdOnUserJoined(m *tb.Message) {
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+		if gc.IsBlackListName(m.Sender) {
+			KickOnce(m.Chat.ID, m.Sender.ID)
+			SmartSend(m.Chat, fmt.Sprintf(Locale("channel.pattern.kicked", GetSenderLocale(m)), m.Sender.ID), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+				AllowWithoutReply:     true,
+			})
+			return
+		}
+	}
 	CheckChannelFollow(m, m.UserJoined, true)
 }
 

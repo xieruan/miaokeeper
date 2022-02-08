@@ -100,3 +100,12 @@ func Type(to interface{}) string {
 	}
 	return reflect.TypeOf(to).String()
 }
+
+func ContainsString(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
+}
