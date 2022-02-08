@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -114,6 +115,17 @@ func CmdOnChatMember(cmu *tb.ChatMemberUpdated) {
 }
 
 func CmdOnUserJoined(m *tb.Message) {
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+		if gc.IsBlackListName(m.Sender) {
+			KickOnce(m.Chat.ID, m.Sender.ID)
+			SmartSend(m.Chat, fmt.Sprintf(Locale("channel.pattern.kicked", GetSenderLocale(m)), m.Sender.ID), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+				AllowWithoutReply:     true,
+			})
+			return
+		}
+	}
 	CheckChannelFollow(m, m.UserJoined, true)
 }
 

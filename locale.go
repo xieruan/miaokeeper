@@ -104,6 +104,7 @@ var LocaleMap = map[string]map[string]string{
 		"channel.cannotSendMsg":        "❌ 无法发送验证消息，请管理员检查群组权限 ～",
 		"channel.cannotBanUser":        "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～",
 		"channel.cannotCheckChannel":   "❌ 无法检测用户是否在目标频道内，请管理员检查机器人权限 ～",
+		"channel.pattern.kicked":       "👮‍♀️ [TA](tg://user?id=%d) 的名字命中了广告规则，已自动放逐 15 秒。如果有误杀请联系管理员处理 ～",
 		"channel.kicked":               "👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～",
 
 		"locale.set": "✔️ 设置成功，当前群组的默认语言为: %s ～",
@@ -243,6 +244,7 @@ var LocaleMap = map[string]map[string]string{
 		"channel.cannotSendMsg":        "❌ Cannot send the verification message, please check my permission ～",
 		"channel.cannotBanUser":        "❌ Cannot complete the CAPTCHA, please check my permission ～",
 		"channel.cannotCheckChannel":   "❌ Cannot read the user list of targetted channel, please make sure the bot has enough permission in the channel ～",
+		"channel.pattern.kicked":       "👮‍♀️ [The user's](tg://user?id=%d) name has been marked as fraud. If you believe this is a mistake, please contact group admin for help ～",
 		"channel.kicked":               "👀 [The user](tg://user?id=%d) did not pass the MFC verification, so it is banned ～",
 
 		"locale.set": "✔️ The default language of this group has been changed to: %s ～",

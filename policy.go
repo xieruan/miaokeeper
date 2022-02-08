@@ -1,6 +1,9 @@
 package main
 
 import (
+	"regexp"
+	"sync"
+
 	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -21,6 +24,11 @@ type GroupConfig struct {
 
 	WarnKeywords []string
 	BanKeywords  []string
+
+	NameBlackListReg   []string
+	NameBlackListRegEx []*regexp.Regexp `json:"-"`
+
+	updateLock sync.RWMutex `json:"-"`
 }
 
 func NewGroupConfig(groupId int64) *GroupConfig {
@@ -33,6 +41,10 @@ func (gc *GroupConfig) Check() *GroupConfig {
 	if gc == nil {
 		gc = &GroupConfig{}
 	}
+
+	gc.updateLock.Lock()
+	defer gc.updateLock.Unlock()
+
 	if gc.Admins == nil {
 		gc.Admins = make([]int64, 0)
 	}
@@ -45,15 +57,34 @@ func (gc *GroupConfig) Check() *GroupConfig {
 	if gc.BanKeywords == nil {
 		gc.BanKeywords = make([]string, 0)
 	}
+	if gc.NameBlackListReg == nil {
+		gc.NameBlackListReg = make([]string, 0)
+	}
+	if gc.NameBlackListRegEx == nil {
+		gc.NameBlackListRegEx = make([]*regexp.Regexp, 0)
+		for _, regStr := range gc.NameBlackListReg {
+			if regex, err := regexp.Compile(regStr); regex != nil && err == nil {
+				gc.NameBlackListRegEx = append(gc.NameBlackListRegEx, regex)
+			} else if err != nil {
+				DErrorf("Name BlackList Error | Not compilable regex=%s err=%s", regStr, err.Error())
+			}
+		}
+	}
 	return gc
 }
 
 func (gc *GroupConfig) ToJson() string {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
 	s, _ := jsoniter.MarshalToString(gc)
 	return s
 }
 
 func (gc *GroupConfig) FromJson(s string) error {
+	gc.updateLock.Lock()
+	defer gc.updateLock.Unlock()
+
 	return jsoniter.UnmarshalFromString(s, gc)
 }
 
@@ -65,6 +96,9 @@ func (gc *GroupConfig) Clone() *GroupConfig {
 }
 
 func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {
+	gc.updateLock.Lock()
+	defer gc.updateLock.Unlock()
+
 	changed := false
 	if method == UMSet {
 		if len(gc.Admins) != 1 || gc.Admins[0] != userId {
@@ -81,6 +115,9 @@ func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {
 }
 
 func (gc *GroupConfig) UpdateBannedForward(id int64, method UpdateMethod) bool {
+	gc.updateLock.Lock()
+	defer gc.updateLock.Unlock()
+
 	changed := false
 	if method == UMSet {
 		if len(gc.BannedForward) != 1 || gc.BannedForward[0] != id {
@@ -97,14 +134,23 @@ func (gc *GroupConfig) UpdateBannedForward(id int64, method UpdateMethod) bool {
 }
 
 func (gc *GroupConfig) IsAdmin(userId int64) bool {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
 	return I64In(&gc.Admins, userId)
 }
 
 func (gc *GroupConfig) IsBannedForward(id int64) bool {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
 	return I64In(&gc.BannedForward, id)
 }
 
 func (gc *GroupConfig) IsBanKeyword(m *tb.Message) bool {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
 	keywords := gc.BanKeywords
 	if len(keywords) == 0 {
 		keywords = DefaultBanKeywords
@@ -113,9 +159,25 @@ func (gc *GroupConfig) IsBanKeyword(m *tb.Message) bool {
 }
 
 func (gc *GroupConfig) IsWarnKeyword(m *tb.Message) bool {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
 	keywords := gc.WarnKeywords
 	if len(keywords) == 0 {
 		keywords = DefaultWarnKeywords
 	}
 	return ContainsString(keywords, m.Text)
+}
+
+func (gc *GroupConfig) IsBlackListName(u *tb.User) bool {
+	gc.updateLock.RLock()
+	defer gc.updateLock.RUnlock()
+
+	namePattern := u.LastName + u.FirstName + u.LastName + u.Username
+	for _, regex := range gc.NameBlackListRegEx {
+		if regex.MatchString(namePattern) {
+			return true
+		}
+	}
+	return false
 }
