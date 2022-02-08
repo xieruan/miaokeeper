@@ -10,7 +10,7 @@ import (
 
 type GroupConfig struct {
 	ID            int64
-	Admins        []int64 `json:"-"`
+	Admins        []int64
 	BannedForward []int64
 	MergeTo       int64
 

@@ -58,7 +58,7 @@ func CmdImportPolicy(m *tb.Message) {
 			DErrorE(err, "Import Credit Error | not parsed: "+err.Error())
 			return
 		}
-		newGC.Admins = gc.Admins
+		newGC.Admins, newGC.ID = gc.Admins, gc.ID
 		gc = newGC.Check()
 		newGC = nil
 		SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
