@@ -145,7 +145,7 @@ func GetGroupConfig(groupId int64) *GroupConfig {
 		gc := &GroupConfig{}
 		err := jsoniter.Unmarshal([]byte(cfg), gc)
 		if err == nil {
-			GroupConfigCache[groupId] = gc
+			GroupConfigCache[groupId] = gc.Check()
 			return gc
 		}
 	}
@@ -154,6 +154,10 @@ func GetGroupConfig(groupId int64) *GroupConfig {
 
 func SetGroupConfig(groupId int64, gc *GroupConfig) *GroupConfig {
 	if !IsGroup(groupId) {
+		return nil
+	}
+
+	if groupId >= 0 {
 		return nil
 	}
 

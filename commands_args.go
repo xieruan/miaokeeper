@@ -58,10 +58,12 @@ func CmdImportPolicy(m *tb.Message) {
 			DErrorE(err, "Import Credit Error | not parsed: "+err.Error())
 			return
 		}
-		newGC.Admins, newGC.ID = gc.Admins, gc.ID
-		gc = newGC.Check()
-		newGC = nil
-		SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
+		newGC.Admins, newGC.ID, newGC.NameBlackListRegEx = gc.Admins, gc.ID, nil
+		if SetGroupConfig(m.Chat.ID, newGC.Check()) != nil {
+			SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
+		} else {
+			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
+		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
