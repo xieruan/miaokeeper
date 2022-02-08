@@ -43,6 +43,7 @@ func main() {
 
 	InitTables()
 	ReadConfigs()
+	DInfo("Configuration Init | Config is initialzed.")
 
 	if setadmin > 0 {
 		UpdateAdmin(setadmin, UMSet)

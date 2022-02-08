@@ -80,6 +80,16 @@ func InitTelegram() {
 		URL: TELEGRAMURL,
 	})
 
+	if err != nil {
+		DErrorf("TeleBot Error | cannot initialize bot | err=%s", err.Error())
+		os.Exit(1)
+	}
+
+	if Bot == nil {
+		DErrorf("TeleBot Error | cannot initialize bot | err=Unknown error")
+		os.Exit(1)
+	}
+
 	if !PingArg && !CleanArg {
 
 		if !Bot.Me.CanJoinGroups {
