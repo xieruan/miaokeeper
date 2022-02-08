@@ -76,6 +76,8 @@ func CmdOnSticker(m *tb.Message) {
 func CmdOnDocument(m *tb.Message) {
 	if m.Caption == "/su_import_credit" && m.Document != nil {
 		CmdSuImportCredit(m)
+	} else if m.Caption == "/import_policy" && m.Document != nil {
+		CmdImportPolicy(m)
 	} else {
 		CheckChannelForward(m)
 		CheckChannelFollow(m, m.Sender, false)

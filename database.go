@@ -44,7 +44,7 @@ var LotteryConfigCache map[string]*LotteryInstance
 
 type GroupConfig struct {
 	ID            int64
-	Admins        []int64
+	Admins        []int64 `json:"-"`
 	BannedForward []int64
 	MergeTo       int64
 
@@ -239,6 +239,22 @@ func UpdateAdmin(userId int64, method UpdateMethod) bool {
 	}
 	WriteConfigs()
 	return changed
+}
+
+func (gc *GroupConfig) ToJson() string {
+	s, _ := jsoniter.MarshalToString(gc)
+	return s
+}
+
+func (gc *GroupConfig) FromJson(s string) error {
+	return jsoniter.UnmarshalFromString(s, gc)
+}
+
+func (gc *GroupConfig) Clone() *GroupConfig {
+	newGC := GroupConfig{}
+	newGC.FromJson(gc.ToJson())
+
+	return &newGC
 }
 
 func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {

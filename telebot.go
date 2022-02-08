@@ -111,6 +111,7 @@ func InitTelegram() {
 
 		Bot.Handle("/add_admin", CmdAddAdmin)
 		Bot.Handle("/del_admin", CmdDelAdmin)
+		Bot.Handle("/export_policy", CmdGetPolicy)
 		Bot.Handle("/ban_forward", CmdBanForward)
 		Bot.Handle("/unban_forward", CmdUnbanForward)
 		Bot.Handle("/set_credit", CmdSetCredit)

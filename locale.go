@@ -45,6 +45,11 @@ var LocaleMap = map[string]map[string]string{
 		"grant.dismiss.success": "✔️ 已将 TA 的管理员移除 ～",
 		"grant.dismiss.failure": "❌ TA 本来就不是管理员呢 ～",
 
+		"policy.importSuccess":    "✔️ 导入群组策略成功",
+		"policy.exportSuccess":    "✔️ 导出群组策略成功，请在私聊查看结果",
+		"policy.importError":      "❌ 无法下载群组策略，请确定您上传的文件格式正确且小于 10MB",
+		"policy.importParseError": "❌ 解析群组策略错误，请确定您上传的文件格式正确",
+
 		"forward.ban.success":   "✔️ TA 已经被我封掉啦 ～",
 		"forward.ban.failure":   "❌ TA 已经被封禁过啦 ～",
 		"forward.unban.success": "✔️ TA 已经被我解封啦 ～",
@@ -178,6 +183,11 @@ var LocaleMap = map[string]map[string]string{
 		"grant.assign.failure":  "❌ The user does not need to be promoted ～",
 		"grant.dismiss.success": "✔️ The user is dismissed ～",
 		"grant.dismiss.failure": "❌ The user does not need to be dismissed ～",
+
+		"policy.importSuccess":    "✔️ Group policy imported.",
+		"policy.exportSuccess":    "✔️ Group policy exported, please check the result in the private chat.",
+		"policy.importError":      "❌ Unable to fetch the file, please make sure the file is valid and less than 10MB.",
+		"policy.importParseError": "❌ Unable to decode the file, please try again.",
 
 		"forward.ban.success":   "✔️ The user has been banned ～",
 		"forward.ban.failure":   "❌ The user was banned ～",
