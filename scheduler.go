@@ -24,6 +24,11 @@ type CheckDrawArgs struct {
 	LotteryId string
 }
 
+type UnbanUserArgs struct {
+	ChatId int64
+	UserId int64
+}
+
 func InitScheduler() {
 	lazyScheduler.Reg("deleteMessage", func(lsc *memutils.LazySchedulerCall) {
 		args := DeleteMessageArgs{}
@@ -75,6 +80,14 @@ func InitScheduler() {
 			if li.Status != 2 {
 				li.CheckDraw(false)
 			}
+		}
+	})
+
+	lazyScheduler.Reg("unbanUser", func(lsc *memutils.LazySchedulerCall) {
+		args := UnbanUserArgs{}
+		lsc.Arg(&args)
+		if args.ChatId != 0 && args.UserId != 0 {
+			Bot.Unban(&tb.Chat{ID: args.ChatId}, &tb.User{ID: args.UserId}, true)
 		}
 	})
 }
