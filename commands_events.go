@@ -7,7 +7,7 @@ import (
 )
 
 func CmdOnText(m *tb.Message) {
-	if IsGroup(m.Chat.ID) {
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil {
 		if !CheckChannelForward(m) {
 			return
 		}
@@ -23,6 +23,14 @@ func CmdOnText(m *tb.Message) {
 		}
 
 		if m.IsForwarded() {
+			return
+		}
+
+		if gc.IsBanKeyword(m) {
+			CmdBanUser(m)
+			return
+		} else if gc.IsWarnKeyword(m) {
+			CmdWarnUser(m)
 			return
 		}
 

@@ -59,7 +59,7 @@ func CmdImportPolicy(m *tb.Message) {
 			return
 		}
 		newGC.Admins = gc.Admins
-		gc = newGC
+		gc = newGC.Check()
 		newGC = nil
 		SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
 	} else {

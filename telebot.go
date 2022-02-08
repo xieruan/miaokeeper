@@ -51,6 +51,9 @@ var lazyScheduler *memutils.LazyScheduler
 var callbacklock sync.Mutex
 var usercreditlock sync.Mutex
 
+var DefaultWarnKeywords = []string{"口臭", "口 臭", "口  臭", "口臭!", "口臭！", "嘴臭", "嘴 臭", "嘴  臭", "嘴臭!", "嘴臭！"}
+var DefaultBanKeywords = []string{"恶意广告", "惡意廣告", "恶意发言", "惡意發言", "恶意举报", "惡意舉報", "惡意檢舉", "恶意嘴臭", "恶意口臭"}
+
 func InitTelegram() {
 	var err error
 	Bot, err = tb.NewBot(tb.Settings{
@@ -137,27 +140,6 @@ func InitTelegram() {
 		Bot.Handle("/mycredit", CmdMyCredit)
 		Bot.Handle("/version", CmdVersion)
 		Bot.Handle("/ping", CmdPing)
-
-		Bot.Handle("口臭", CmdWarnUser)
-		Bot.Handle("口 臭", CmdWarnUser)
-		Bot.Handle("口  臭", CmdWarnUser)
-		Bot.Handle("口臭!", CmdWarnUser)
-		Bot.Handle("口臭！", CmdWarnUser)
-		Bot.Handle("嘴臭", CmdWarnUser)
-		Bot.Handle("嘴 臭", CmdWarnUser)
-		Bot.Handle("嘴  臭", CmdWarnUser)
-		Bot.Handle("嘴臭!", CmdWarnUser)
-		Bot.Handle("嘴臭！", CmdWarnUser)
-
-		Bot.Handle("恶意广告", CmdBanUser)
-		Bot.Handle("惡意廣告", CmdBanUser)
-		Bot.Handle("恶意发言", CmdBanUser)
-		Bot.Handle("惡意發言", CmdBanUser)
-		Bot.Handle("恶意举报", CmdBanUser)
-		Bot.Handle("惡意舉報", CmdBanUser)
-		Bot.Handle("惡意檢舉", CmdBanUser)
-		Bot.Handle("恶意嘴臭", CmdBanUser)
-		Bot.Handle("恶意口臭", CmdBanUser)
 
 		Bot.Handle(tb.OnUserLeft, CmdOnUserLeft)
 		Bot.Handle(tb.OnChatMember, CmdOnChatMember)
