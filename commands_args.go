@@ -163,7 +163,7 @@ func CmdGetPolicy(m *tb.Message) {
 			return
 		}
 		Bot.Notify(m.Chat, tb.UploadingDocument)
-		ioReader := strings.NewReader(gc.ToJson())
+		ioReader := strings.NewReader(gc.ToJson(true))
 		Bot.Send(m.Sender, &tb.Document{
 			File:     tb.FromReader(ioReader),
 			MIME:     "application/json",

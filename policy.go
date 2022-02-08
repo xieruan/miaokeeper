@@ -73,12 +73,18 @@ func (gc *GroupConfig) Check() *GroupConfig {
 	return gc
 }
 
-func (gc *GroupConfig) ToJson() string {
+func (gc *GroupConfig) ToJson(indent bool) (s string) {
 	gc.updateLock.RLock()
 	defer gc.updateLock.RUnlock()
 
-	s, _ := jsoniter.MarshalToString(gc)
-	return s
+	if !indent {
+		s, _ = jsoniter.MarshalToString(gc)
+	} else {
+		if b, err := jsoniter.MarshalIndent(gc, "", "  "); err == nil && b != nil {
+			s = string(b)
+		}
+	}
+	return
 }
 
 func (gc *GroupConfig) FromJson(s string) error {
@@ -90,7 +96,7 @@ func (gc *GroupConfig) FromJson(s string) error {
 
 func (gc *GroupConfig) Clone() *GroupConfig {
 	newGC := GroupConfig{}
-	newGC.FromJson(gc.ToJson())
+	newGC.FromJson(gc.ToJson(false))
 
 	return (&newGC).Check()
 }
