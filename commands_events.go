@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
+	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -14,6 +16,39 @@ func CmdOnText(m *tb.Message) {
 		}
 
 		if !CheckChannelFollow(m, m.Sender, false) {
+			return
+		}
+
+		if rule := gc.TestCustomReplyRule(m); rule != nil {
+			if rule.CreditBehavior != 0 {
+				addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true)
+			}
+
+			if rule.ReplyMessage != "" {
+				var target interface{} = m
+				if rule.ReplyTo == "group" {
+					target = m.Chat
+				} else if rule.ReplyTo == "private" {
+					target = m.Sender
+				}
+
+				_, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
+					ParseMode:             "Markdown",
+					DisableWebPagePreview: true,
+					AllowWithoutReply:     true,
+				})
+
+				if err != nil {
+					SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
+				}
+			}
+
+			if APIToken != "" && rule.CallbackURL != "" {
+				if u, err := url.Parse(rule.CallbackURL); err == nil && u != nil {
+					go POSTJsonWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
+				}
+			}
+
 			return
 		}
 

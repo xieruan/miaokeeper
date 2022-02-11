@@ -10,6 +10,7 @@ var LocaleAlias = map[string]string{
 var LocaleMap = map[string]map[string]string{
 	"zh": {
 		"system.unexpected": "❌ 无法完成任务，请检查服务器错误日志",
+		"system.notsend":    "❌ 发送消息失败",
 
 		"cmd.zc.notAllowed":  "当前群组不允许互相臭嘴哦 ~",
 		"cmd.zc.indeed":      "确实",
@@ -149,7 +150,8 @@ var LocaleMap = map[string]map[string]string{
 		"cb.disabled":                     "❌ 这个群组还没有被授权哦 ~",
 	},
 	"en": {
-		"system.unexpected": "❌ cannot fulfill the task, please check logs",
+		"system.unexpected": "❌ Cannot fulfill the task, please check logs",
+		"system.notsend":    "❌ Cannot send the message",
 
 		"cmd.zc.notAllowed":  "嘴臭 is not permitted in this group",
 		"cmd.zc.indeed":      "INDEED",

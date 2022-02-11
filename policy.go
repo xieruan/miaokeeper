@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/bep/debounce"
 	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -28,7 +32,72 @@ type GroupConfig struct {
 	NameBlackListReg   []string
 	NameBlackListRegEx []*regexp.Regexp `json:"-"`
 
-	updateLock sync.RWMutex `json:"-"`
+	CustomReply []*CustomReplyRule
+
+	updateLock    sync.RWMutex `json:"-"`
+	saveLock      sync.Mutex   `json:"-"`
+	saveDebouncer func(func()) `json:"-"`
+}
+
+type CustomReplyRule struct {
+	Match   string
+	MatchEx *regexp.Regexp `json:"-"`
+
+	Name           string
+	Limit          int
+	CreditBehavior int
+	CallbackURL    string // need a X-MiaoKeeper-Sign header
+
+	ReplyMessage string
+	ReplyTo      string // message, group, private
+	ReplyButtons []string
+
+	lock sync.Mutex `json:"-"`
+}
+
+func (crr *CustomReplyRule) Consume() bool {
+	crr.lock.Lock()
+	defer crr.lock.Unlock()
+
+	if crr.Limit == 0 {
+		return false
+	} else if crr.Limit < 0 {
+		return true
+	} else {
+		crr.Limit -= 1
+		return true
+	}
+}
+
+func BuilRuleMessage(s string, m *tb.Message) string {
+	s = strings.ReplaceAll(s, "{{ChatName}}", GetQuotableChatName(m.Chat))
+	s = strings.ReplaceAll(s, "{{UserName}}", GetQuotableSenderName(m))
+	s = strings.ReplaceAll(s, "{{UserLink}}", GetSenderLink(m))
+	s = strings.ReplaceAll(s, "{{UserID}}", fmt.Sprintf("%d", m.Sender.ID))
+
+	return s
+}
+
+func BuildRuleMessages(ss []string, m *tb.Message) []string {
+	res := []string{}
+	for _, s := range ss {
+		res = append(res, BuilRuleMessage(s, m))
+	}
+	return res
+}
+
+func (crr *CustomReplyRule) ToJson(indent bool) (s string) {
+	crr.lock.Lock()
+	defer crr.lock.Unlock()
+
+	if !indent {
+		s, _ = jsoniter.MarshalToString(crr)
+	} else {
+		if b, err := jsoniter.MarshalIndent(crr, "", "  "); err == nil && b != nil {
+			s = string(b)
+		}
+	}
+	return
 }
 
 func NewGroupConfig(groupId int64) *GroupConfig {
@@ -68,6 +137,20 @@ func (gc *GroupConfig) Check() *GroupConfig {
 			} else if err != nil {
 				DErrorf("Name BlackList Error | Not compilable regex=%s err=%s", regStr, err.Error())
 			}
+		}
+	}
+	if gc.CustomReply == nil {
+		gc.CustomReply = make([]*CustomReplyRule, 0)
+	}
+	for _, crr := range gc.CustomReply {
+		if regex, err := regexp.Compile(crr.Match); regex != nil && err == nil {
+			crr.MatchEx = regex
+		} else if err != nil {
+			DErrorf("Custom Reply Error | Not compilable regex=%s err=%s", crr.Match, err.Error())
+			crr.MatchEx = nil
+		}
+		if crr.ReplyButtons == nil {
+			crr.ReplyButtons = make([]string, 0)
 		}
 	}
 	return gc
@@ -116,7 +199,7 @@ func (gc *GroupConfig) UpdateAdmin(userId int64, method UpdateMethod) bool {
 	} else if method == UMDel {
 		gc.Admins, changed = DelFromInt64Arr(gc.Admins, userId)
 	}
-	SetGroupConfig(gc.ID, gc)
+	gc.Save()
 	return changed
 }
 
@@ -135,7 +218,7 @@ func (gc *GroupConfig) UpdateBannedForward(id int64, method UpdateMethod) bool {
 	} else if method == UMDel {
 		gc.BannedForward, changed = DelFromInt64Arr(gc.BannedForward, id)
 	}
-	SetGroupConfig(gc.ID, gc)
+	gc.Save()
 	return changed
 }
 
@@ -186,4 +269,34 @@ func (gc *GroupConfig) IsBlackListName(u *tb.User) bool {
 		}
 	}
 	return false
+}
+
+func (gc *GroupConfig) Save() {
+	gc.saveLock.Lock()
+	defer gc.saveLock.Unlock()
+
+	if gc.saveDebouncer == nil {
+		gc.saveDebouncer = debounce.New(time.Second)
+	}
+
+	gc.saveDebouncer(func() {
+		SetGroupConfig(gc.ID, gc)
+	})
+}
+
+func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
+	if gc == nil {
+		return nil
+	}
+
+	for _, rule := range gc.CustomReply {
+		if rule != nil && rule.MatchEx != nil && rule.MatchEx.MatchString(m.Text+m.Caption) && rule.Consume() {
+			if rule.Limit >= 0 {
+				gc.Save()
+			}
+			return rule
+		}
+	}
+
+	return nil
 }

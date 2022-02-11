@@ -171,12 +171,12 @@ func InitTelegram() {
 	go Bot.Start()
 
 	if !PingArg {
-		DInfo("MiaoKeeper is up.")
+		DInfo("System | MiaoKeeper bot is up.")
 		lazyScheduler.Recover()
 	}
 
 	if CleanArg {
-		DInfo("Clean mode is on.")
+		DInfo("System | Clean mode is on.")
 	}
 }
 

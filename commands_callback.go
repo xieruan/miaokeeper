@@ -35,7 +35,8 @@ func CmdOnCallback(c *tb.Callback) {
 		joinVerificationId := fmt.Sprintf("join,%d,%d", gid, uid)
 		isGroupAdmin := IsGroupAdmin(m.Chat, c.Sender)
 		isMiaoGroupAdmin := IsGroupAdminMiaoKo(m.Chat, c.Sender)
-		if strings.Contains("vt unban kick check rp lt", cmd) && IsGroup(gid) && uid > 0 {
+		isUserRelatedOp := IsGroup(gid) && uid > 0
+		if isUserRelatedOp && strings.Contains("vt unban kick check rp lt", cmd) {
 			if cmd == "unban" && isGroupAdmin {
 				if Unban(gid, uid, 0) == nil {
 					Rsp(c, "cb.unban.success")
@@ -191,6 +192,12 @@ func CmdOnCallback(c *tb.Callback) {
 				}
 			} else {
 				Rsp(c, "cb.notAdmin")
+			}
+		} else if strings.Contains("close ", cmd) {
+			if cmd == "close" {
+				Bot.Delete(m)
+			} else {
+				Rsp(c, "cb.notParsed")
 			}
 		} else {
 			Rsp(c, "cb.notParsed")

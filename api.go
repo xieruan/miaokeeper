@@ -87,11 +87,12 @@ func InitRESTServer(portNum int, token string) {
 
 			if ci := GinParseGroupAndUser(c); ci != nil {
 				consumeRequest := struct {
-					Credit int64 `json:"credit,omitempty"`
+					Credit        int64 `json:"credit,omitempty"`
+					AllowNegative bool  `json:"allowNegative,omitempty"`
 				}{}
 				c.BindJSON(&consumeRequest)
 				if consumeRequest.Credit > 0 {
-					if ci.Credit >= consumeRequest.Credit {
+					if ci.Credit >= consumeRequest.Credit || (ci.Credit > 0 && consumeRequest.AllowNegative) {
 						ci = UpdateCredit(ci, UMAdd, -consumeRequest.Credit)
 						c.JSON(http.StatusOK, GinData(ci))
 					} else {
