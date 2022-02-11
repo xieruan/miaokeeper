@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -654,4 +655,33 @@ func LazyDelete(m *tb.Message) {
 		ChatId:    m.Chat.ID,
 		MessageId: m.ID,
 	}))
+}
+
+var GroupParserReg *regexp.Regexp
+var SessionParserReg *regexp.Regexp
+
+func ParseSessionMessage(str string) (int64, string) {
+	result := GroupParserReg.FindString(str)
+	session := SessionParserReg.FindString(str)
+	if len(session) >= 2 {
+		session = session[1 : len(session)-1]
+	}
+	if len(result) > 3 {
+		id, _ := strconv.ParseInt(result[1:len(result)-1], 10, 64)
+		return id, session
+	}
+	return 0, session
+}
+
+func ParseSession(m *tb.Message) (bool, int64, string) {
+	if m.Chat.ID > 0 && m.IsReply() && m.ReplyTo.Sender.ID == Bot.Me.ID {
+		chatId, sessionType := ParseSessionMessage(m.ReplyTo.Text)
+		return true, chatId, sessionType
+	}
+	return false, 0, ""
+}
+
+func init() {
+	GroupParserReg = regexp.MustCompile(`\(\-\d+\)`)
+	SessionParserReg = regexp.MustCompile(`\{[a-zA-Z]+\}`)
 }

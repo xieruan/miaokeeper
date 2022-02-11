@@ -41,7 +41,11 @@ func CmdSuExportCredit(m *tb.Message) {
 
 func CmdImportPolicy(m *tb.Message) {
 	Bot.Delete(m)
-	gc := GetGroupConfig(m.Chat.ID)
+	chatId := m.Chat.ID
+	if ok, cid, _ := ParseSession(m); ok {
+		chatId = cid
+	}
+	gc := GetGroupConfig(chatId)
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 		Bot.Notify(m.Chat, tb.UploadingDocument)
 		ioHandler, err := Bot.GetFile(&m.Document.File)
@@ -59,7 +63,7 @@ func CmdImportPolicy(m *tb.Message) {
 			return
 		}
 		newGC.Admins, newGC.ID, newGC.NameBlackListRegEx = gc.Admins, gc.ID, nil
-		if SetGroupConfig(m.Chat.ID, newGC.Check()) != nil {
+		if SetGroupConfig(chatId, newGC.Check()) != nil {
 			SmartSendDelete(m, Locale("policy.importSuccess", GetSenderLocale(m)))
 		} else {
 			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
@@ -172,6 +176,25 @@ func CmdGetPolicy(m *tb.Message) {
 			FileName: fmt.Sprintf("Policy-%d-%s.json", Abs(m.Chat.ID), time.Now().Format(time.RFC3339)),
 		})
 		SmartSendDelete(m, Locale("policy.exportSuccess", GetSenderLocale(m)))
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+	LazyDelete(m)
+}
+
+func CmdSetPolicy(m *tb.Message) {
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+		_, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.privateSession", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, "Policy"), &tb.SendOptions{
+			ParseMode:             "Markdown",
+			DisableWebPagePreview: true,
+			AllowWithoutReply:     true,
+		})
+		if err != nil {
+			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
+			return
+		}
+		SmartSendDelete(m, Locale("cmd.privateSession.sended", GetSenderLocale(m)))
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
