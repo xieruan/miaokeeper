@@ -32,11 +32,17 @@ func CmdOnText(m *tb.Message) {
 					target = m.Sender
 				}
 
-				_, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
+				sent, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
 					ParseMode:             "Markdown",
 					DisableWebPagePreview: true,
 					AllowWithoutReply:     true,
 				})
+				if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
+					LazyDelete(sent)
+				}
+				if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
+					LazyDelete(m)
+				}
 
 				if err != nil {
 					SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
