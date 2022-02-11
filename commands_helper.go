@@ -308,6 +308,52 @@ func SmartSend(to interface{}, what interface{}, options ...interface{}) (*tb.Me
 	return SmartSendInner(to, what, options...)
 }
 
+func MakeButtons(btns []string) [][]tb.InlineButton {
+	btnsc := make([][]tb.InlineButton, 0)
+	for _, row := range btns {
+		btnscr := make([]tb.InlineButton, 0)
+		for _, btn := range strings.Split(row, "||") {
+			z := strings.SplitN(btn, "|", 2)
+			unique := z[1]
+			url := ""
+			if strings.HasPrefix(z[1], "http://") || strings.HasPrefix(z[1], "https://") || strings.HasPrefix(z[1], "tg://") {
+				unique = ""
+				url = z[1]
+			}
+			btnscr = append(btnscr, tb.InlineButton{
+				Unique: unique,
+				URL:    url,
+				Text:   z[0],
+				Data:   "",
+			})
+		}
+		btnsc = append(btnsc, btnscr)
+	}
+	return btnsc
+}
+
+func SmartSendWithBtns(to interface{}, what interface{}, buttons []string, options ...interface{}) (*tb.Message, error) {
+	withOptions := []interface{}{}
+	if len(options) == 0 {
+		withOptions = append(withOptions, &tb.SendOptions{
+			DisableWebPagePreview: true,
+			AllowWithoutReply:     true,
+		})
+	} else {
+		withOptions = options
+	}
+
+	if len(buttons) > 0 {
+		withOptions = append(withOptions, &tb.ReplyMarkup{
+			OneTimeKeyboard:     true,
+			ResizeReplyKeyboard: true,
+			ForceReply:          true,
+			InlineKeyboard:      MakeButtons(buttons),
+		})
+	}
+	return SmartSendInner(to, what, withOptions...)
+}
+
 func extractMessage(data []byte) (*tb.Message, error) {
 	var resp struct {
 		Result *tb.Message
@@ -387,8 +433,27 @@ func GetUserName(u *tb.User) string {
 	return s
 }
 
-func GetQuotableStr(s string) string {
-	return strings.ReplaceAll(s, "`", "'")
+func GetQuotableStr(f string) string {
+	f = strings.ReplaceAll(f, "`", "'")
+	f = strings.ReplaceAll(f, "[", "【")
+	f = strings.ReplaceAll(f, "]", "】")
+	return f
+}
+
+func GetQuotableSenderName(m *tb.Message) string {
+	if m.SenderChat != nil {
+		return GetQuotableChatName(m.SenderChat)
+	} else {
+		return GetQuotableUserName(m.Sender)
+	}
+}
+
+func GetSenderLink(m *tb.Message) string {
+	if m.SenderChat != nil {
+		return "https://t.me/" + m.SenderChat.Username
+	} else {
+		return fmt.Sprintf("tg://user?id=%d", m.Sender.ID)
+	}
 }
 
 func GetQuotableUserName(u *tb.User) string {
@@ -404,6 +469,10 @@ func GetChatName(u *tb.Chat) string {
 	}
 
 	return s
+}
+
+func GetQuotableChatName(u *tb.Chat) string {
+	return GetQuotableStr(GetChatName(u))
 }
 
 func UserIsInGroup(chatRepr string, userId int64) UIGStatus {

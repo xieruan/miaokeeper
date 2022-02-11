@@ -347,7 +347,7 @@ func CmdSetAntiSpoiler(m *tb.Message) {
 			}
 
 			gc.AntiSpoiler = status
-			SetGroupConfig(m.Chat.ID, gc)
+			gc.Save()
 			SmartSendDelete(m, fmt.Sprintf(Locale("spoiler.success", GetSenderLocale(m)), gc.AntiSpoiler), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
@@ -377,7 +377,7 @@ func CmdSetChannel(m *tb.Message) {
 				gc.MustFollow = ""
 				gc.MustFollowOnJoin = false
 				gc.MustFollowOnMsg = false
-				SetGroupConfig(m.Chat.ID, gc)
+				gc.Save()
 				SmartSendDelete(m, Locale("channel.set.cancel", GetSenderLocale(m)))
 			} else {
 				if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
@@ -394,7 +394,7 @@ func CmdSetChannel(m *tb.Message) {
 						gc.MustFollowOnJoin = true
 						gc.MustFollowOnMsg = true
 					}
-					SetGroupConfig(m.Chat.ID, gc)
+					gc.Save()
 					SmartSendDelete(m, fmt.Sprintf(Locale("channel.set.success", GetSenderLocale(m)), gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
 						ParseMode:             "Markdown",
 						DisableWebPagePreview: true,
@@ -420,7 +420,7 @@ func CmdSetLocale(m *tb.Message) {
 				} else {
 					gc.Locale = payloads[0]
 				}
-				SetGroupConfig(m.Chat.ID, gc)
+				gc.Save()
 				SmartSendDelete(m, fmt.Sprintf(Locale("locale.set", GetSenderLocale(m)), gc.Locale))
 			} else {
 				SmartSendDelete(m, fmt.Sprintf(Locale("locale.get", GetSenderLocale(m)), gc.Locale))

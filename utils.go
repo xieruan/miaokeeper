@@ -1,12 +1,19 @@
 package main
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func AddIntoInt64Arr(arr []int64, val int64) ([]int64, bool) {
@@ -108,4 +115,49 @@ func ContainsString(slice []string, str string) bool {
 		}
 	}
 	return false
+}
+
+func MD5(str string) string {
+	hasher := md5.New()
+	hasher.Write([]byte(str))
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func SignHeader() string {
+	if APIToken == "" {
+		return ""
+	}
+
+	phaseOne := MD5(fmt.Sprintf("MiaoKeeper:Normal:Hash|%s|APITK{%s}##^", APIToken, APIToken))
+	phaseTwo := MD5(fmt.Sprintf("501%s5cadd%s51ff13", phaseOne, phaseOne))
+	phaseThree := MD5(fmt.Sprintf("%s415%saff4%s", phaseOne, phaseTwo, phaseOne))
+
+	return phaseThree
+}
+
+func POSTJsonWithSign(url string, payload []byte, timeout time.Duration) []byte {
+	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
+	if err != nil {
+		return nil
+	}
+
+	req.Header.Set("User-Agent", "miaokeeper/"+version)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-MiaoKeeper-Sign", SignHeader())
+	client := &http.Client{
+		Timeout: timeout,
+	}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil
+	}
+
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	return body
 }

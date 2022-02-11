@@ -39,11 +39,11 @@ func main() {
 		DErrorE(err, "Database Error | Cannot initialize database.")
 		os.Exit(1)
 	}
-	DInfo("Database Init | Database is initialzed.")
+	DInfo("System | Database is initialzed.")
 
 	InitTables()
 	ReadConfigs()
-	DInfo("Configuration Init | Config is initialzed.")
+	DInfo("System | Config is initialzed.")
 
 	if setadmin > 0 {
 		UpdateAdmin(setadmin, UMSet)
@@ -53,6 +53,9 @@ func main() {
 	InitTelegram()
 	if APIBind > 0 {
 		InitRESTServer(APIBind, APIToken)
+	}
+	if APIToken != "" {
+		DInfo("System | X-MiaoKeeper-Sign: " + SignHeader())
 	}
 
 	<-MakeSysChan()
