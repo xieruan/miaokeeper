@@ -118,6 +118,14 @@ func CmdOnSticker(m *tb.Message) {
 }
 
 func CmdOnDocument(m *tb.Message) {
+	if ok, _, session := ParseSession(m); ok && session != "" {
+		switch session {
+		case "Policy":
+			CmdImportPolicy(m)
+		}
+		return
+	}
+
 	if m.Caption == "/su_import_credit" && m.Document != nil {
 		CmdSuImportCredit(m)
 	} else if m.Caption == "/import_policy" && m.Document != nil {
