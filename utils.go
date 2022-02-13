@@ -123,19 +123,15 @@ func MD5(str string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func SignHeader() string {
-	if APIToken == "" {
-		return ""
-	}
-
-	phaseOne := MD5(fmt.Sprintf("MiaoKeeper:Normal:Hash|%s|APITK{%s}##^", APIToken, APIToken))
-	phaseTwo := MD5(fmt.Sprintf("501%s5cadd%s51ff13", phaseOne, phaseOne))
-	phaseThree := MD5(fmt.Sprintf("%s415%saff4%s", phaseOne, phaseTwo, phaseOne))
+func SignGroup(groupId int64, signType int) string {
+	phaseOne := MD5(fmt.Sprintf("MiaoKeeper:Normal:Hash|%d%d|%s|APITK{%d}##^", signType, groupId, APISeed, groupId))
+	phaseTwo := MD5(fmt.Sprintf("501%s5c%dadd%s51ff13%d", phaseOne, signType, phaseOne, signType))
+	phaseThree := MD5(fmt.Sprintf("%s415%s%daff4%s", phaseOne, phaseTwo, signType, phaseOne))
 
 	return phaseThree
 }
 
-func POSTJsonWithSign(url string, payload []byte, timeout time.Duration) []byte {
+func POSTJsonWithSign(url string, sign string, payload []byte, timeout time.Duration) []byte {
 	req, err := http.NewRequest("POST", url, bytes.NewReader(payload))
 	if err != nil {
 		return nil
@@ -143,7 +139,7 @@ func POSTJsonWithSign(url string, payload []byte, timeout time.Duration) []byte 
 
 	req.Header.Set("User-Agent", "miaokeeper/"+version)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-MiaoKeeper-Sign", SignHeader())
+	req.Header.Set("X-MiaoKeeper-Sign", sign)
 	client := &http.Client{
 		Timeout: timeout,
 	}

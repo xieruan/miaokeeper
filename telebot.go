@@ -26,7 +26,7 @@ var TOKEN = ""
 var TELEGRAMURL = ""
 
 var APIBind = 0
-var APIToken = ""
+var APISeed = ""
 
 var GROUPS = []int64{}
 var ADMINS = []int64{}
@@ -126,6 +126,7 @@ func InitTelegram() {
 		Bot.Handle("/del_admin", CmdDelAdmin)
 		Bot.Handle("/import_policy", CmdSetPolicy)
 		Bot.Handle("/export_policy", CmdGetPolicy)
+		Bot.Handle("/export_token", CmdGetToken)
 		Bot.Handle("/ban_forward", CmdBanForward)
 		Bot.Handle("/unban_forward", CmdUnbanForward)
 		Bot.Handle("/set_credit", CmdSetCredit)

@@ -52,10 +52,10 @@ func main() {
 
 	InitTelegram()
 	if APIBind > 0 {
-		InitRESTServer(APIBind, APIToken)
+		InitRESTServer(APIBind)
 	}
-	if APIToken != "" {
-		DInfo("System | X-MiaoKeeper-Sign: " + SignHeader())
+	if APISeed != "" {
+		DLog("System | Applying API Seed: " + APISeed)
 	}
 
 	<-MakeSysChan()
@@ -74,9 +74,20 @@ func init() {
 	flag.Int64Var(&setadmin, "setadmin", 0, "set admin and delete all the other existing admins")
 
 	flag.IntVar(&APIBind, "bind", 0, "specify a point number to bind and start an api server, for example 9876")
-	flag.StringVar(&APIToken, "api-token", "", "specify a token that needs to be passed in when calling api methods")
+	flag.StringVar(&APISeed, "seed", "", "specify a seed to generate token that needs to be passed in when calling api methods")
+
+	// deprecated flags
+	APIToken := ""
+	flag.StringVar(&APIToken, "api-token", "", "alias: seed, specify a seed to generate token that needs to be passed in when calling api methods")
 
 	flag.Parse()
+
+	{
+		// deprecated flags
+		if APISeed == "" && APIToken != "" {
+			APISeed = APIToken
+		}
+	}
 
 	InitTelegramArgs()
 }
