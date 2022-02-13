@@ -32,11 +32,17 @@ func CmdOnText(m *tb.Message) {
 					target = m.Sender
 				}
 
-				_, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
+				sent, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
 					ParseMode:             "Markdown",
 					DisableWebPagePreview: true,
 					AllowWithoutReply:     true,
 				})
+				if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
+					LazyDelete(sent)
+				}
+				if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
+					LazyDelete(m)
+				}
 
 				if err != nil {
 					SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
@@ -118,6 +124,14 @@ func CmdOnSticker(m *tb.Message) {
 }
 
 func CmdOnDocument(m *tb.Message) {
+	if ok, _, session := ParseSession(m); ok && session != "" {
+		switch session {
+		case "Policy":
+			CmdImportPolicy(m)
+		}
+		return
+	}
+
 	if m.Caption == "/su_import_credit" && m.Document != nil {
 		CmdSuImportCredit(m)
 	} else if m.Caption == "/import_policy" && m.Document != nil {

@@ -30,6 +30,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.ey.exec":        "👮 %s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。",
 		"cmd.ey.duplicated":  "👮 他已经被检察官带走啦，不要鞭尸啦 ～",
 
+		"cmd.privateSession":          "👀 请回复这则消息一个文件来为群组 `%s`(%d) 设置 {%s} 哦～",
+		"cmd.privateSession.sended":   "✔️ 建立会话成功，请查看私聊～",
 		"cmd.privateChatFirst":        "❌ 请先私聊我然后再运行这个命令哦",
 		"cmd.noPerm":                  "❌ 您没有使用这个命令的权限呢",
 		"cmd.mustReply":               "❌ 请在群组内回复一个有效用户使用这个命令哦 ～",
@@ -172,6 +174,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.ey.exec":        "👮 %s, you are reported by %s to shot spam into the group ⚠️, please well behave! You are punished by 50 credit points and the reporter has gained 25 points. Please contact group admin if you think the judgement is a mistake, or you could ask for other members to vote to help.",
 		"cmd.ey.duplicated":  "👮 The user has already been banned.",
 
+		"cmd.privateSession":          "👀 Please reply a config file to this message to assign `%s`(%d) a new {%s} config ~",
+		"cmd.privateSession.sended":   "✔️ Establishing a session successfully, please refer to the private chat ～",
 		"cmd.privateChatFirst":        "❌ Please start me in the private chat before using this command.",
 		"cmd.noPerm":                  "❌ You are not permitted to use this command.",
 		"cmd.mustReply":               "❌ Please reply this command to a valid user is a valid group.",

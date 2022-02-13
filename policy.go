@@ -58,6 +58,7 @@ type CustomReplyRule struct {
 	ReplyMessage string
 	ReplyTo      string // message, group, private
 	ReplyButtons []string
+	ReplyMode    string // deleteself, deleteorigin, deleteboth
 
 	lock sync.Mutex `json:"-"`
 }
