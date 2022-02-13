@@ -12,6 +12,13 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
+type GroupSignType = int
+
+const (
+	GST_API_SIGN GroupSignType = iota
+	GST_POLICY_CALLBACK_SIGN
+)
+
 type GroupConfig struct {
 	ID            int64
 	Admins        []int64
@@ -154,6 +161,14 @@ func (gc *GroupConfig) Check() *GroupConfig {
 		}
 	}
 	return gc
+}
+
+func (gc *GroupConfig) GenerateSign(signType GroupSignType) string {
+	return SignGroup(gc.ID, signType)
+}
+
+func (gc *GroupConfig) POSTWithSign(url string, payload []byte, timeout time.Duration) []byte {
+	return POSTJsonWithSign(url, gc.GenerateSign(GST_POLICY_CALLBACK_SIGN), payload, timeout)
 }
 
 func (gc *GroupConfig) ToJson(indent bool) (s string) {

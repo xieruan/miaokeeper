@@ -43,9 +43,9 @@ func CmdOnText(m *tb.Message) {
 				}
 			}
 
-			if APIToken != "" && rule.CallbackURL != "" {
+			if rule.CallbackURL != "" {
 				if u, err := url.Parse(rule.CallbackURL); err == nil && u != nil {
-					go POSTJsonWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
+					go gc.POSTWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
 				}
 			}
 
