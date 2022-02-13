@@ -79,10 +79,10 @@ func InitRESTServer(portNum int) {
 
 	apiVersionOne := r.Group("/v1")
 	{
-		authorizedGroup := r.Group("/:groupId")
+		authorizedGroup := apiVersionOne.Group("/group/:groupId")
 		authorizedGroup.Use(MiddlewareGroupAuthorization())
 		{
-			credit := apiVersionOne.Group("/credit")
+			credit := authorizedGroup.Group("/credit")
 			credit.GET("/:userId", func(c *gin.Context) {
 				if ci := GinParseUser(c); ci != nil {
 					c.JSON(http.StatusOK, GinData(ci))
