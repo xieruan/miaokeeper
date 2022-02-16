@@ -46,9 +46,9 @@ func CmdOnCallback(c *tb.Callback) {
 				SmartEdit(m, m.Text+Locale("cb.unblock.byadmin", GetSenderLocaleCallback(c)))
 				joinmap.Unset(joinVerificationId)
 				if secuid > 0 && votemap.Exist(vtToken) {
-					addCredit(gid, &tb.User{ID: uid}, 50, true)
+					addCredit(gid, &tb.User{ID: uid}, 50, true, OPByAbuse)
 					votemap.Unset(vtToken)
-					addCredit(gid, &tb.User{ID: secuid}, -15, true)
+					addCredit(gid, &tb.User{ID: secuid}, -15, true, OPByAbuse)
 				}
 			} else if cmd == "kick" && isGroupAdmin {
 				if Kick(gid, uid) == nil {
@@ -85,9 +85,9 @@ func CmdOnCallback(c *tb.Callback) {
 							Unban(gid, uid, 0)
 							votemap.Unset(vtToken)
 							SmartEdit(m, m.Text+Locale("cb.unblock.byvote", GetSenderLocaleCallback(c)))
-							addCredit(gid, &tb.User{ID: uid}, 50, true)
+							addCredit(gid, &tb.User{ID: uid}, 50, true, OPByAbuse)
 							if secuid > 0 {
-								addCredit(gid, &tb.User{ID: secuid}, -15, true)
+								addCredit(gid, &tb.User{ID: secuid}, -15, true, OPByAbuse)
 							}
 						} else {
 							EditBtns(m, m.Text, "", GenVMBtns(votes, gid, uid, secuid))
@@ -134,7 +134,7 @@ func CmdOnCallback(c *tb.Callback) {
 								redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(c.Sender))
 							}
 							Rsp(c, Locale("cb.rp.get.1", c.Sender.LanguageCode)+strconv.Itoa(amount)+Locale("cb.rp.get.2", GetSenderLocaleCallback(c)))
-							addCredit(gid, c.Sender, int64(amount), true)
+							addCredit(gid, c.Sender, int64(amount), true, OPByRedPacket)
 						}
 
 						SendRedPacket(m, gid, secuid)
@@ -159,7 +159,7 @@ func CmdOnCallback(c *tb.Callback) {
 						if ci != nil {
 							if ci.Credit >= int64(li.Limit) {
 								if li.Consume {
-									addCredit(li.GroupID, c.Sender, -int64(li.Limit), true)
+									addCredit(li.GroupID, c.Sender, -int64(li.Limit), true, OPByLottery)
 								}
 								if err := li.Join(triggerUid, GetQuotableUserName(c.Sender)); err == nil {
 									Rsp(c, "cb.lottery.enroll")
@@ -174,7 +174,7 @@ func CmdOnCallback(c *tb.Callback) {
 									})
 								} else {
 									if li.Consume {
-										addCredit(li.GroupID, c.Sender, int64(li.Limit), true)
+										addCredit(li.GroupID, c.Sender, int64(li.Limit), true, OPByLottery)
 									}
 									Rsp(c, err.Error())
 								}

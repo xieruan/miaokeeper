@@ -317,7 +317,7 @@ func CmdSetCredit(m *tb.Message) {
 		if m.ReplyTo != nil {
 			target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 		}
-		target = UpdateCredit(target, UMSet, credit)
+		target = UpdateCredit(target, UMSet, credit, OPByAdmin)
 		SmartSendDelete(m, fmt.Sprintf(Locale("credit.set.success", GetSenderLocale(m)), target.Credit))
 	} else {
 		SmartSendDelete(m, Locale("cmd.noMiaoPerm", GetSenderLocale(m)))
@@ -346,7 +346,7 @@ func CmdAddCredit(m *tb.Message) {
 		if m.ReplyTo != nil {
 			target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 		}
-		target = UpdateCredit(target, UMAdd, credit)
+		target = UpdateCredit(target, UMAdd, credit, OPByAdmin)
 		SmartSendDelete(m, fmt.Sprintf(Locale("credit.set.success", GetSenderLocale(m)), target.Credit))
 	} else {
 		SmartSendDelete(m, Locale("cmd.noMiaoPerm", GetSenderLocale(m)))
@@ -579,49 +579,6 @@ func CmdCreateLottery(m *tb.Message) {
 	LazyDelete(m)
 }
 
-func CmdRedpacket(m *tb.Message) {
-	if IsGroup(m.Chat.ID) {
-		payloads := strings.Fields(m.Payload)
-
-		mc := 0
-		if len(payloads) > 0 {
-			mc, _ = strconv.Atoi(payloads[0])
-		}
-		n := 0
-		if len(payloads) > 1 {
-			n, _ = strconv.Atoi(payloads[1])
-		}
-
-		if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
-			SmartSendDelete(m, Locale("rp.set.invalid", GetSenderLocale(m)), &tb.SendOptions{
-				ParseMode: "Markdown",
-			})
-			LazyDelete(m)
-			return
-		}
-
-		usercreditlock.Lock()
-		defer usercreditlock.Unlock()
-		ci := GetCredit(m.Chat.ID, m.Sender.ID)
-
-		if ci != nil && ci.Credit >= int64(mc) {
-			chatId := m.Chat.ID
-			addCredit(chatId, m.Sender, -Abs(int64(mc)), true)
-			redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
-			redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
-			redpacketrankmap.Set(redpacketKey+":sender", GetQuotableUserName(m.Sender))
-			redpacketmap.Set(redpacketKey, mc)
-			redpacketnmap.Set(redpacketKey, n)
-			SendRedPacket(m.Chat, chatId, redpacketId)
-		} else {
-			SmartSendDelete(m, Locale("rp.set.noEnoughCredit", GetSenderLocale(m)))
-		}
-	} else {
-		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
-	}
-	LazyDelete(m)
-}
-
 func CmdLottery(m *tb.Message) {
 	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 		payloads := strings.Fields(m.Payload)
@@ -662,8 +619,6 @@ func CmdLottery(m *tb.Message) {
 	}
 	LazyDelete(m)
 }
-
-// ---------------- Normal User ----------------
 
 func CmdBanUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
@@ -719,23 +674,81 @@ func CmdKickUserCommand(m *tb.Message) {
 	LazyDelete(m)
 }
 
+// ---------------- Normal User ----------------
+
+func CmdRedpacket(m *tb.Message) {
+	defer LazyDelete(m)
+	if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+		if gc.ExecPolicy(m) {
+			return
+		}
+
+		payloads := strings.Fields(m.Payload)
+
+		mc := 0
+		if len(payloads) > 0 {
+			mc, _ = strconv.Atoi(payloads[0])
+		}
+		n := 0
+		if len(payloads) > 1 {
+			n, _ = strconv.Atoi(payloads[1])
+		}
+
+		if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
+			SmartSendDelete(m, Locale("rp.set.invalid", GetSenderLocale(m)), &tb.SendOptions{
+				ParseMode: "Markdown",
+			})
+			LazyDelete(m)
+			return
+		}
+
+		usercreditlock.Lock()
+		defer usercreditlock.Unlock()
+		ci := GetCredit(m.Chat.ID, m.Sender.ID)
+
+		if ci != nil && ci.Credit >= int64(mc) {
+			chatId := m.Chat.ID
+			addCredit(chatId, m.Sender, -Abs(int64(mc)), true, OPByRedPacket)
+			redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
+			redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
+			redpacketrankmap.Set(redpacketKey+":sender", GetQuotableUserName(m.Sender))
+			redpacketmap.Set(redpacketKey, mc)
+			redpacketnmap.Set(redpacketKey, n)
+			SendRedPacket(m.Chat, chatId, redpacketId)
+		} else {
+			SmartSendDelete(m, Locale("rp.set.noEnoughCredit", GetSenderLocale(m)))
+		}
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+}
+
 func CmdMyCredit(m *tb.Message) {
+	defer LazyDelete(m)
 	if m.Chat.ID > 0 {
 		SmartSendDelete(m, Locale("cmd.mustInGroup", GetSenderLocale(m)))
-	} else if IsGroup(m.Chat.ID) {
+	} else if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+		if gc.ExecPolicy(m) {
+			return
+		}
+
 		SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.my", GetSenderLocale(m)), GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
 			ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
 		})
 	}
-	LazyDelete(m)
 }
 
 func CmdCreditTransfer(m *tb.Message) {
+	defer LazyDelete(m)
 	if m.Chat.ID > 0 {
 		SmartSendDelete(m, Locale("cmd.mustInGroup", GetSenderLocale(m)))
-	} else if IsGroup(m.Chat.ID) {
+	} else if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+		if gc.ExecPolicy(m) {
+			return
+		}
+
 		credit, _ := strconv.Atoi(m.Payload)
 		if credit <= 0 || !ValidReplyUser(m) {
 			SmartSendDelete(m, Locale("transfer.invalidParam", GetSenderLocale(m)))
@@ -745,8 +758,8 @@ func CmdCreditTransfer(m *tb.Message) {
 
 			ci := GetCredit(m.Chat.ID, m.Sender.ID)
 			if ci.Credit >= int64(credit) {
-				addCredit(m.Chat.ID, m.Sender, -int64(credit), true)
-				addCredit(m.Chat.ID, m.ReplyTo.Sender, int64(credit), true)
+				addCredit(m.Chat.ID, m.Sender, -int64(credit), true, OPByTransfer)
+				addCredit(m.Chat.ID, m.ReplyTo.Sender, int64(credit), true, OPByTransfer)
 
 				SmartSendDelete(m, fmt.Sprintf(Locale("transfer.success", GetSenderLocale(m)), credit))
 			} else {
@@ -754,7 +767,6 @@ func CmdCreditTransfer(m *tb.Message) {
 			}
 		}
 	}
-	LazyDelete(m)
 }
 
 func CmdVersion(m *tb.Message) {

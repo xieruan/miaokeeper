@@ -31,6 +31,21 @@ const (
 	UMDel
 )
 
+type OPReasons string
+
+const (
+	OPFlush        OPReasons = "FLUSH"
+	OPNormal       OPReasons = "NORMAL"
+	OPByAdmin      OPReasons = "ADMIN"
+	OPByRedPacket  OPReasons = "REDPACKET"
+	OPByLottery    OPReasons = "LOTTERY"
+	OPByTransfer   OPReasons = "TRANSFER"
+	OPByPolicy     OPReasons = "POLICY"
+	OPByAbuse      OPReasons = "ABUSE"
+	OPByAPIConsume OPReasons = "CONSUME"
+	OPByCleanUp    OPReasons = "CLEANUP"
+)
+
 type CreditInfo struct {
 	Username string `json:"username"`
 	Name     string `json:"nickname"`
@@ -186,6 +201,22 @@ func InitGroupTable(groupId int64) {
 		q.Close()
 	}
 
+	q, err = MYSQLDB.Query(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS MiaoKeeper_Credit_Log_%d (
+		id BIGINT NOT NULL AUTO_INCREMENT,
+		userid BIGINT NOT NULL,
+		credit BIGINT NOT NULL,
+		op CHAR(16) NOT NULL,
+		INDEX (id),
+		INDEX (userid),
+		INDEX (op)
+	) DEFAULT CHARSET=utf8mb4`, Abs(groupId)))
+	if err != nil {
+		DErrorf("Table Creation Error | error=%v", err.Error())
+	}
+	if q != nil {
+		q.Close()
+	}
+
 	if GetGroupConfig(groupId) == nil {
 		NewGroupConfig(groupId)
 	}
@@ -319,10 +350,28 @@ func FlushCredits(groupId int64, records [][]string) {
 		query.Close()
 	}
 
+	// writing logs
+	params = []interface{}{}
+	sqlCmd = fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d (userid, credit, op) VALUES`, Abs(groupId))
+	for _, r := range records {
+		sqlCmd += ` (?, ?, ?),`
+		if len(r) >= 4 {
+			params = append(params, r[0], r[3], OPFlush)
+		}
+	}
+	sqlCmd = sqlCmd[0 : len(sqlCmd)-1]
+	query, err = MYSQLDB.Query(sqlCmd, params...)
+	if err != nil {
+		DErrorE(err, "Database Credit Log Flush Error")
+	}
+	if query != nil {
+		query.Close()
+	}
+
 	DInfof("Flush Credit | group=%d columns=%d", groupId, len(records))
 }
 
-func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInfo {
+func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPReasons) *CreditInfo {
 	ci := GetCredit(user.GroupId, user.ID)
 	if user.Name == "" {
 		user.Name = ci.Name
@@ -340,6 +389,7 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInf
 	}
 
 	var query *sql.Rows
+	var queryLogs *sql.Rows
 	var err error
 
 	realGroup := GetAliasedGroup(user.GroupId)
@@ -353,16 +403,23 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64) *CreditInf
 				username = VALUES(username),
 				credit = VALUES(credit)
 			`, Abs(realGroup)), user.ID, user.Name, user.Username, user.Credit)
+		queryLogs, err = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
+			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, user.Credit, reason)
 	} else if realGroup == user.GroupId {
 		// when the method is UMDel, do not delete aliased credit
 		query, err = MYSQLDB.Query(fmt.Sprintf(`DELETE FROM MiaoKeeper_Credit_%d
 			WHERE userid = ?;`, Abs(user.GroupId)), user.ID)
+		queryLogs, err = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
+			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, -user.Credit, OPByCleanUp)
 	}
 	if err != nil {
 		DErrorE(err, "Database Credit Update Error")
 	}
 	if query != nil {
 		query.Close()
+	}
+	if queryLogs != nil {
+		queryLogs.Close()
 	}
 
 	DLogf("Update Credit | gid=%d rgid=%d user=%d alter=%d credit=%d", user.GroupId, realGroup, user.ID, method, value)

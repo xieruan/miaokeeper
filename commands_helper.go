@@ -160,18 +160,18 @@ func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	}
 }
 
-func addCreditToMsgSender(chatId int64, m *tb.Message, credit int64, force bool) *CreditInfo {
+func addCreditToMsgSender(chatId int64, m *tb.Message, credit int64, force bool, reason OPReasons) *CreditInfo {
 	if ValidMessageUser(m) {
-		return addCredit(chatId, m.Sender, credit, force)
+		return addCredit(chatId, m.Sender, credit, force, reason)
 	}
 	return nil
 }
 
-func addCredit(chatId int64, user *tb.User, credit int64, force bool) *CreditInfo {
+func addCredit(chatId int64, user *tb.User, credit int64, force bool, reason OPReasons) *CreditInfo {
 	if chatId < 0 && user != nil && user.ID > 0 && credit != 0 {
 		token := fmt.Sprintf("ac-%d-%d", chatId, user.ID)
 		if creditomap.Add(token) < 20 || force { // can only get credit 20 times / hour
-			return UpdateCredit(BuildCreditInfo(chatId, user, false), UMAdd, credit)
+			return UpdateCredit(BuildCreditInfo(chatId, user, false), UMAdd, credit, reason)
 		}
 	}
 	return nil

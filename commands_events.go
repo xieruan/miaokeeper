@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
-	"time"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -19,48 +17,13 @@ func CmdOnText(m *tb.Message) {
 			return
 		}
 
-		if rule := gc.TestCustomReplyRule(m); rule != nil {
-			if rule.CreditBehavior != 0 {
-				addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true)
-			}
-
-			if rule.ReplyMessage != "" {
-				var target interface{} = m
-				if rule.ReplyTo == "group" {
-					target = m.Chat
-				} else if rule.ReplyTo == "private" {
-					target = m.Sender
-				}
-
-				sent, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
-					ParseMode:             "Markdown",
-					DisableWebPagePreview: true,
-					AllowWithoutReply:     true,
-				})
-				if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
-					LazyDelete(sent)
-				}
-				if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
-					LazyDelete(m)
-				}
-
-				if err != nil {
-					SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
-				}
-			}
-
-			if rule.CallbackURL != "" {
-				if u, err := url.Parse(rule.CallbackURL); err == nil && u != nil {
-					go gc.POSTWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
-				}
-			}
-
+		if gc.ExecPolicy(m) {
 			return
 		}
 
 		if CheckSpoiler(m) {
 			RevealSpoiler(m)
-			addCreditToMsgSender(m.Chat.ID, m, -2, true)
+			addCreditToMsgSender(m.Chat.ID, m, -2, true, OPNormal)
 			return
 		}
 
@@ -82,15 +45,15 @@ func CmdOnText(m *tb.Message) {
 
 		if puncReg.MatchString(text) {
 			// commands
-			addCreditToMsgSender(m.Chat.ID, m, -5, true)
+			addCreditToMsgSender(m.Chat.ID, m, -5, true, OPNormal)
 		} else if lastID == userId && text == lastText {
 			// duplicated messages
-			addCreditToMsgSender(m.Chat.ID, m, -2, true)
+			addCreditToMsgSender(m.Chat.ID, m, -2, true, OPNormal)
 		} else if textLen >= 2 && (lastID != userId || (textLen >= 14 && text != lastText)) {
 			// valid messages
-			addCreditToMsgSender(m.Chat.ID, m, 1, false)
+			addCreditToMsgSender(m.Chat.ID, m, 1, false, OPNormal)
 			if ValidReplyUser(m) {
-				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
+				addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true, OPNormal)
 			}
 		}
 
@@ -113,12 +76,12 @@ func CmdOnSticker(m *tb.Message) {
 		}
 		userId := m.Sender.ID
 		if lastID != userId {
-			addCreditToMsgSender(m.Chat.ID, m, 1, false)
+			addCreditToMsgSender(m.Chat.ID, m, 1, false, OPNormal)
 			lastID = userId
 		}
 
 		if ValidReplyUser(m) {
-			addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true)
+			addCreditToMsgSender(m.Chat.ID, m.ReplyTo, 1, true, OPNormal)
 		}
 	}
 }
@@ -146,7 +109,7 @@ func CmdOnUserLeft(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && m.UserLeft.ID > 0 {
 		gc.UpdateAdmin(m.UserLeft.ID, UMDel)
-		UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0)
+		UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0, OPByCleanUp)
 	}
 	LazyDelete(m)
 }
@@ -158,7 +121,7 @@ func CmdOnChatMember(cmu *tb.ChatMemberUpdated) {
 		if cmu.NewChatMember.Role == tb.Kicked ||
 			cmu.NewChatMember.Role == tb.Left {
 			gc.UpdateAdmin(user.ID, UMDel)
-			UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0)
+			UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0, OPByCleanUp)
 		}
 	}
 }

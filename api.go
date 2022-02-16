@@ -100,7 +100,7 @@ func InitRESTServer(portNum int) {
 					c.BindJSON(&consumeRequest)
 					if consumeRequest.Credit > 0 {
 						if ci.Credit >= consumeRequest.Credit || (ci.Credit > 0 && consumeRequest.AllowNegative) {
-							ci = UpdateCredit(ci, UMAdd, -consumeRequest.Credit)
+							ci = UpdateCredit(ci, UMAdd, -consumeRequest.Credit, OPByAPIConsume)
 							c.JSON(http.StatusOK, GinData(ci))
 						} else {
 							c.JSON(http.StatusNotAcceptable, GinError("the user does not have enough credit."))
