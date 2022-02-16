@@ -337,7 +337,7 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 			var message interface{} = textMessage
 			if rule.ReplyImage != "" {
 				if u, err := url.Parse(rule.ReplyImage); err == nil && u != nil {
-					message = tb.Photo{
+					message = &tb.Photo{
 						File:    tb.FromURL(rule.ReplyImage),
 						Caption: textMessage,
 					}
