@@ -454,13 +454,13 @@ type LotteryInstance struct {
 func (li *LotteryInstance) UpdateTelegramMsg() *tb.Message {
 	btns := []string{}
 	if li.Status == 0 {
-		btns = append(btns, fmt.Sprintf("🤏 我要抽奖|lt/%d/1/%s", li.GroupID, li.ID))
+		btns = append(btns, fmt.Sprintf("🤏 我要抽奖|lt?t=1&id=%s", li.ID))
 	}
 	if li.Status >= 0 && li.Status < 2 {
-		btns = append(btns, fmt.Sprintf("📦 手动开奖[管理]|lt/%d/3/%s", li.GroupID, li.ID))
+		btns = append(btns, fmt.Sprintf("📦 手动开奖[管理]|lt?t=3&id=%s", li.ID))
 	}
 	if li.Status == -1 {
-		btns = append(btns, fmt.Sprintf("🎡 开启活动[管理]|lt/%d/2/%s", li.GroupID, li.ID))
+		btns = append(btns, fmt.Sprintf("🎡 开启活动[管理]|lt?t=2&id=%s", li.ID))
 	}
 	if li.MsgID > 0 && li.Status == 2 {
 		Bot.Delete(&tb.Message{ID: li.MsgID, Chat: &tb.Chat{ID: li.GroupID}})

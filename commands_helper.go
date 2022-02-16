@@ -110,8 +110,8 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			}
 			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", GetSenderLocale(m)), userId, usrName), "", []string{
 				fmt.Sprintf(Locale("btn.channel.step1", GetSenderLocale(m)), strings.TrimLeft(gc.MustFollow, "@")),
-				fmt.Sprintf(Locale("btn.channel.step2", GetSenderLocale(m)), chatId, userId),
-				fmt.Sprintf(Locale("btn.adminPanel", GetSenderLocale(m)), chatId, userId, 0, chatId, userId, 0),
+				fmt.Sprintf(Locale("btn.channel.step2", GetSenderLocale(m)), userId),
+				fmt.Sprintf(Locale("btn.adminPanel", GetSenderLocale(m)), userId, 0, userId, 0),
 			})
 			if msg == nil || err != nil {
 				if showExceptDialog {
@@ -155,8 +155,8 @@ func Rsp(c *tb.Callback, msg string) {
 
 func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	return []string{
-		fmt.Sprintf(Locale("btn.notFair", "zh"), votes, chatId, userId, secondUserId),
-		fmt.Sprintf(Locale("btn.adminPanel", "zh"), chatId, userId, secondUserId, chatId, userId, secondUserId),
+		fmt.Sprintf(Locale("btn.notFair", "zh"), votes, userId, secondUserId),
+		fmt.Sprintf(Locale("btn.adminPanel", "zh"), userId, secondUserId, userId, secondUserId),
 	}
 }
 

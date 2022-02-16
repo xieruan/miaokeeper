@@ -48,7 +48,6 @@ var redpacketnmap *ObliviousMapInt
 var debouncer func(func())
 var lazyScheduler *memutils.LazyScheduler
 
-var callbacklock sync.Mutex
 var usercreditlock sync.Mutex
 
 var DefaultWarnKeywords = []string{"口臭", "口 臭", "口  臭", "口臭!", "口臭！", "嘴臭", "嘴 臭", "嘴  臭", "嘴臭!", "嘴臭！"}

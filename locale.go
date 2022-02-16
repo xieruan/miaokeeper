@@ -119,12 +119,12 @@ var LocaleMap = map[string]map[string]string{
 		"locale.get": "👀 当前群组的默认语言为: %s ～",
 
 		// not support yet
-		"btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
-		"btn.notFair": "😠 这不公平 (%d)|vt/%d/%d/%d",
+		"btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
+		"btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
-		"btn.adminPanel":    "🚩 解封[管理]|unban/%d/%d/%d||🚮 清退[管理]|kick/%d/%d/%d",
+		"btn.adminPanel":    "🚩 解封[管理]|unban?u=%d&s=%d||🚮 清退[管理]|kick?u=%d&s=%d",
 		"btn.channel.step1": "👉 第一步：关注频道 👈|https://t.me/%s",
-		"btn.channel.step2": "👉 第二步：点我验证 👈|check/%d/%d",
+		"btn.channel.step2": "👉 第二步：点我验证 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nTA 已被管理员解封 👊",
 		"cb.kicked.byadmin":  "\n\nTA 已被管理员踢出群聊 🦶",
@@ -154,6 +154,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.notAdmin":                     "❌ 请不要乱玩管理员指令！",
 		"cb.noEvent":                      "❌ 未找到这个活动，请联系管理员解决！",
 		"cb.notParsed":                    "❌ 指令解析出错，请联系管理员解决 ~",
+		"cb.validationError":              "❌ 指令验证失败，请不要乱玩回调指令 ~",
 		"cb.disabled":                     "❌ 这个群组还没有被授权哦 ~",
 	},
 	"en": {
@@ -267,12 +268,12 @@ var LocaleMap = map[string]map[string]string{
 		"locale.get": "👀 The default language of this group is: %s ～",
 
 		// not support yet
-		// "btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
-		// "btn.notFair": "😠 这不公平 (%d)|vt/%d/%d/%d",
+		// "btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
+		// "btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
-		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban/%d/%d/%d||🚮 KICK [ADMIN]|kick/%d/%d/%d",
+		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban?u=%d&s=%d||🚮 KICK [ADMIN]|kick?u=%d&s=%d",
 		"btn.channel.step1": "👉 1ST: JOIN THE CHANNEL 👈|https://t.me/%s",
-		"btn.channel.step2": "👉 2ND: RELEASE ME 👈|check/%d/%d",
+		"btn.channel.step2": "👉 2ND: RELEASE ME 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nThe user is unbanned by admin 👊",
 		"cb.kicked.byadmin":  "\n\nThe user has been kicked 🦶",
@@ -301,6 +302,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.notMiaoAdmin":                 "❌ Do not play with the button!",
 		"cb.notAdmin":                     "❌ Do not play with the button!",
 		"cb.noEvent":                      "❌ The event is not found.",
+		"cb.validationError":              "❌ The data is not validated.",
 		"cb.notParsed":                    "❌ The event is invalid.",
 		"cb.disabled":                     "❌ The group is not authorized.",
 	},
