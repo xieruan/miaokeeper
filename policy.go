@@ -60,6 +60,7 @@ type CustomReplyRule struct {
 	ReplyTo      string // message, group, private
 	ReplyButtons []string
 	ReplyMode    string // deleteself, deleteorigin, deleteboth
+	ReplyImage   string
 
 	lock sync.Mutex `json:"-"`
 }
@@ -332,7 +333,18 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 				target = m.Sender
 			}
 
-			sent, err := SmartSendWithBtns(target, BuilRuleMessage(rule.ReplyMessage, m), BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
+			textMessage := BuilRuleMessage(rule.ReplyMessage, m)
+			var message interface{} = textMessage
+			if rule.ReplyImage != "" {
+				if u, err := url.Parse(rule.ReplyImage); err == nil && u != nil {
+					message = tb.Photo{
+						File:    tb.FromURL(rule.ReplyImage),
+						Caption: textMessage,
+					}
+				}
+			}
+
+			sent, err := SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
 				ParseMode:             "Markdown",
 				DisableWebPagePreview: true,
 				AllowWithoutReply:     true,
