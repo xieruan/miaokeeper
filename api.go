@@ -63,7 +63,6 @@ func MiddlewareGroupAuthorization() gin.HandlerFunc {
 		}
 
 		c.Abort()
-		return
 	}
 }
 
