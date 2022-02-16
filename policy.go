@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -59,6 +60,7 @@ type CustomReplyRule struct {
 	ReplyTo      string // message, group, private
 	ReplyButtons []string
 	ReplyMode    string // deleteself, deleteorigin, deleteboth
+	ReplyImage   string
 
 	lock sync.Mutex `json:"-"`
 }
@@ -315,4 +317,58 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 	}
 
 	return nil
+}
+
+func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
+	if rule := gc.TestCustomReplyRule(m); rule != nil {
+		if rule.CreditBehavior != 0 {
+			addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true, OPByPolicy)
+		}
+
+		if rule.ReplyMessage != "" {
+			var target interface{} = m
+			if rule.ReplyTo == "group" {
+				target = m.Chat
+			} else if rule.ReplyTo == "private" {
+				target = m.Sender
+			}
+
+			textMessage := BuilRuleMessage(rule.ReplyMessage, m)
+			var message interface{} = textMessage
+			if rule.ReplyImage != "" {
+				if u, err := url.Parse(rule.ReplyImage); err == nil && u != nil {
+					message = &tb.Photo{
+						File:    tb.FromURL(rule.ReplyImage),
+						Caption: textMessage,
+					}
+				}
+			}
+
+			sent, err := SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
+				ParseMode:             "Markdown",
+				DisableWebPagePreview: true,
+				AllowWithoutReply:     true,
+			})
+			if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
+				LazyDelete(sent)
+			}
+			if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
+				LazyDelete(m)
+			}
+
+			if err != nil {
+				SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
+			}
+		}
+
+		if rule.CallbackURL != "" {
+			if u, err := url.Parse(rule.CallbackURL); err == nil && u != nil {
+				go gc.POSTWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
+			}
+		}
+
+		return true
+	}
+
+	return false
 }
