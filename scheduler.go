@@ -62,11 +62,7 @@ func InitScheduler() {
 				cm, err := Bot.ChatMemberOf(fakeMsg.Chat, fakeMsg.Sender)
 				if err != nil || cm.Role == tb.Restricted || cm.Role == tb.Kicked || cm.Role == tb.Left {
 					KickOnce(fakeMsg.Chat.ID, fakeMsg.Sender.ID)
-					SmartSend(fakeMsg.Chat, fmt.Sprintf(Locale("channel.kicked", GetSenderLocale(fakeMsg)), fakeMsg.Sender.ID), &tb.SendOptions{
-						ParseMode:             "Markdown",
-						DisableWebPagePreview: true,
-						AllowWithoutReply:     true,
-					})
+					SmartSend(fakeMsg.Chat, fmt.Sprintf(Locale("channel.kicked", GetSenderLocale(fakeMsg)), fakeMsg.Sender.ID), WithMarkdown())
 				}
 			}
 		}

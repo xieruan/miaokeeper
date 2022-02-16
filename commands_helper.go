@@ -202,7 +202,6 @@ func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
 func SmartEdit(to *tb.Message, what interface{}, options ...interface{}) (*tb.Message, error) {
 	if len(options) == 0 {
 		options = append([]interface{}{&tb.SendOptions{
-			// ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
 		}}, options...)
@@ -252,7 +251,6 @@ func MakeBtns(prefix string, btns []string) [][]tb.InlineButton {
 
 func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*tb.Message, error) {
 	return SmartSendInner(to, what, &tb.SendOptions{
-		// ParseMode:             "Markdown",
 		DisableWebPagePreview: true,
 		AllowWithoutReply:     true,
 	}, &tb.ReplyMarkup{
@@ -264,11 +262,7 @@ func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*
 }
 
 func SendBtnsMarkdown(to interface{}, what interface{}, prefix string, btns []string) (*tb.Message, error) {
-	return SmartSendInner(to, what, &tb.SendOptions{
-		ParseMode:             "Markdown",
-		DisableWebPagePreview: true,
-		AllowWithoutReply:     true,
-	}, &tb.ReplyMarkup{
+	return SmartSendInner(to, what, WithMarkdown(), &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
 		ForceReply:          false,
@@ -286,11 +280,7 @@ func EditBtns(to *tb.Message, what interface{}, prefix string, btns []string) (*
 }
 
 func EditBtnsMarkdown(to *tb.Message, what interface{}, prefix string, btns []string) (*tb.Message, error) {
-	return SmartEdit(to, what, &tb.SendOptions{
-		ParseMode:             "Markdown",
-		DisableWebPagePreview: true,
-		AllowWithoutReply:     true,
-	}, &tb.ReplyMarkup{
+	return SmartEdit(to, what, WithMarkdown(), &tb.ReplyMarkup{
 		OneTimeKeyboard:     true,
 		ResizeReplyKeyboard: true,
 		ForceReply:          false,
@@ -301,7 +291,6 @@ func EditBtnsMarkdown(to *tb.Message, what interface{}, prefix string, btns []st
 func SmartSend(to interface{}, what interface{}, options ...interface{}) (*tb.Message, error) {
 	if len(options) == 0 {
 		return SmartSendInner(to, what, &tb.SendOptions{
-			// ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,
 		})
@@ -679,6 +668,14 @@ func ParseSession(m *tb.Message) (bool, int64, string) {
 		return true, chatId, sessionType
 	}
 	return false, 0, ""
+}
+
+func WithMarkdown() *tb.SendOptions {
+	return &tb.SendOptions{
+		ParseMode:             "Markdown",
+		DisableWebPagePreview: true,
+		AllowWithoutReply:     true,
+	}
 }
 
 func init() {

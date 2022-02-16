@@ -344,11 +344,7 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 				}
 			}
 
-			sent, err := SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			sent, err := SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), WithMarkdown())
 			if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
 				LazyDelete(sent)
 			}

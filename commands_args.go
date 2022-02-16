@@ -185,11 +185,7 @@ func CmdGetPolicy(m *tb.Message) {
 func CmdSetPolicy(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-		_, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.privateSession", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, "Policy"), &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-			AllowWithoutReply:     true,
-		})
+		_, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.privateSession", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, "Policy"), WithMarkdown())
 		if err != nil {
 			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
 			return
@@ -205,11 +201,7 @@ func CmdGetToken(m *tb.Message) {
 	defer LazyDelete(m)
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-		if _, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.getToken", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, gc.GenerateSign(GST_API_SIGN), gc.GenerateSign(GST_POLICY_CALLBACK_SIGN)), &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-			AllowWithoutReply:     true,
-		}); err == nil {
+		if _, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.getToken", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, gc.GenerateSign(GST_API_SIGN), gc.GenerateSign(GST_POLICY_CALLBACK_SIGN)), WithMarkdown()); err == nil {
 			SmartSendDelete(m, Locale("credit.exportSuccess", GetSenderLocale(m)))
 		} else {
 			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
@@ -359,11 +351,7 @@ func CmdCheckCredit(m *tb.Message) {
 		if m.Chat.ID > 0 || !m.IsReply() {
 			SmartSendDelete(m, Locale("cmd.mustReply", GetSenderLocale(m)))
 		} else {
-			SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender), GetCredit(m.Chat.ID, m.ReplyTo.Sender.ID).Credit), WithMarkdown())
 		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
@@ -389,11 +377,7 @@ func CmdSetAntiSpoiler(m *tb.Message) {
 
 			gc.AntiSpoiler = status
 			gc.Save()
-			SmartSendDelete(m, fmt.Sprintf(Locale("spoiler.success", GetSenderLocale(m)), gc.AntiSpoiler), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			SmartSendDelete(m, fmt.Sprintf(Locale("spoiler.success", GetSenderLocale(m)), gc.AntiSpoiler), WithMarkdown())
 		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noMiaoPerm", GetSenderLocale(m)))
@@ -436,11 +420,7 @@ func CmdSetChannel(m *tb.Message) {
 						gc.MustFollowOnMsg = true
 					}
 					gc.Save()
-					SmartSendDelete(m, fmt.Sprintf(Locale("channel.set.success", GetSenderLocale(m)), gc.MustFollowOnJoin, gc.MustFollowOnMsg), &tb.SendOptions{
-						ParseMode:             "Markdown",
-						DisableWebPagePreview: true,
-						AllowWithoutReply:     true,
-					})
+					SmartSendDelete(m, fmt.Sprintf(Locale("channel.set.success", GetSenderLocale(m)), gc.MustFollowOnJoin, gc.MustFollowOnMsg), WithMarkdown())
 				}
 			}
 		}
@@ -524,11 +504,7 @@ func CmdCreditRank(m *tb.Message) {
 		for i, c := range ranks {
 			rankStr += fmt.Sprintf("`%2d`. `%s`: `%d`\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.Credit)
 		}
-		SmartSend(m, Locale("credit.rank.info", GetSenderLocale(m))+rankStr, &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-			AllowWithoutReply:     true,
-		})
+		SmartSend(m, Locale("credit.rank.info", GetSenderLocale(m))+rankStr, WithMarkdown())
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
@@ -609,11 +585,7 @@ func CmdLottery(m *tb.Message) {
 		for i, c := range ranks[:n] {
 			rankStr += fmt.Sprintf("`%2d.` `%s` ([%d](%s))\n", i+1, strings.ReplaceAll(c.Name, "`", "'"), c.ID, fmt.Sprintf("tg://user?id=%d", c.ID))
 		}
-		SmartSend(m, fmt.Sprintf(Locale("credit.lottery.info", GetSenderLocale(m))+rankStr), &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-			AllowWithoutReply:     true,
-		})
+		SmartSend(m, fmt.Sprintf(Locale("credit.lottery.info", GetSenderLocale(m))+rankStr), WithMarkdown())
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
@@ -623,11 +595,7 @@ func CmdLottery(m *tb.Message) {
 func CmdBanUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := Ban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-			SmartSendDelete(m, fmt.Sprintf(Locale("gp.ban.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.ban.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), WithMarkdown())
 		} else {
 			DErrorE(err, "Perm Update | Fail to ban user")
 			SmartSendDelete(m, Locale("gp.ban.failure", GetSenderLocale(m)))
@@ -641,11 +609,7 @@ func CmdBanUserCommand(m *tb.Message) {
 func CmdUnbanUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := Unban(m.Chat.ID, m.ReplyTo.Sender.ID, 0); err == nil {
-			SmartSendDelete(m, fmt.Sprintf(Locale("gp.unban.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.unban.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), WithMarkdown())
 		} else {
 			DErrorE(err, "Perm Update | Fail to unban user")
 			SmartSendDelete(m, Locale("gp.unban.failure", GetSenderLocale(m)))
@@ -659,11 +623,7 @@ func CmdUnbanUserCommand(m *tb.Message) {
 func CmdKickUserCommand(m *tb.Message) {
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {
 		if err := KickOnce(m.Chat.ID, m.ReplyTo.Sender.ID); err == nil {
-			SmartSendDelete(m, fmt.Sprintf(Locale("gp.kick.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), &tb.SendOptions{
-				ParseMode:             "Markdown",
-				DisableWebPagePreview: true,
-				AllowWithoutReply:     true,
-			})
+			SmartSendDelete(m, fmt.Sprintf(Locale("gp.kick.success", GetSenderLocale(m)), GetQuotableUserName(m.ReplyTo.Sender)), WithMarkdown())
 		} else {
 			DErrorE(err, "Perm Update | Fail to kick user once")
 			SmartSendDelete(m, Locale("gp.kick.failure", GetSenderLocale(m)))
@@ -695,9 +655,7 @@ func CmdRedpacket(m *tb.Message) {
 		}
 
 		if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
-			SmartSendDelete(m, Locale("rp.set.invalid", GetSenderLocale(m)), &tb.SendOptions{
-				ParseMode: "Markdown",
-			})
+			SmartSendDelete(m, Locale("rp.set.invalid", GetSenderLocale(m)), WithMarkdown())
 			LazyDelete(m)
 			return
 		}
@@ -732,11 +690,7 @@ func CmdMyCredit(m *tb.Message) {
 			return
 		}
 
-		SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.my", GetSenderLocale(m)), GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), &tb.SendOptions{
-			ParseMode:             "Markdown",
-			DisableWebPagePreview: true,
-			AllowWithoutReply:     true,
-		})
+		SmartSendDelete(m, fmt.Sprintf(Locale("credit.check.my", GetSenderLocale(m)), GetQuotableUserName(m.Sender), GetCredit(m.Chat.ID, m.Sender.ID).Credit), WithMarkdown())
 	}
 }
 
@@ -790,7 +744,7 @@ func CmdID(m *tb.Message) {
 			retStr = fmt.Sprintf(Locale("cmd.misc.id.user", GetSenderLocale(m)), m.Chat.ID, m.Sender.ID, m.Sender.LanguageCode)
 		}
 	}
-	SmartSendDelete(m, retStr)
+	SmartSendDelete(m, retStr, WithMarkdown())
 }
 
 func CmdPing(m *tb.Message) {
@@ -798,15 +752,7 @@ func CmdPing(m *tb.Message) {
 	t := time.Now().UnixMilli()
 	Bot.GetCommands()
 	t1 := time.Now().UnixMilli() - t
-	msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf(Locale("cmd.misc.ping.1", GetSenderLocale(m)), t1), &tb.SendOptions{
-		ParseMode:             "Markdown",
-		DisableWebPagePreview: true,
-		AllowWithoutReply:     true,
-	})
+	msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf(Locale("cmd.misc.ping.1", GetSenderLocale(m)), t1), WithMarkdown())
 	t2 := time.Now().UnixMilli() - t - t1
-	SmartEdit(msg, fmt.Sprintf(Locale("cmd.misc.ping.2", GetSenderLocale(m)), t1, t2), &tb.SendOptions{
-		ParseMode:             "Markdown",
-		DisableWebPagePreview: true,
-		AllowWithoutReply:     true,
-	})
+	SmartEdit(msg, fmt.Sprintf(Locale("cmd.misc.ping.2", GetSenderLocale(m)), t1, t2), WithMarkdown())
 }
