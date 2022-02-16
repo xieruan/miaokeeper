@@ -317,7 +317,7 @@ func CmdSetCredit(m *tb.Message) {
 		if m.ReplyTo != nil {
 			target = BuildCreditInfo(m.Chat.ID, m.ReplyTo.Sender, false)
 		}
-		target = UpdateCredit(target, UMSet, credit, OPByAdmin)
+		target = UpdateCredit(target, UMSet, credit, OPByAdminSet)
 		SmartSendDelete(m, fmt.Sprintf(Locale("credit.set.success", GetSenderLocale(m)), target.Credit))
 	} else {
 		SmartSendDelete(m, Locale("cmd.noMiaoPerm", GetSenderLocale(m)))

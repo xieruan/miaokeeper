@@ -37,6 +37,7 @@ const (
 	OPFlush        OPReasons = "FLUSH"
 	OPNormal       OPReasons = "NORMAL"
 	OPByAdmin      OPReasons = "ADMIN"
+	OPByAdminSet   OPReasons = "ADMINSET"
 	OPByRedPacket  OPReasons = "REDPACKET"
 	OPByLottery    OPReasons = "LOTTERY"
 	OPByTransfer   OPReasons = "TRANSFER"
@@ -206,6 +207,7 @@ func InitGroupTable(groupId int64) {
 		userid BIGINT NOT NULL,
 		credit BIGINT NOT NULL,
 		op CHAR(16) NOT NULL,
+		createdat DATETIME DEFAULT CURRENT_TIMESTAMP,
 		INDEX (id),
 		INDEX (userid),
 		INDEX (op)
@@ -403,13 +405,13 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPR
 				username = VALUES(username),
 				credit = VALUES(credit)
 			`, Abs(realGroup)), user.ID, user.Name, user.Username, user.Credit)
-		queryLogs, err = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
-			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, user.Credit, reason)
+		queryLogs, _ = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
+			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, value, reason)
 	} else if realGroup == user.GroupId {
 		// when the method is UMDel, do not delete aliased credit
 		query, err = MYSQLDB.Query(fmt.Sprintf(`DELETE FROM MiaoKeeper_Credit_%d
 			WHERE userid = ?;`, Abs(user.GroupId)), user.ID)
-		queryLogs, err = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
+		queryLogs, _ = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
 			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, -user.Credit, OPByCleanUp)
 	}
 	if err != nil {
