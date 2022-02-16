@@ -151,6 +151,7 @@ func InitTelegram() {
 
 		Bot.Handle("/mycredit", CmdMyCredit)
 		Bot.Handle("/version", CmdVersion)
+		Bot.Handle("/id", CmdID)
 		Bot.Handle("/ping", CmdPing)
 
 		Bot.Handle(tb.OnUserLeft, CmdOnUserLeft)

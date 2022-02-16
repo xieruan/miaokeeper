@@ -770,11 +770,31 @@ func CmdCreditTransfer(m *tb.Message) {
 }
 
 func CmdVersion(m *tb.Message) {
+	defer LazyDelete(m)
 	SmartSendDelete(m, fmt.Sprintf(Locale("cmd.misc.version", GetSenderLocale(m)), version))
-	LazyDelete(m)
+}
+
+func CmdID(m *tb.Message) {
+	defer LazyDelete(m)
+	retStr := ""
+	if m.ReplyTo != nil {
+		if m.ReplyTo.SenderChat != nil {
+			retStr = fmt.Sprintf(Locale("cmd.misc.replyid.chat", GetSenderLocale(m)), m.Chat.ID, m.ReplyTo.SenderChat.ID, m.ReplyTo.SenderChat.Type)
+		} else {
+			retStr = fmt.Sprintf(Locale("cmd.misc.replyid.user", GetSenderLocale(m)), m.Chat.ID, m.ReplyTo.Sender.ID, m.ReplyTo.Sender.LanguageCode)
+		}
+	} else {
+		if m.SenderChat != nil {
+			retStr = fmt.Sprintf(Locale("cmd.misc.id.chat", GetSenderLocale(m)), m.Chat.ID, m.SenderChat.ID, m.SenderChat.Type)
+		} else {
+			retStr = fmt.Sprintf(Locale("cmd.misc.id.user", GetSenderLocale(m)), m.Chat.ID, m.Sender.ID, m.Sender.LanguageCode)
+		}
+	}
+	SmartSendDelete(m, retStr)
 }
 
 func CmdPing(m *tb.Message) {
+	defer LazyDelete(m)
 	t := time.Now().UnixMilli()
 	Bot.GetCommands()
 	t1 := time.Now().UnixMilli() - t
@@ -789,5 +809,4 @@ func CmdPing(m *tb.Message) {
 		DisableWebPagePreview: true,
 		AllowWithoutReply:     true,
 	})
-	LazyDelete(m)
 }
