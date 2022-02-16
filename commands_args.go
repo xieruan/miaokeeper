@@ -205,7 +205,7 @@ func CmdGetToken(m *tb.Message) {
 	defer LazyDelete(m)
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
-		if _, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.getToken", GetSenderLocale(m)), gc.GenerateSign(GST_API_SIGN), gc.GenerateSign(GST_POLICY_CALLBACK_SIGN)), &tb.SendOptions{
+		if _, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.getToken", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, gc.GenerateSign(GST_API_SIGN), gc.GenerateSign(GST_POLICY_CALLBACK_SIGN)), &tb.SendOptions{
 			ParseMode:             "Markdown",
 			DisableWebPagePreview: true,
 			AllowWithoutReply:     true,

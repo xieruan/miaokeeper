@@ -12,7 +12,7 @@ var LocaleMap = map[string]map[string]string{
 		"system.unexpected": "❌ 无法完成任务，请检查服务器错误日志",
 		"system.notsend":    "❌ 发送消息失败",
 
-		"cmd.getToken":       "*🔍 生成成功*\n\nAPI 令牌: `%s`\n回调签名: `%s`",
+		"cmd.getToken":       "*🔍 生成成功*\n\n群组名称: `%s`\n群组 ID: `%d`\nAPI 令牌: `%s`\n回调签名: `%s`",
 		"cmd.zc.notAllowed":  "当前群组不允许互相臭嘴哦 ~",
 		"cmd.zc.indeed":      "确实",
 		"cmd.zc.cantBan":     "我拿它没办法呢 ...",
@@ -156,7 +156,7 @@ var LocaleMap = map[string]map[string]string{
 		"system.unexpected": "❌ Cannot fulfill the task, please check logs",
 		"system.notsend":    "❌ Cannot send the message",
 
-		"cmd.getToken":       "*🔍 Generate Success*\n\nAPI Token: `%s`\nCallback Sign: `%s`",
+		"cmd.getToken":       "*🔍 Generate Success*\n\nGroup Name: `%s`\nGroup ID: `%d`\nAPI Token: `%s`\nCallback Sign: `%s`",
 		"cmd.zc.notAllowed":  "Warn is not permitted in this group",
 		"cmd.zc.indeed":      "INDEED",
 		"cmd.zc.cantBan":     "Well, I have nothing to do with it ...",
