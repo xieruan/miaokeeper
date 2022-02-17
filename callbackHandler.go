@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -114,14 +115,38 @@ type CallbackHandlerConfig struct {
 	CallbackFunction CallbackHandlerFn
 	Route            string
 
+	LockOn           string
 	Validations      map[string]string
 	ShouldInGroup    bool
 	ShouldGroupAdmin bool
 	ShouldMiaoAdmin  bool
+
+	parent *CallbackHandler
+}
+
+func (chc *CallbackHandlerConfig) Call(cp *CallbackParams) {
+	if chc.CallbackFunction != nil {
+		if chc.LockOn != "" {
+			chc.parent.Mutex[chc.LockOn].Lock()
+			defer chc.parent.Mutex[chc.LockOn].Unlock()
+		}
+		chc.CallbackFunction(cp)
+	}
 }
 
 func (chc *CallbackHandlerConfig) Should(key, vtype string) *CallbackHandlerConfig {
 	chc.Validations[key] = vtype
+	return chc
+}
+
+func (chc *CallbackHandlerConfig) Lock(key string) *CallbackHandlerConfig {
+	if chc.parent.Mutex == nil {
+		chc.parent.Mutex = make(map[string]*sync.Mutex)
+	}
+	if _, ok := chc.parent.Mutex[key]; !ok {
+		chc.parent.Mutex[key] = &sync.Mutex{}
+	}
+	chc.LockOn = key
 	return chc
 }
 
@@ -170,6 +195,7 @@ func (chc *CallbackHandlerConfig) Parse(c *tb.Callback) *CallbackParams {
 
 type CallbackHandler struct {
 	Routes map[string]*CallbackHandlerConfig
+	Mutex  map[string]*sync.Mutex
 }
 
 func (ch *CallbackHandler) Add(route string, fn CallbackHandlerFn) *CallbackHandlerConfig {
@@ -177,6 +203,8 @@ func (ch *CallbackHandler) Add(route string, fn CallbackHandlerFn) *CallbackHand
 		Route:            route,
 		CallbackFunction: fn,
 		Validations:      make(map[string]string),
+
+		parent: ch,
 	}
 
 	if ch.Routes == nil {
@@ -190,7 +218,7 @@ func (ch *CallbackHandler) Handle(c *tb.Callback) {
 	for _, r := range ch.Routes {
 		if r != nil && r.CallbackFunction != nil && r.Match(c) {
 			if cp := r.Parse(c); cp != nil {
-				r.CallbackFunction(cp)
+				r.Call(cp)
 			} else {
 				// validation failed
 				Rsp(c, "cb.validationError")

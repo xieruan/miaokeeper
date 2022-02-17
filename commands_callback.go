@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	"sync"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -14,8 +13,6 @@ var callbackHandler *CallbackHandler
 func CmdOnCallback(c *tb.Callback) {
 	callbackHandler.Handle(c)
 }
-
-var callbacklock sync.Mutex
 
 func InitCallback() {
 	callbackHandler = &CallbackHandler{}
@@ -52,9 +49,6 @@ func InitCallback() {
 	}).ShouldValidGroup(true).Should("u", "user")
 
 	callbackHandler.Add("rp", func(cp *CallbackParams) {
-		callbacklock.Lock()
-		defer callbacklock.Unlock()
-
 		gid, tuid := cp.GroupID(), cp.TriggerUserID()
 		rpKey, _ := cp.GetInt64("r")
 
@@ -101,7 +95,7 @@ func InitCallback() {
 		} else {
 			cp.Response("cb.rp.notExists")
 		}
-	}).ShouldValidGroup(true).Should("r", "int64")
+	}).ShouldValidGroup(true).Should("r", "int64").Lock("credit")
 
 	callbackHandler.Add("unban", func(cp *CallbackParams) {
 		gid := cp.GroupID()
@@ -215,6 +209,6 @@ func InitCallback() {
 		} else {
 			cp.Response("cb.noEvent")
 		}
-	}).ShouldValidGroup(true).Should("t", "int64").Should("id", "string")
+	}).ShouldValidGroup(true).Should("t", "int64").Should("id", "string").Lock("credit")
 
 }
