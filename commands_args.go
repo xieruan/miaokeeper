@@ -492,6 +492,7 @@ func CmdSendRedpacket(m *tb.Message) {
 }
 
 func CmdCreditRank(m *tb.Message) {
+	defer LazyDelete(m)
 	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
 		rank, _ := strconv.Atoi(m.Payload)
 		if rank <= 0 {
@@ -508,7 +509,29 @@ func CmdCreditRank(m *tb.Message) {
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}
-	LazyDelete(m)
+}
+
+func CmdCreditLog(m *tb.Message) {
+	defer LazyDelete(m)
+	_, ah := ArgParse(m.Payload)
+	userId := int64(0)
+	groupId := m.Chat.ID
+	if gid, ok := ah.Int64("group"); ok && gid < 0 {
+		groupId = gid
+	}
+	if m.IsReply() && m.ReplyTo.SenderChat == nil {
+		userId = m.ReplyTo.Sender.ID
+	}
+	if IsGroupAdminMiaoKo(&tb.Chat{ID: groupId}, m.Sender) {
+		if uid, ok := ah.Int64("user"); ok {
+			userId = uid
+		}
+		reason, _ := ah.Str("reason")
+
+		GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPReasons(reason))
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
 }
 
 func CmdCreateLottery(m *tb.Message) {

@@ -160,6 +160,76 @@ func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	}
 }
 
+func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, limit uint64, userId int64, before time.Time, reason OPReasons) {
+	if c == nil && m == nil {
+		return
+	}
+	var operator *tb.User = nil
+	locale := ""
+	if c == nil {
+		operator = m.Sender
+		locale = GetSenderLocale(m)
+		// check private message sending permission
+		if m.Chat.ID < 0 {
+			err := Bot.Notify(m.Sender, tb.UploadingDocument)
+			if err != nil {
+				SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
+				return
+			}
+		}
+	} else {
+		operator = c.Sender
+		locale = GetSenderLocaleCallback(c)
+	}
+
+	// permission check
+	if !IsGroupAdminMiaoKo(&tb.Chat{ID: groupId}, operator) {
+		if c != nil {
+			Rsp(c, "cb.notMiaoAdmin")
+		} else {
+			SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+		}
+		return
+	}
+
+	// build message
+	logs := QueryLogs(groupId, offset, limit, userId, before, reason)
+	text := ""
+
+	nlen := 0
+	for _, r := range logs {
+		nlen = MaxInt(nlen, len(fmt.Sprintf("%d", r.Credit)))
+	}
+	for _, r := range logs {
+		text += fmt.Sprintf("`%10d` | `%s(%"+fmt.Sprintf("%d", nlen)+"d)` | `%s`\n", r.UserID, r.Reason[:1], r.Credit, r.CreatedAt.Format("01-02.15:04"))
+	}
+
+	userRepr := "N/A"
+	if userId > 0 {
+		userRepr = fmt.Sprintf("%d", userId)
+	}
+
+	buttons := []string{
+		fmt.Sprintf("👤 %s|user?c=%d&u=%d||🔍 %s|msg?m=%s", userRepr, groupId, userId, reason.Repr(), reason.Repr()),
+		Locale("cmd.misc.prevPage", locale) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s||", groupId, int64(offset)-int64(limit), limit, userId, reason) +
+			fmt.Sprintf(Locale("cmd.misc.atPage", locale), offset/limit+1) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s||", groupId, offset, limit, userId, reason) +
+			Locale("cmd.misc.nextPage", locale) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s", groupId, offset+limit, limit, userId, reason),
+	}
+
+	if c == nil {
+		SmartSendWithBtns(operator, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), buttons, WithMarkdown())
+	} else {
+		if len(logs) == 0 {
+			Rsp(c, "cmd.misc.outOfRange")
+		} else {
+			_, err := EditBtnsMarkdown(c.Message, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), "", buttons)
+			if err != nil {
+				Rsp(c, "cmd.misc.noChange")
+			}
+		}
+	}
+}
+
 func addCreditToMsgSender(chatId int64, m *tb.Message, credit int64, force bool, reason OPReasons) *CreditInfo {
 	if ValidMessageUser(m) {
 		return addCredit(chatId, m.Sender, credit, force, reason)
@@ -304,7 +374,7 @@ func MakeButtons(btns []string) [][]tb.InlineButton {
 		btnscr := make([]tb.InlineButton, 0)
 		for _, btn := range strings.Split(row, "||") {
 			z := strings.SplitN(btn, "|", 2)
-			unique := z[1]
+			unique := strings.TrimSpace(z[1])
 			url := ""
 			if strings.HasPrefix(z[1], "http://") || strings.HasPrefix(z[1], "https://") || strings.HasPrefix(z[1], "tg://") {
 				unique = ""

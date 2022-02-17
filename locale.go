@@ -1,6 +1,8 @@
 package main
 
-import tb "gopkg.in/tucnak/telebot.v2"
+import (
+	tb "gopkg.in/tucnak/telebot.v2"
+)
 
 var LocaleAlias = map[string]string{
 	"zh-hans": "zh",
@@ -40,13 +42,21 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.mustReplyChannelOrInput": "❌ 请回复一则转发的频道消息或者手动加上频道 id ～",
 		"cmd.mustInGroup":             "❌ 请在群组发送这条命令哦 ～",
 
-		"cmd.misc.version":      "👀 当前版本为: %s",
-		"cmd.misc.replyid.chat": "*群组 ID:* `%d`\n*回复匿名群 ID:* `%d`\n*回复匿名群类型:* `%s`",
-		"cmd.misc.replyid.user": "*群组 ID:* `%d`\n*回复用户 ID:* `%d`\n*回复用户语言:* `%s`",
-		"cmd.misc.id.chat":      "*群组 ID:* `%d`\n*匿名群 ID:* `%d`\n*匿名群类型:* `%s`",
-		"cmd.misc.id.user":      "*群组 ID:* `%d`\n*用户 ID:* `%d`\n*用户语言:* `%s`",
-		"cmd.misc.ping.1":       "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`",
-		"cmd.misc.ping.2":       "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`",
+		"cmd.misc.version":       "👀 当前版本为: %s",
+		"cmd.misc.replyid.chat":  "*群组 ID:* `%d`\n*回复匿名群 ID:* `%d`\n*回复匿名群类型:* `%s`",
+		"cmd.misc.replyid.user":  "*群组 ID:* `%d`\n*回复用户 ID:* `%d`\n*回复用户语言:* `%s`",
+		"cmd.misc.id.chat":       "*群组 ID:* `%d`\n*匿名群 ID:* `%d`\n*匿名群类型:* `%s`",
+		"cmd.misc.id.user":       "*群组 ID:* `%d`\n*用户 ID:* `%d`\n*用户语言:* `%s`",
+		"cmd.misc.ping.1":        "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`",
+		"cmd.misc.ping.2":        "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`",
+		"cmd.misc.user.notExist": "❌ 用户记录不存在",
+		"cmd.misc.noChange":      "👀 当前列表没有发生变化，无需刷新 ～",
+		"cmd.misc.outOfRange":    "👀 没有更多记录了呢 ～",
+		"cmd.misc.prevPage":      "⬆️ 上一页",
+		"cmd.misc.atPage":        "第 %d 页",
+		"cmd.misc.nextPage":      "⬇️ 下一页",
+
+		"cmd.credit.logHead": "📖 `%d` 积分记录:\n\n%s",
 
 		"grant.assign.success":  "✔️ TA 已经成为管理员啦 ～",
 		"grant.assign.failure":  "❌ TA 已经是管理员啦 ～",
@@ -189,13 +199,21 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.mustReplyChannelOrInput": "❌ Please reply this command to a forwarded channel message, or pass in the channel id as a parameter.",
 		"cmd.mustInGroup":             "❌ Please send this command in a group chat.",
 
-		"cmd.misc.version":      "👀 Current Version: %s",
-		"cmd.misc.replyid.chat": "*Chat ID:* `%d`\n*Reply SenderChat ID:* `%d`\n*Reply SenderChat Type:* `%s`",
-		"cmd.misc.replyid.user": "*Chat ID:* `%d`\n*Reply User ID:* `%d`\n*Reply User Locale:* `%s`",
-		"cmd.misc.id.chat":      "*Chat ID:* `%d`\n*SenderChat ID:* `%d`\n*SenderChat Type:* `%s`",
-		"cmd.misc.id.user":      "*Chat ID:* `%d`\n*User ID:* `%d`\n*User Locale:* `%s`",
-		"cmd.misc.ping.1":       "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`",
-		"cmd.misc.ping.2":       "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`\nGroup DC: `%dms`",
+		"cmd.misc.version":       "👀 Current Version: %s",
+		"cmd.misc.replyid.chat":  "*Chat ID:* `%d`\n*Reply SenderChat ID:* `%d`\n*Reply SenderChat Type:* `%s`",
+		"cmd.misc.replyid.user":  "*Chat ID:* `%d`\n*Reply User ID:* `%d`\n*Reply User Locale:* `%s`",
+		"cmd.misc.id.chat":       "*Chat ID:* `%d`\n*SenderChat ID:* `%d`\n*SenderChat Type:* `%s`",
+		"cmd.misc.id.user":       "*Chat ID:* `%d`\n*User ID:* `%d`\n*User Locale:* `%s`",
+		"cmd.misc.ping.1":        "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`",
+		"cmd.misc.ping.2":        "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`\nGroup DC: `%dms`",
+		"cmd.misc.user.notExist": "❌ The credit info of the user does not exist",
+		"cmd.misc.noChange":      "👀 The list is not modified.",
+		"cmd.misc.outOfRange":    "👀 The list is out of range.",
+		"cmd.misc.prevPage":      "⬆️ Last",
+		"cmd.misc.atPage":        "# %d",
+		"cmd.misc.nextPage":      "⬇️ Next",
+
+		"cmd.credit.logHead": "📖 `%d` Logs:\n\n%s",
 
 		"grant.assign.success":  "✔️ The user is promoted ～",
 		"grant.assign.failure":  "❌ The user does not need to be promoted ～",
@@ -348,7 +366,7 @@ func GetUserLocale(c *tb.Chat, u *tb.User) string {
 
 	if c != nil {
 		gc := GetGroupConfig(c.ID)
-		if gc.Locale != "" && HasLocale(gc.Locale) {
+		if gc != nil && gc.Locale != "" && HasLocale(gc.Locale) {
 			return gc.Locale
 		}
 	}

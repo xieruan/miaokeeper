@@ -34,6 +34,7 @@ const (
 type OPReasons string
 
 const (
+	OPAll          OPReasons = ""
 	OPFlush        OPReasons = "FLUSH"
 	OPNormal       OPReasons = "NORMAL"
 	OPByAdmin      OPReasons = "ADMIN"
@@ -47,6 +48,14 @@ const (
 	OPByCleanUp    OPReasons = "CLEANUP"
 )
 
+func (op *OPReasons) Repr() string {
+	if *op == OPAll {
+		return "ALL"
+	} else {
+		return string(*op)
+	}
+}
+
 type CreditInfo struct {
 	Username string `json:"username"`
 	Name     string `json:"nickname"`
@@ -55,11 +64,19 @@ type CreditInfo struct {
 	GroupId  int64  `json:"groupId"`
 }
 
+type CreditLog struct {
+	ID        int64
+	UserID    int64
+	Credit    int64
+	Reason    OPReasons
+	CreatedAt time.Time
+}
+
 var GroupConfigCache map[int64]*GroupConfig
 var LotteryConfigCache map[string]*LotteryInstance
 
 func InitDatabase() (err error) {
-	MYSQLDB, err = sql.Open("mysql", DBCONN)
+	MYSQLDB, err = sql.Open("mysql", DBCONN+"?parseTime=true")
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		err = MYSQLDB.PingContext(ctx)
@@ -371,6 +388,40 @@ func FlushCredits(groupId int64, records [][]string) {
 	}
 
 	DInfof("Flush Credit | group=%d columns=%d", groupId, len(records))
+}
+
+func QueryLogs(groupId int64, offset uint64, limit uint64, uid int64, before time.Time, vtype OPReasons) []CreditLog {
+	var ret = []CreditLog{}
+
+	id, userId, credit, reason := int64(0), int64(0), int64(0), OPAll
+	args := []interface{}{before}
+	addons := ""
+	if uid > 0 {
+		addons += " AND userid = ?"
+		args = append(args, uid)
+	}
+	if vtype != "" {
+		addons += " AND op = ?"
+		args = append(args, vtype)
+	}
+	args = append(args, limit, offset)
+
+	queryStr := fmt.Sprintf(`SELECT id, userid, credit, op, createdat FROM MiaoKeeper_Credit_Log_%d
+		WHERE createdat < ? %s
+		ORDER BY id DESC LIMIT ? OFFSET ?;`, Abs(groupId), addons)
+	row, _ := MYSQLDB.Query(queryStr, args...)
+
+	for row.Next() {
+		myTime := time.Now()
+		row.Scan(&id, &userId, &credit, &reason, &myTime)
+		if id > 0 {
+			ret = append(ret, CreditLog{id, userId, credit, reason, myTime})
+		}
+	}
+	row.Close()
+
+	DInfof("Query Logs | group=%d offset=%d limit=%d userId=%d before=%d reason=%s columns=%d", groupId, offset, limit, userId, before.Unix(), vtype, len(ret))
+	return ret
 }
 
 func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPReasons) *CreditInfo {

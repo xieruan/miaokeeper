@@ -138,6 +138,7 @@ func InitTelegram() {
 		Bot.Handle("/create_lottery", CmdCreateLottery)
 
 		Bot.Handle("/creditrank", CmdCreditRank)
+		Bot.Handle("/creditlog", CmdCreditLog)
 		Bot.Handle("/redpacket", CmdRedpacket)
 		Bot.Handle("/lottery", CmdLottery)
 		Bot.Handle("/transfer", CmdCreditTransfer)
@@ -168,6 +169,7 @@ func InitTelegram() {
 		Bot.Handle(tb.OnText, CmdOnText)
 		Bot.Handle(tb.OnSticker, CmdOnSticker)
 
+		InitCallback()
 	}
 
 	go Bot.Start()

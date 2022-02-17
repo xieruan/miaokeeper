@@ -115,11 +115,12 @@ type CallbackHandlerConfig struct {
 	CallbackFunction CallbackHandlerFn
 	Route            string
 
-	LockOn           string
-	Validations      map[string]string
-	ShouldInGroup    bool
-	ShouldGroupAdmin bool
-	ShouldMiaoAdmin  bool
+	LockOn             string
+	Validations        map[string]string
+	ShouldInGroup      bool
+	ShouldGroupAdmin   bool
+	ShouldMiaoAdmin    bool
+	ShouldMiaoAdminOpt string
 
 	parent *CallbackHandler
 }
@@ -155,6 +156,11 @@ func (chc *CallbackHandlerConfig) ShouldValidGroup(v bool) *CallbackHandlerConfi
 	return chc
 }
 
+func (chc *CallbackHandlerConfig) ShouldValidMiaoAdminOpt(groupIdKey string) *CallbackHandlerConfig {
+	chc.ShouldMiaoAdminOpt = groupIdKey
+	return chc
+}
+
 func (chc *CallbackHandlerConfig) ShouldValidGroupAdmin(v bool) *CallbackHandlerConfig {
 	chc.ShouldGroupAdmin = v
 	return chc
@@ -182,6 +188,12 @@ func (chc *CallbackHandlerConfig) Parse(c *tb.Callback) *CallbackParams {
 	}
 	if u, err := url.ParseQuery(queryString); err == nil && u != nil {
 		qs := CallbackParams{u, c}
+		if chc.ShouldMiaoAdminOpt != "" {
+			gid, _ := qs.GetGroupId(chc.ShouldMiaoAdminOpt)
+			if !IsGroupAdminMiaoKo(&tb.Chat{ID: gid}, c.Sender) {
+				return nil
+			}
+		}
 		for key, vType := range chc.Validations {
 			if !qs.AssertType(key, vType) {
 				return nil
@@ -215,6 +227,8 @@ func (ch *CallbackHandler) Add(route string, fn CallbackHandlerFn) *CallbackHand
 }
 
 func (ch *CallbackHandler) Handle(c *tb.Callback) {
+	c.Data = strings.TrimSpace(c.Data)
+	DLogf("Callback Event | group=%d user=%d data=%s", c.Message.Chat.ID, c.Sender.ID, c.Data)
 	for _, r := range ch.Routes {
 		if r != nil && r.CallbackFunction != nil && r.Match(c) {
 			if cp := r.Parse(c); cp != nil {

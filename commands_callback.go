@@ -17,6 +17,22 @@ func CmdOnCallback(c *tb.Callback) {
 func InitCallback() {
 	callbackHandler = &CallbackHandler{}
 
+	callbackHandler.Add("msg", func(cp *CallbackParams) {
+		msg, _ := cp.GetString("m")
+		cp.Response(msg)
+	}).Should("m", "string")
+
+	callbackHandler.Add("user", func(cp *CallbackParams) {
+		groupId, _ := cp.GetGroupId("c")
+		userId, _ := cp.GetUserId("u")
+		ci := GetCredit(groupId, userId)
+		if ci == nil || ci.ID == 0 {
+			cp.Response("cmd.misc.user.notExist")
+		} else {
+			cp.Response(fmt.Sprintf("Name: %s\nCredit: %d", ci.Name, ci.Credit))
+		}
+	}).ShouldValidMiaoAdminOpt("c")
+
 	callbackHandler.Add("vote", func(cp *CallbackParams) {
 		gid, tuid := cp.GroupID(), cp.TriggerUserID()
 		uid, _ := cp.GetUserId("u")
@@ -210,5 +226,19 @@ func InitCallback() {
 			cp.Response("cb.noEvent")
 		}
 	}).ShouldValidGroup(true).Should("t", "int64").Should("id", "string").Lock("credit")
+
+	callbackHandler.Add("lg", func(cp *CallbackParams) {
+		groupId, _ := cp.GetGroupId("c")
+		userId, _ := cp.GetUserId("u")
+		offset, _ := cp.GetInt64("o")
+		limit, _ := cp.GetInt64("l")
+		reason, _ := cp.GetString("t")
+
+		if offset < 0 || limit < 5 {
+			cp.Response("cmd.misc.outOfRange")
+		} else {
+			GenLogDialog(cp.Callback, nil, groupId, uint64(offset), uint64(limit), userId, cp.Callback.Message.Time(), OPReasons(reason))
+		}
+	}).ShouldValidMiaoAdminOpt("c").Should("o", "int64").Should("l", "int64")
 
 }
