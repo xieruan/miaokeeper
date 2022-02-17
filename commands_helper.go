@@ -29,7 +29,7 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 			creditLeft = Locale("rp.guessLeft", "zh")
 		}
 		msg = fmt.Sprintf(Locale("rp.text", "zh"), sender, creditLeft, left)
-		btns = []string{fmt.Sprintf(Locale("btn.rp.draw", "zh"), chatId, packetId)}
+		btns = []string{fmt.Sprintf(Locale("btn.rp.draw", "zh"), packetId)}
 	}
 
 	redpacketBestKey := fmt.Sprintf("%d-%d:best", chatId, packetId)

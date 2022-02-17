@@ -172,7 +172,7 @@ func (chc *CallbackHandlerConfig) ShouldValidMiaoAdmin(v bool) *CallbackHandlerC
 }
 
 func (chc *CallbackHandlerConfig) Match(c *tb.Callback) bool {
-	return strings.HasPrefix(c.Data, chc.Route+"?")
+	return c.Data == chc.Route || strings.HasPrefix(c.Data, chc.Route+"?")
 }
 
 func (chc *CallbackHandlerConfig) Parse(c *tb.Callback) *CallbackParams {

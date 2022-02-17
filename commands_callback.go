@@ -17,6 +17,10 @@ func CmdOnCallback(c *tb.Callback) {
 func InitCallback() {
 	callbackHandler = &CallbackHandler{}
 
+	callbackHandler.Add("close", func(cp *CallbackParams) {
+		Bot.Delete(cp.Callback.Message)
+	})
+
 	callbackHandler.Add("msg", func(cp *CallbackParams) {
 		msg, _ := cp.GetString("m")
 		cp.Response(msg)
