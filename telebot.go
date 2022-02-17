@@ -48,7 +48,6 @@ var redpacketnmap *ObliviousMapInt
 var debouncer func(func())
 var lazyScheduler *memutils.LazyScheduler
 
-var callbacklock sync.Mutex
 var usercreditlock sync.Mutex
 
 var DefaultWarnKeywords = []string{"口臭", "口 臭", "口  臭", "口臭!", "口臭！", "嘴臭", "嘴 臭", "嘴  臭", "嘴臭!", "嘴臭！"}
@@ -139,6 +138,7 @@ func InitTelegram() {
 		Bot.Handle("/create_lottery", CmdCreateLottery)
 
 		Bot.Handle("/creditrank", CmdCreditRank)
+		Bot.Handle("/creditlog", CmdCreditLog)
 		Bot.Handle("/redpacket", CmdRedpacket)
 		Bot.Handle("/lottery", CmdLottery)
 		Bot.Handle("/transfer", CmdCreditTransfer)
@@ -169,6 +169,7 @@ func InitTelegram() {
 		Bot.Handle(tb.OnText, CmdOnText)
 		Bot.Handle(tb.OnSticker, CmdOnSticker)
 
+		InitCallback()
 	}
 
 	go Bot.Start()

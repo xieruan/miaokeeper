@@ -1,6 +1,8 @@
 package main
 
-import tb "gopkg.in/tucnak/telebot.v2"
+import (
+	tb "gopkg.in/tucnak/telebot.v2"
+)
 
 var LocaleAlias = map[string]string{
 	"zh-hans": "zh",
@@ -40,13 +42,21 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.mustReplyChannelOrInput": "❌ 请回复一则转发的频道消息或者手动加上频道 id ～",
 		"cmd.mustInGroup":             "❌ 请在群组发送这条命令哦 ～",
 
-		"cmd.misc.version":      "👀 当前版本为: %s",
-		"cmd.misc.replyid.chat": "*群组 ID:* `%d`\n*回复匿名群 ID:* `%d`\n*回复匿名群类型:* `%s`",
-		"cmd.misc.replyid.user": "*群组 ID:* `%d`\n*回复用户 ID:* `%d`\n*回复用户语言:* `%s`",
-		"cmd.misc.id.chat":      "*群组 ID:* `%d`\n*匿名群 ID:* `%d`\n*匿名群类型:* `%s`",
-		"cmd.misc.id.user":      "*群组 ID:* `%d`\n*用户 ID:* `%d`\n*用户语言:* `%s`",
-		"cmd.misc.ping.1":       "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`",
-		"cmd.misc.ping.2":       "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`",
+		"cmd.misc.version":       "👀 当前版本为: %s",
+		"cmd.misc.replyid.chat":  "*群组 ID:* `%d`\n*回复匿名群 ID:* `%d`\n*回复匿名群类型:* `%s`",
+		"cmd.misc.replyid.user":  "*群组 ID:* `%d`\n*回复用户 ID:* `%d`\n*回复用户语言:* `%s`",
+		"cmd.misc.id.chat":       "*群组 ID:* `%d`\n*匿名群 ID:* `%d`\n*匿名群类型:* `%s`",
+		"cmd.misc.id.user":       "*群组 ID:* `%d`\n*用户 ID:* `%d`\n*用户语言:* `%s`",
+		"cmd.misc.ping.1":        "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`",
+		"cmd.misc.ping.2":        "🔗 与 Telegram 伺服器的延迟约为:\n\n机器人 DC: `%dms`\n群组 DC: `%dms`",
+		"cmd.misc.user.notExist": "❌ 用户记录不存在",
+		"cmd.misc.noChange":      "👀 当前列表没有发生变化，无需刷新 ～",
+		"cmd.misc.outOfRange":    "👀 没有更多记录了呢 ～",
+		"cmd.misc.prevPage":      "⬆️ 上一页",
+		"cmd.misc.atPage":        "第 %d 页",
+		"cmd.misc.nextPage":      "⬇️ 下一页",
+
+		"cmd.credit.logHead": "📖 `%d` 积分记录:\n\n%s",
 
 		"grant.assign.success":  "✔️ TA 已经成为管理员啦 ～",
 		"grant.assign.failure":  "❌ TA 已经是管理员啦 ～",
@@ -119,12 +129,12 @@ var LocaleMap = map[string]map[string]string{
 		"locale.get": "👀 当前群组的默认语言为: %s ～",
 
 		// not support yet
-		"btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
-		"btn.notFair": "😠 这不公平 (%d)|vt/%d/%d/%d",
+		"btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
+		"btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
-		"btn.adminPanel":    "🚩 解封[管理]|unban/%d/%d/%d||🚮 清退[管理]|kick/%d/%d/%d",
+		"btn.adminPanel":    "🚩 解封[管理]|unban?u=%d&s=%d||🚮 清退[管理]|kick?u=%d&s=%d",
 		"btn.channel.step1": "👉 第一步：关注频道 👈|https://t.me/%s",
-		"btn.channel.step2": "👉 第二步：点我验证 👈|check/%d/%d",
+		"btn.channel.step2": "👉 第二步：点我验证 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nTA 已被管理员解封 👊",
 		"cb.kicked.byadmin":  "\n\nTA 已被管理员踢出群聊 🦶",
@@ -154,6 +164,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.notAdmin":                     "❌ 请不要乱玩管理员指令！",
 		"cb.noEvent":                      "❌ 未找到这个活动，请联系管理员解决！",
 		"cb.notParsed":                    "❌ 指令解析出错，请联系管理员解决 ~",
+		"cb.validationError":              "❌ 指令验证失败，请不要乱玩回调指令 ~",
 		"cb.disabled":                     "❌ 这个群组还没有被授权哦 ~",
 	},
 	"en": {
@@ -188,13 +199,21 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.mustReplyChannelOrInput": "❌ Please reply this command to a forwarded channel message, or pass in the channel id as a parameter.",
 		"cmd.mustInGroup":             "❌ Please send this command in a group chat.",
 
-		"cmd.misc.version":      "👀 Current Version: %s",
-		"cmd.misc.replyid.chat": "*Chat ID:* `%d`\n*Reply SenderChat ID:* `%d`\n*Reply SenderChat Type:* `%s`",
-		"cmd.misc.replyid.user": "*Chat ID:* `%d`\n*Reply User ID:* `%d`\n*Reply User Locale:* `%s`",
-		"cmd.misc.id.chat":      "*Chat ID:* `%d`\n*SenderChat ID:* `%d`\n*SenderChat Type:* `%s`",
-		"cmd.misc.id.user":      "*Chat ID:* `%d`\n*User ID:* `%d`\n*User Locale:* `%s`",
-		"cmd.misc.ping.1":       "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`",
-		"cmd.misc.ping.2":       "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`\nGroup DC: `%dms`",
+		"cmd.misc.version":       "👀 Current Version: %s",
+		"cmd.misc.replyid.chat":  "*Chat ID:* `%d`\n*Reply SenderChat ID:* `%d`\n*Reply SenderChat Type:* `%s`",
+		"cmd.misc.replyid.user":  "*Chat ID:* `%d`\n*Reply User ID:* `%d`\n*Reply User Locale:* `%s`",
+		"cmd.misc.id.chat":       "*Chat ID:* `%d`\n*SenderChat ID:* `%d`\n*SenderChat Type:* `%s`",
+		"cmd.misc.id.user":       "*Chat ID:* `%d`\n*User ID:* `%d`\n*User Locale:* `%s`",
+		"cmd.misc.ping.1":        "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`",
+		"cmd.misc.ping.2":        "🔗 Telegram Server Transmission Delay:\n\nBot DC: `%dms`\nGroup DC: `%dms`",
+		"cmd.misc.user.notExist": "❌ The credit info of the user does not exist",
+		"cmd.misc.noChange":      "👀 The list is not modified.",
+		"cmd.misc.outOfRange":    "👀 The list is out of range.",
+		"cmd.misc.prevPage":      "⬆️ Last",
+		"cmd.misc.atPage":        "# %d",
+		"cmd.misc.nextPage":      "⬇️ Next",
+
+		"cmd.credit.logHead": "📖 `%d` Logs:\n\n%s",
 
 		"grant.assign.success":  "✔️ The user is promoted ～",
 		"grant.assign.failure":  "❌ The user does not need to be promoted ～",
@@ -267,12 +286,12 @@ var LocaleMap = map[string]map[string]string{
 		"locale.get": "👀 The default language of this group is: %s ～",
 
 		// not support yet
-		// "btn.rp.draw": "🤏 我要抢红包|rp/%d/1/%d",
-		// "btn.notFair": "😠 这不公平 (%d)|vt/%d/%d/%d",
+		// "btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
+		// "btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
-		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban/%d/%d/%d||🚮 KICK [ADMIN]|kick/%d/%d/%d",
+		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban?u=%d&s=%d||🚮 KICK [ADMIN]|kick?u=%d&s=%d",
 		"btn.channel.step1": "👉 1ST: JOIN THE CHANNEL 👈|https://t.me/%s",
-		"btn.channel.step2": "👉 2ND: RELEASE ME 👈|check/%d/%d",
+		"btn.channel.step2": "👉 2ND: RELEASE ME 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nThe user is unbanned by admin 👊",
 		"cb.kicked.byadmin":  "\n\nThe user has been kicked 🦶",
@@ -301,6 +320,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.notMiaoAdmin":                 "❌ Do not play with the button!",
 		"cb.notAdmin":                     "❌ Do not play with the button!",
 		"cb.noEvent":                      "❌ The event is not found.",
+		"cb.validationError":              "❌ The data is not validated.",
 		"cb.notParsed":                    "❌ The event is invalid.",
 		"cb.disabled":                     "❌ The group is not authorized.",
 	},
@@ -346,7 +366,7 @@ func GetUserLocale(c *tb.Chat, u *tb.User) string {
 
 	if c != nil {
 		gc := GetGroupConfig(c.ID)
-		if gc.Locale != "" && HasLocale(gc.Locale) {
+		if gc != nil && gc.Locale != "" && HasLocale(gc.Locale) {
 			return gc.Locale
 		}
 	}
