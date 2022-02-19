@@ -52,7 +52,7 @@ func PrintLogUnit(lu *LogUnit) {
 		if lu.Type <= LTWarn {
 			fmt.Fprintf(os.Stdout, "%s | %s | %s", LogTypeToStr(lu.Type), lu.TimeStr, lu.Data)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s | %s | %s", LogTypeToStr(lu.Type), lu.TimeStr, lu.Data)
+			fmt.Fprintf(os.Stdout, "%s | %s | %s", LogTypeToStr(lu.Type), lu.TimeStr, lu.Data)
 		}
 	}
 }
