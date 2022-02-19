@@ -118,6 +118,7 @@ func InitTelegram() {
 		Bot.Handle("/su_del_group", CmdSuDelGroup)
 		Bot.Handle("/su_add_admin", CmdSuAddAdmin)
 		Bot.Handle("/su_del_admin", CmdSuDelAdmin)
+		Bot.Handle("/su_quit_group", CmdSuQuitGroup)
 
 		// ---------------- Group Admin ----------------
 
