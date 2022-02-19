@@ -21,6 +21,7 @@ func CmdSuExportCredit(m *tb.Message) {
 	if gc != nil && IsAdmin(m.Sender.ID) {
 		err := Bot.Notify(m.Sender, tb.UploadingDocument)
 		if err != nil {
+			DErrorE(err, "Cmd Error | Export Credit | Cannot notify user")
 			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
 			return
 		}
@@ -50,16 +51,16 @@ func CmdImportPolicy(m *tb.Message) {
 		Bot.Notify(m.Chat, tb.UploadingDocument)
 		ioHandler, err := Bot.GetFile(&m.Document.File)
 		if err != nil {
-			SmartSendDelete(m, Locale("policy.importError", GetSenderLocale(m)))
 			DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
+			SmartSendDelete(m, Locale("policy.importError", GetSenderLocale(m)))
 			return
 		}
 		data, _ := io.ReadAll(ioHandler)
 		newGC := gc.Clone()
 		err = jsoniter.Unmarshal(data, &newGC)
 		if err != nil {
-			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
 			DErrorE(err, "Import Credit Error | not parsed: "+err.Error())
+			SmartSendDelete(m, Locale("policy.importParseError", GetSenderLocale(m)))
 			return
 		}
 		newGC.Admins, newGC.ID, newGC.NameBlackListRegEx = gc.Admins, gc.ID, nil
@@ -80,15 +81,15 @@ func CmdSuImportCredit(m *tb.Message) {
 		Bot.Notify(m.Chat, tb.UploadingDocument)
 		ioHandler, err := Bot.GetFile(&m.Document.File)
 		if err != nil {
-			SmartSendDelete(m, Locale("credit.importError", GetSenderLocale(m)))
 			DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
+			SmartSendDelete(m, Locale("credit.importError", GetSenderLocale(m)))
 			return
 		}
 		csvHandler := csv.NewReader(ioHandler)
 		records, err := csvHandler.ReadAll()
 		if err != nil {
-			SmartSendDelete(m, Locale("credit.importParseError", GetSenderLocale(m)))
 			DErrorE(err, "Import Credit Error | not parsed")
+			SmartSendDelete(m, Locale("credit.importParseError", GetSenderLocale(m)))
 			return
 		}
 		FlushCredits(m.Chat.ID, records)
@@ -165,6 +166,7 @@ func CmdGetPolicy(m *tb.Message) {
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 		err := Bot.Notify(m.Sender, tb.UploadingDocument)
 		if err != nil {
+			DErrorE(err, "Cmd Error | Export Policy | Cannot notify user")
 			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
 			return
 		}
@@ -187,6 +189,7 @@ func CmdSetPolicy(m *tb.Message) {
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 		_, err := SmartSend(m.Sender, fmt.Sprintf(Locale("cmd.privateSession", GetSenderLocale(m)), GetQuotableChatName(m.Chat), m.Chat.ID, "Policy"), WithMarkdown())
 		if err != nil {
+			DErrorE(err, "Cmd Error | Import Policy | Cannot send user session")
 			SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
 			return
 		}
