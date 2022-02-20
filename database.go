@@ -48,12 +48,24 @@ const (
 	OPByCleanUp    OPReasons = "CLEANUP"
 )
 
+var OPAllReasons = []OPReasons{OPAll, OPFlush, OPNormal, OPByAdmin, OPByAdminSet, OPByRedPacket, OPByLottery, OPByTransfer, OPByPolicy, OPByAbuse, OPByAPIConsume, OPByCleanUp}
+
 func (op *OPReasons) Repr() string {
 	if *op == OPAll {
 		return "ALL"
 	} else {
 		return string(*op)
 	}
+}
+
+func OPParse(s string) OPReasons {
+	for _, op := range OPAllReasons {
+		if string(op) == s {
+			return op
+		}
+	}
+
+	return OPAll
 }
 
 type CreditInfo struct {

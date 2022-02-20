@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -242,7 +243,7 @@ func InitCallback() {
 		if offset < 0 || limit <= 0 || limit > 20 || mode < 0 {
 			cp.Response("cmd.misc.outOfRange")
 		} else {
-			GenLogDialog(cp.Callback, nil, groupId, uint64(offset), uint64(limit), userId, cp.Callback.Message.Time(), OPReasons(reason), uint64(mode))
+			GenLogDialog(cp.Callback, nil, groupId, uint64(offset), uint64(limit), userId, cp.Callback.Message.Time(), OPParse(strings.ToUpper(reason)), uint64(mode))
 		}
 	}).ShouldValidMiaoAdminOpt("c").Should("o", "int64").Should("l", "int64")
 
