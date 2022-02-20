@@ -160,17 +160,20 @@ func GenVMBtns(votes int, chatId, userId, secondUserId int64) []string {
 	}
 }
 
-func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, limit uint64, userId int64, before time.Time, reason OPReasons) {
+func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, limit uint64, userId int64, before time.Time, reason OPReasons, dialogMode uint64) {
 	if c == nil && m == nil {
 		return
 	}
 	var operator *tb.User = nil
+	inGroup := false
 	locale := ""
 	if c == nil {
 		operator = m.Sender
 		locale = GetSenderLocale(m)
+		_, ah := ArgParse(m.Payload)
+		inGroup, _ = ah.Bool("ingroup")
 		// check private message sending permission
-		if m.Chat.ID < 0 {
+		if m.Chat.ID < 0 && !inGroup {
 			err := Bot.Notify(m.Sender, tb.UploadingDocument)
 			if err != nil {
 				SmartSendDelete(m, Locale("cmd.privateChatFirst", GetSenderLocale(m)))
@@ -192,16 +195,29 @@ func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, l
 		return
 	}
 
-	// build message
-	logs := QueryLogs(groupId, offset, limit, userId, before, reason)
-	text := ""
+	// dialog mode
+	isToggle := dialogMode == 1
 
-	nlen := 0
-	for _, r := range logs {
-		nlen = MaxInt(nlen, len(fmt.Sprintf("%d", r.Credit)))
-	}
-	for _, r := range logs {
-		text += fmt.Sprintf("`%10d` | `%s(%"+fmt.Sprintf("%d", nlen)+"d)` | `%s`\n", r.UserID, r.Reason[:1], r.Credit, r.CreatedAt.Format("01-02.15:04"))
+	toggleButtonStr := ""
+	toggleButtonMode := 0
+
+	// build message
+	text := ""
+	var logs []CreditLog = nil
+
+	if !isToggle {
+		nlen := 0
+		logs = QueryLogs(groupId, offset, limit, userId, before, reason)
+		for _, r := range logs {
+			nlen = MaxInt(nlen, len(fmt.Sprintf("%d", r.Credit)))
+		}
+		for _, r := range logs {
+			text += fmt.Sprintf("`%10d` | `%s(%"+fmt.Sprintf("%d", nlen)+"d)` | `%s`\n", r.UserID, r.Reason[:1], r.Credit, r.CreatedAt.Format("01-02.15:04"))
+		}
+		toggleButtonMode = 1
+	} else {
+		text = fmt.Sprintf("`/creditlog@%s :ingroup=true :group=%d :user=%d :reason=%s`", Bot.Me.Username, groupId, userId, reason)
+		toggleButtonStr = "· "
 	}
 
 	userRepr := "N/A"
@@ -212,14 +228,20 @@ func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, l
 	buttons := []string{
 		fmt.Sprintf("👤 %s|user?c=%d&u=%d||🔍 %s|msg?m=%s", userRepr, groupId, userId, reason.Repr(), reason.Repr()),
 		Locale("cmd.misc.prevPage", locale) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s||", groupId, int64(offset)-int64(limit), limit, userId, reason) +
-			fmt.Sprintf(Locale("cmd.misc.atPage", locale), offset/limit+1) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s||", groupId, offset, limit, userId, reason) +
+			toggleButtonStr + fmt.Sprintf(Locale("cmd.misc.atPage", locale), offset/limit+1) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s&m=%d||", groupId, offset, limit, userId, reason, toggleButtonMode) +
 			Locale("cmd.misc.nextPage", locale) + fmt.Sprintf("|lg?c=%d&o=%d&l=%d&u=%d&t=%s", groupId, offset+limit, limit, userId, reason),
 	}
 
 	if c == nil {
-		SmartSendWithBtns(operator, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), buttons, WithMarkdown())
+		if inGroup {
+			// send directly in group
+			SmartSendWithBtns(m.Chat, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), buttons, WithMarkdown())
+		} else {
+			// send to private chat
+			SmartSendWithBtns(operator, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), buttons, WithMarkdown())
+		}
 	} else {
-		if len(logs) == 0 {
+		if len(logs) == 0 && !isToggle {
 			Rsp(c, "cmd.misc.outOfRange")
 		} else {
 			_, err := EditBtnsMarkdown(c.Message, fmt.Sprintf(Locale("cmd.credit.logHead", locale), groupId, text), "", buttons)

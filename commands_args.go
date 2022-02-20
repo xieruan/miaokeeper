@@ -541,7 +541,7 @@ func CmdCreditLog(m *tb.Message) {
 		}
 		reason, _ := ah.Str("reason")
 
-		GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPReasons(reason))
+		GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPReasons(reason), 0)
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}

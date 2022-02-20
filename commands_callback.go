@@ -33,7 +33,7 @@ func InitCallback() {
 		if ci == nil || ci.ID == 0 {
 			cp.Response("cmd.misc.user.notExist")
 		} else {
-			cp.Response(fmt.Sprintf("Name: %s\nCredit: %d", ci.Name, ci.Credit))
+			cp.Response(fmt.Sprintf("ID: %s\nName: %s\nCredit: %d", "@"+ci.Username, ci.Name, ci.Credit))
 		}
 	}).ShouldValidMiaoAdminOpt("c")
 
@@ -237,11 +237,12 @@ func InitCallback() {
 		offset, _ := cp.GetInt64("o")
 		limit, _ := cp.GetInt64("l")
 		reason, _ := cp.GetString("t")
+		mode, _ := cp.GetInt64("m")
 
-		if offset < 0 || limit < 5 {
+		if offset < 0 || limit <= 0 || limit > 20 || mode < 0 {
 			cp.Response("cmd.misc.outOfRange")
 		} else {
-			GenLogDialog(cp.Callback, nil, groupId, uint64(offset), uint64(limit), userId, cp.Callback.Message.Time(), OPReasons(reason))
+			GenLogDialog(cp.Callback, nil, groupId, uint64(offset), uint64(limit), userId, cp.Callback.Message.Time(), OPReasons(reason), uint64(mode))
 		}
 	}).ShouldValidMiaoAdminOpt("c").Should("o", "int64").Should("l", "int64")
 
