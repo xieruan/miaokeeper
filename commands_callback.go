@@ -72,6 +72,7 @@ func InitCallback() {
 	callbackHandler.Add("rp", func(cp *CallbackParams) {
 		gid, tuid := cp.GroupID(), cp.TriggerUserID()
 		rpKey, _ := cp.GetInt64("r")
+		captcha, _ := cp.GetString("c")
 
 		redpacketKey := fmt.Sprintf("%d-%d", gid, rpKey)
 		credits, _ := redpacketmap.Get(redpacketKey)
@@ -80,36 +81,40 @@ func InitCallback() {
 			redpacketBestKey := fmt.Sprintf("%d-%d:best", gid, rpKey)
 			redpacketUserKey := fmt.Sprintf("%d-%d:%d", gid, rpKey, tuid)
 			if redpacketmap.Add(redpacketUserKey) == 1 {
-				amount := 0
-				if left <= 1 {
-					amount = credits
-				} else if left == 2 {
-					amount = rand.Intn(credits)
-				} else {
-					rate := 3
-					if left <= 4 {
-						rate = 2
-					} else if left >= 12 {
-						rate = 4
+				if cap, ok := redpacketcaptcha.Get(redpacketKey); !ok || cap == "" || (captcha != "" && strings.HasPrefix(cap, captcha)) {
+					amount := 0
+					if left <= 1 {
+						amount = credits
+					} else if left == 2 {
+						amount = rand.Intn(credits)
+					} else {
+						rate := 3
+						if left <= 4 {
+							rate = 2
+						} else if left >= 12 {
+							rate = 4
+						}
+						amount = rand.Intn(credits * rate / left)
 					}
-					amount = rand.Intn(credits * rate / left)
-				}
-				redpacketnmap.Set(redpacketKey, left-1)
-				redpacketmap.Set(redpacketKey, credits-amount)
+					redpacketnmap.Set(redpacketKey, left-1)
+					redpacketmap.Set(redpacketKey, credits-amount)
 
-				if amount == 0 {
-					cp.Response("cb.rp.nothing")
-				} else {
-					lastBest, _ := redpacketmap.Get(redpacketBestKey)
-					if amount > lastBest {
-						redpacketmap.Set(redpacketBestKey, amount)
-						redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(cp.TriggerUser()))
+					if amount == 0 {
+						cp.Response("cb.rp.nothing")
+					} else {
+						lastBest, _ := redpacketmap.Get(redpacketBestKey)
+						if amount > lastBest {
+							redpacketmap.Set(redpacketBestKey, amount)
+							redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(cp.TriggerUser()))
+						}
+						cp.Response(Locale("cb.rp.get.1", cp.TriggerUser().LanguageCode) + strconv.Itoa(amount) + Locale("cb.rp.get.2", cp.Locale()))
+						addCredit(gid, cp.TriggerUser(), int64(amount), true, OPByRedPacket)
 					}
-					cp.Response(Locale("cb.rp.get.1", cp.TriggerUser().LanguageCode) + strconv.Itoa(amount) + Locale("cb.rp.get.2", cp.Locale()))
-					addCredit(gid, cp.TriggerUser(), int64(amount), true, OPByRedPacket)
-				}
 
-				SendRedPacket(cp.Callback.Message, gid, rpKey)
+					SendRedPacket(cp.Callback.Message, gid, rpKey, nil)
+				} else {
+					cp.Response("cb.rp.captchaInvalid")
+				}
 			} else {
 				cp.Response("cb.rp.duplicated")
 			}

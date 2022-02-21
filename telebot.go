@@ -44,6 +44,7 @@ var joinmap *ObliviousMapInt
 var redpacketrankmap *ObliviousMapStr
 var redpacketmap *ObliviousMapInt
 var redpacketnmap *ObliviousMapInt
+var redpacketcaptcha *ObliviousMapStr
 
 var debouncer func(func())
 var lazyScheduler *memutils.LazyScheduler
@@ -135,7 +136,6 @@ func InitTelegram() {
 		Bot.Handle("/set_antispoiler", CmdSetAntiSpoiler)
 		Bot.Handle("/set_channel", CmdSetChannel)
 		Bot.Handle("/set_locale", CmdSetLocale)
-		Bot.Handle("/send_redpacket", CmdSendRedpacket)
 		Bot.Handle("/create_lottery", CmdCreateLottery)
 
 		Bot.Handle("/creditrank", CmdCreditRank)
@@ -215,6 +215,7 @@ func InitTelegramArgs() {
 	redpacketrankmap = NewOMapStr("rprank/", time.Hour*24, false, memdriver)
 	redpacketmap = NewOMapInt("rp/", time.Hour*24, false, memdriver)
 	redpacketnmap = NewOMapInt("rpname/", time.Hour*24, false, memdriver)
+	redpacketcaptcha = NewOMapStr("rpcaptcha/", time.Hour*24, false, memdriver)
 
 	debouncer = debounce.New(time.Second)
 	lazyScheduler = memutils.NewLazyScheduler(memdriver)
