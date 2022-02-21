@@ -31,9 +31,10 @@ type GroupConfig struct {
 	MustFollowOnJoin bool
 	MustFollowOnMsg  bool
 
-	AntiSpoiler      bool
-	DisableWarn      bool
-	RedPacketCaptcha bool
+	AntiSpoiler                        bool
+	DisableWarn                        bool
+	RedPacketCaptcha                   bool
+	RedPacketCaptchaFailCreditBehavior int64
 
 	WarnKeywords []string
 	BanKeywords  []string

@@ -26,10 +26,12 @@ func GenerateRandomCaptcha() (*bytes.Buffer, []string) {
 func GenerateCaptcha(captchaType CaptchaType) (*bytes.Buffer, string) {
 	var data *captcha.Data = nil
 
+	w := 280
+	h := w * 2 / 5
 	if captchaType == CaptchaTypeNormal {
-		data, _ = captcha.New(330, 110)
+		data, _ = captcha.New(w, h)
 	} else {
-		data, _ = captcha.NewMathExpr(330, 110)
+		data, _ = captcha.NewMathExpr(w, h)
 	}
 
 	buf := bytes.Buffer{}
@@ -43,12 +45,16 @@ var ObfsExcludes = [][]string{
 	{"2", "z", "Z"},
 }
 var ObfsSet = []rune("1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM")
+var ObfsSetNum = []rune("1234567890")
 
-func GenerateCaptchaRandomize() rune {
+func GenerateCaptchaRandomize(captchaType CaptchaType) rune {
+	if captchaType == CaptchaTypeMathExpr {
+		return ObfsSetNum[rand.Intn(len(ObfsSetNum))]
+	}
 	return ObfsSet[rand.Intn(len(ObfsSet))]
 }
 
-func GenerateCaptchaReplacableChar(s rune) rune {
+func GenerateCaptchaReplacableChar(captchaType CaptchaType, s rune) rune {
 	excludes := []string{}
 	for _, ex := range ObfsExcludes {
 		if ContainsString(ex, string(s)) {
@@ -59,9 +65,9 @@ func GenerateCaptchaReplacableChar(s rune) rune {
 	attempts := 0
 	for {
 		attempts += 1
-		s := GenerateCaptchaRandomize()
-		if !ContainsString(excludes, string(s)) {
-			return s
+		c := GenerateCaptchaRandomize(captchaType)
+		if !ContainsString(excludes, string(c)) && c != s {
+			return c
 		}
 		if attempts > 10 {
 			return 'k'
@@ -71,16 +77,22 @@ func GenerateCaptchaReplacableChar(s rune) rune {
 
 func GenerateCaptchaOptions(captchaType CaptchaType, original string) []string {
 	waitList := []string{original}
-
-	for i := 0; i < 3; i++ {
+	options := 4
+	if captchaType == CaptchaTypeMathExpr {
+		options = 6
+	}
+	for i := 0; i < options-1; i++ {
 		attempts := 2
 		target := []rune(original)
 		if captchaType == CaptchaTypeMathExpr {
 			attempts = 1
+			if len(target) > 1 {
+				attempts = 2
+			}
 		}
 		for j := 0; j < attempts; j += 1 {
 			index := rand.Intn(len(target))
-			target[index] = GenerateCaptchaReplacableChar(target[index])
+			target[index] = GenerateCaptchaReplacableChar(captchaType, target[index])
 		}
 		waitList = append(waitList, string(target))
 	}
