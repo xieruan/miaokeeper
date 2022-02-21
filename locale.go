@@ -98,13 +98,14 @@ var LocaleMap = map[string]map[string]string{
 		"su.group.delDuplicate": "❌ 该组尚未开启积分统计哦 ～",
 
 		// not support yet
-		"rp.complete":  "🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～",
-		"rp.guessLeft": "猜猜看还剩多少？",
-		"rp.text":      "🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`",
-		"rp.lucky":     "\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~",
+		"rp.complete":     "🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～",
+		"rp.guessLeft":    "猜猜看还剩多少？",
+		"rp.text":         "🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`",
+		"rp.text.captcha": "\n\n*请选择与上图相符的验证码来抢红包哦～*",
+		"rp.lucky":        "\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~",
 
 		"rp.admin":              "管理员-",
-		"rp.set.invalid":        "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 1000 之间，红包个数需在 1 ~ 20 之间，且红包大小不能低于参与人数哦～",
+		"rp.set.invalid":        "❌ 使用方法不正确呢，请输入 /redpacket `<总分数>` `<红包个数>` 来发红包哦～\n\n备注：红包总分需在 1 ~ 100,000 之间，红包个数需在 1 ~ 100 之间，且红包大小不能低于参与人数哦～",
 		"rp.set.noEnoughCredit": "❌ 您的积分不够发这个红包哦，请在努力赚积分吧～",
 
 		"gp.ban.success":   "🎉 恭喜 `%s` 获得禁言大礼包，可喜可贺可喜可贺！",
@@ -129,8 +130,9 @@ var LocaleMap = map[string]map[string]string{
 		"locale.get": "👀 当前群组的默认语言为: %s ～",
 
 		// not support yet
-		"btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
-		"btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
+		"btn.rp.draw":         "🤏 我要抢红包|rp?r=%d",
+		"btn.rp.draw.captcha": "%s|rp?c=%s&r=%d",
+		"btn.notFair":         "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
 		"btn.adminPanel":    "🚩 解封[管理]|unban?u=%d&s=%d||🚮 清退[管理]|kick?u=%d&s=%d",
 		"btn.channel.step1": "👉 第一步：关注频道 👈|https://t.me/%s",
@@ -154,6 +156,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.rp.nothing":                   "🐢 您的运气也太差啦！什么都没有抽到哦...",
 		"cb.rp.get.1":                     "🎉 恭喜获得 ",
 		"cb.rp.get.2":                     " 积分，积分已经实时到账～",
+		"cb.rp.captchaInvalid":            "❌ 验证码验证失败，您无法领取红包咯～",
 		"cb.rp.duplicated":                "❌ 您已经参与过这次活动了，不能太贪心哦！",
 		"cb.rp.notExists":                 "❌ 抽奖活动已经结束啦！请期待下一次活动～",
 		"cb.lottery.start":                "🎉 活动已确认，请号召群友踊跃参与哦！",
@@ -258,10 +261,11 @@ var LocaleMap = map[string]map[string]string{
 		// "rp.complete":  "🧧 *积分红包*\n\n小伙伴们手速都太快啦，`%s`的大红包已被瓜分干净，没抢到的小伙伴们请期待下次的活动哦～",
 		// "rp.guessLeft": "猜猜看还剩多少？",
 		// "rp.text":      "🧧 *积分红包*\n\n``%s发红包啦！大家快抢哦～\n\n剩余积分: `%s`\n剩余数量: `%d`",
+		// "rp.text.captcha": "\n\n*请选择与上图相符的验证码来抢红包哦～*",
 		// "rp.lucky":     "\n\n恭喜手气王 `%s` 获得了 `%d` 分 🎉 ~",
 
 		"rp.admin":              "Admin ",
-		"rp.set.invalid":        "❌ Invalid Params. Please refer to: /redpacket `<Total Credit>` `<Num of Share>`\n\nPS: Total Credit should be with in 1 and 1000. Number of Share should be with in 1 and 20 and no less than the Total Credit.",
+		"rp.set.invalid":        "❌ Invalid Params. Please refer to: /redpacket `<Total Credit>` `<Num of Share>`\n\nPS: Total Credit should be with in 1 and 100,000. Number of Share should be with in 1 and 100 and no less than the Total Credit.",
 		"rp.set.noEnoughCredit": "❌ You do not have that much credit to send this redpacket.",
 
 		"gp.ban.success":   "🎉 Congrats to `%s` to be restricted!",
@@ -287,6 +291,7 @@ var LocaleMap = map[string]map[string]string{
 
 		// not support yet
 		// "btn.rp.draw": "🤏 我要抢红包|rp?r=%d",
+		// "btn.rp.draw.captcha": "%s|rp?c=%s&r=%d",
 		// "btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
 		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban?u=%d&s=%d||🚮 KICK [ADMIN]|kick?u=%d&s=%d",
@@ -311,6 +316,7 @@ var LocaleMap = map[string]map[string]string{
 		"cb.rp.nothing":                   "🐢 AHA you get nothing...",
 		"cb.rp.get.1":                     "🎉 You get ",
 		"cb.rp.get.2":                     " credit points. Congrats ～",
+		"cb.rp.captchaInvalid":            "❌ Wrong captcha code, you lose the change to get a redpacket ～",
 		"cb.rp.duplicated":                "❌ Duplicated draw, DONT BE VORACIOUS ~",
 		"cb.rp.notExists":                 "❌ The event is over, please engage next time ~",
 		"cb.lottery.start":                "🎉 The lottery is submitted.",

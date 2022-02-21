@@ -466,44 +466,6 @@ func CmdSetLocale(m *tb.Message) {
 	}
 }
 
-func CmdSendRedpacket(m *tb.Message) {
-	defer LazyDelete(m)
-	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
-		payloads := strings.Fields(m.Payload)
-
-		mc := 0
-		if len(payloads) > 0 {
-			mc, _ = strconv.Atoi(payloads[0])
-		}
-		n := 0
-		if len(payloads) > 1 {
-			n, _ = strconv.Atoi(payloads[1])
-		}
-
-		if mc <= 0 {
-			mc = 1
-		} else if mc > 1000000 {
-			mc = 1000000
-		}
-		if n < 1 {
-			n = 1
-		} else if n > 1000 {
-			n = 1000
-		}
-
-		chatId := m.Chat.ID
-		redpacketId := time.Now().Unix() + int64(rand.Intn(10000))
-		redpacketKey := fmt.Sprintf("%d-%d", chatId, redpacketId)
-		redpacketrankmap.Set(redpacketKey+":sender", Locale("rp.admin", GetSenderLocale(m))+GetQuotableUserName(m.Sender))
-		redpacketmap.Set(redpacketKey, mc)
-		redpacketnmap.Set(redpacketKey, n)
-		SendRedPacket(m.Chat, chatId, redpacketId)
-		LazyDelete(m)
-	} else {
-		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
-	}
-}
-
 func CmdCreditRank(m *tb.Message) {
 	defer LazyDelete(m)
 	if IsGroupAdminMiaoKo(m.Chat, m.Sender) {
@@ -690,7 +652,7 @@ func CmdRedpacket(m *tb.Message) {
 			n, _ = strconv.Atoi(payloads[1])
 		}
 
-		if mc <= 0 || n <= 0 || mc > 1000 || n > 20 || mc < n {
+		if mc <= 0 || n <= 0 || mc > 100000 || n > 100 || mc < n {
 			SmartSendDelete(m, Locale("rp.set.invalid", GetSenderLocale(m)), WithMarkdown())
 			LazyDelete(m)
 			return
@@ -708,7 +670,13 @@ func CmdRedpacket(m *tb.Message) {
 			redpacketrankmap.Set(redpacketKey+":sender", GetQuotableUserName(m.Sender))
 			redpacketmap.Set(redpacketKey, mc)
 			redpacketnmap.Set(redpacketKey, n)
-			SendRedPacket(m.Chat, chatId, redpacketId)
+			var buf *bytes.Buffer
+			if gc.RedPacketCaptcha {
+				buffer, results := GenerateRandomCaptcha()
+				redpacketcaptcha.Set(redpacketKey, strings.Join(results, ","))
+				buf = buffer
+			}
+			SendRedPacket(m.Chat, chatId, redpacketId, buf)
 		} else {
 			SmartSendDelete(m, Locale("rp.set.noEnoughCredit", GetSenderLocale(m)))
 		}

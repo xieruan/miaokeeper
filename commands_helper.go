@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -14,11 +16,12 @@ import (
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, error) {
+func SendRedPacket(to interface{}, chatId int64, packetId int64, photo *bytes.Buffer) (*tb.Message, error) {
 	redpacketKey := fmt.Sprintf("%d-%d", chatId, packetId)
 	credits, _ := redpacketmap.Get(redpacketKey)
 	left, _ := redpacketnmap.Get(redpacketKey)
 	sender, _ := redpacketrankmap.Get(redpacketKey + ":sender")
+	captcha, _ := redpacketcaptcha.Get(redpacketKey)
 
 	msg := fmt.Sprintf(Locale("rp.complete", "zh"), sender)
 	btns := []string{}
@@ -29,7 +32,17 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 			creditLeft = Locale("rp.guessLeft", "zh")
 		}
 		msg = fmt.Sprintf(Locale("rp.text", "zh"), sender, creditLeft, left)
-		btns = []string{fmt.Sprintf(Locale("btn.rp.draw", "zh"), packetId)}
+		if captcha == "" {
+			btns = []string{fmt.Sprintf(Locale("btn.rp.draw", "zh"), packetId)}
+		} else {
+			msg += Locale("rp.text.captcha", "zh")
+			results := strings.Split(captcha, ",")
+			sort.Strings(results)
+			for _, s := range results {
+				btns = append(btns, fmt.Sprintf(Locale("btn.rp.draw.captcha", "zh"), s, s, packetId))
+			}
+			btns = []string{strings.Join(btns, "||")}
+		}
 	}
 
 	redpacketBestKey := fmt.Sprintf("%d-%d:best", chatId, packetId)
@@ -40,8 +53,21 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64) (*tb.Message, e
 
 	if Type(to) == "*telebot.Message" {
 		mess, _ := to.(*tb.Message)
-		return EditBtnsMarkdown(mess, msg, "", btns)
+		if mess.Photo != nil {
+			return EditBtnsMarkdown(mess, &tb.Photo{
+				File:    mess.Photo.File,
+				Caption: msg,
+			}, "", btns)
+		} else {
+			return EditBtnsMarkdown(mess, msg, "", btns)
+		}
 	} else {
+		if photo != nil {
+			return SendBtnsMarkdown(to, &tb.Photo{
+				File:    tb.FromReader(photo),
+				Caption: msg,
+			}, "", btns)
+		}
 		return SendBtnsMarkdown(to, msg, "", btns)
 	}
 }
@@ -687,7 +713,7 @@ func BanChannel(chatId, channelId int64) error {
 func SetCommands() error {
 	allCommands := [][]string{
 		{"mycredit", "获取自己的积分"},
-		{"redpacket", "用自己的积分发红包，发 N (10~1000) 分给 K (1~20) 个人"},
+		{"redpacket", "用自己的积分发红包，发 N (1~100,000) 分给 K (1~100) 个人"},
 		{"creditrank", "获取积分排行榜前 N 名"},
 		{"lottery", "在积分排行榜前 N 名内抽出 K 名幸运儿"},
 		{"transfer", "回复一个用户将自己的积分转移 N 分给 TA"},
