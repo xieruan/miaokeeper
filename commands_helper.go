@@ -25,8 +25,9 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64, photo *bytes.Bu
 
 	msg := fmt.Sprintf(Locale("rp.complete", "zh"), sender)
 	btns := []string{}
+	hasLeft := credits > 0 && left > 0
 
-	if credits > 0 && left > 0 {
+	if hasLeft {
 		creditLeft := strconv.Itoa(credits)
 		if left == 1 {
 			creditLeft = Locale("rp.guessLeft", "zh")
@@ -53,7 +54,7 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64, photo *bytes.Bu
 
 	if Type(to) == "*telebot.Message" {
 		mess, _ := to.(*tb.Message)
-		if mess.Photo != nil {
+		if mess.Photo != nil && hasLeft {
 			return EditBtnsMarkdown(mess, &tb.Photo{
 				File:    mess.Photo.File,
 				Caption: msg,
