@@ -70,7 +70,7 @@ func GenerateCaptchaReplacableChar(captchaType CaptchaType, s rune) rune {
 			return c
 		}
 		if attempts > 10 {
-			return 'k'
+			return '5'
 		}
 	}
 }

@@ -54,7 +54,11 @@ func SendRedPacket(to interface{}, chatId int64, packetId int64, photo *bytes.Bu
 
 	if Type(to) == "*telebot.Message" {
 		mess, _ := to.(*tb.Message)
-		if mess.Photo != nil && hasLeft {
+		if mess.Photo != nil {
+			if !hasLeft {
+				Bot.Delete(mess)
+				return SendBtnsMarkdown(mess.Chat, msg, "", btns)
+			}
 			return EditBtnsMarkdown(mess, &tb.Photo{
 				File:    mess.Photo.File,
 				Caption: msg,
