@@ -53,10 +53,11 @@ type CustomReplyRule struct {
 	Match   string
 	MatchEx *regexp.Regexp `json:"-"`
 
-	Name           string
-	Limit          int
-	CreditBehavior int
-	CallbackURL    string // need a X-MiaoKeeper-Sign header
+	Name                       string
+	Limit                      int
+	CreditBehavior             int
+	NoForceCreditBehaviorError string
+	CallbackURL                string // need a X-MiaoKeeper-Sign header
 
 	ReplyMessage string
 	ReplyTo      string // message, group, private
@@ -78,6 +79,15 @@ func (crr *CustomReplyRule) Consume() bool {
 	} else {
 		crr.Limit -= 1
 		return true
+	}
+}
+
+func (crr *CustomReplyRule) Resume() {
+	crr.lock.Lock()
+	defer crr.lock.Unlock()
+
+	if crr.Limit >= 0 {
+		crr.Limit += 1
 	}
 }
 
@@ -324,6 +334,18 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 	if rule := gc.TestCustomReplyRule(m); rule != nil {
 		if rule.CreditBehavior != 0 {
+			if rule.NoForceCreditBehaviorError != "" && rule.CreditBehavior < 0 {
+				ci := GetCredit(gc.ID, m.Sender.ID)
+				if ci == nil || ci.Credit+int64(rule.CreditBehavior) < 0 {
+					// cannot substract credit points
+					textMessage := BuilRuleMessage(rule.NoForceCreditBehaviorError, m)
+					SmartSendDelete(m, textMessage, WithMarkdown())
+					rule.Resume()
+					gc.Save()
+
+					return true
+				}
+			}
 			addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true, OPByPolicy)
 		}
 
@@ -360,8 +382,12 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 		}
 
 		if rule.CallbackURL != "" {
-			if u, err := url.Parse(rule.CallbackURL); err == nil && u != nil {
-				go gc.POSTWithSign(rule.CallbackURL, []byte(rule.ToJson(false)), time.Second*3)
+			realURL := BuilRuleMessage(rule.CallbackURL, m)
+			if strings.HasPrefix(realURL, "tg://") {
+				realURL = strings.Replace(realURL, "tg://", "https://api.telegram.org/bot"+Bot.Token+"/", 1)
+			}
+			if u, err := url.Parse(realURL); err == nil && u != nil {
+				go gc.POSTWithSign(realURL, []byte(rule.ToJson(false)), time.Second*3)
 			}
 		}
 
