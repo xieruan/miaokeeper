@@ -94,6 +94,20 @@ func MaxInt(a, b int) int {
 	return a
 }
 
+func MinInt64(a, b int64) int64 {
+	if a > b {
+		return b
+	}
+	return a
+}
+
+func MaxInt64(a, b int64) int64 {
+	if a < b {
+		return b
+	}
+	return a
+}
+
 func Abs(a int64) int64 {
 	if a >= 0 {
 		return a

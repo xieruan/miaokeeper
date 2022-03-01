@@ -20,7 +20,7 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.zc.cantBan":     "我拿它没办法呢 ...",
 		"cmd.zc.cooldown10":  "😠 你自己先漱漱口呢，不要连续臭别人哦！扣 10 分警告一下",
 		"cmd.zc.cooldown":    "😳 用指令对线是不对的，请大家都冷静下呢～",
-		"cmd.zc.exec":        "👮 %s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 25 分作为警告，如果您的分数低于 -50 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。",
+		"cmd.zc.exec":        "👮 %s, 您被热心的 %s 警告了 ⚠️，请注意管理好自己的行为！暂时扣除 %d 分作为警告，如果您的分数低于 %d 分将被直接禁言。若您觉得这是恶意举报，请理性对待，并联系群管理员处理。",
 		"cmd.zc.noAnonymous": "😠 匿名就不要乱啵啵啦！叭了个叭叭了个叭叭了个叭 ...",
 
 		"cmd.ey.selfReport":  "👮 举报自己？那没办法...只好把你 🫒 半小时哦～",
@@ -29,7 +29,7 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.ey.killChannel": "👮 好的！这就把这个频道封掉啦～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
 		"cmd.ey.killBot":     "👮 好的！这就把这个机器人封禁半小时～ PS: %s 的主人，如果您觉得这是恶意举报，请赶快联系管理员解封哦 ～）",
 		"cmd.ey.cooldown5":   "😠 消停一下消停一下，举报太多次啦，扣 5 分缓一缓",
-		"cmd.ey.exec":        "👮 %s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 50 分作为警告，举报者 15 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 6 票可以解封并抵消扣分），或者直接联系群管理员处理。",
+		"cmd.ey.exec":        "👮 %s, 您被热心群友 %s 报告有发送恶意言论的嫌疑 ⚠️，请注意自己的发言哦！暂时禁言半小时并扣除 %d 分作为警告，举报者 %d 分奖励已到账。若您觉得这是恶意举报，可以呼吁小伙伴们公投为您解封（累计满 %d 票可以解封并抵消扣分），或者直接联系群管理员处理。",
 		"cmd.ey.duplicated":  "👮 他已经被检察官带走啦，不要鞭尸啦 ～",
 
 		"cmd.privateSession":          "👀 请回复这则消息一个文件来为群组 `%s`(%d) 设置 {%s} 哦～",
@@ -180,7 +180,7 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.zc.cantBan":     "Well, I have nothing to do with it ...",
 		"cmd.zc.cooldown10":  "😠 DO NOT TALK LIKE SHIT, YOU WILL BE PUNISHED BY 10 POINTS",
 		"cmd.zc.cooldown":    "😳 Calm down, calm down ...",
-		"cmd.zc.exec":        "👮 %s, you are warned by %s ⚠️, please do not be too aggressive! You are punished by 25 credit points. If your credit is below -50, you would be restricted in this group. Please contact group admin if you think the judgement is a mistake.",
+		"cmd.zc.exec":        "👮 %s, you are warned by %s ⚠️, please do not be too aggressive! You are punished by %d credit points. If your credit is below %d, you would be restricted in this group. Please contact group admin if you think the judgement is a mistake.",
 		"cmd.zc.noAnonymous": "😠 PLEASE WELL BEHAVE WHEN YOU ARE ANONYMOUS ...",
 
 		"cmd.ey.selfReport":  "👮 Yeah, you know what you are doing. You are restricted for half an hour.",
@@ -189,7 +189,7 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.ey.killChannel": "👮 This channel has been banned, PS: if the owner of %s finds it a mistake, please contact the group admin asap.",
 		"cmd.ey.killBot":     "👮 This bot has been restricted for half an hour, PS: if the owner of %s finds it a mistake, please contact the group admin asap.",
 		"cmd.ey.cooldown5":   "😠 DO NOT TALK LIKE SHIT, YOU WILL BE PUNISHED BY 5 POINTS",
-		"cmd.ey.exec":        "👮 %s, you are reported by %s to shot spam into the group ⚠️, please well behave! You are punished by 50 credit points and the reporter has gained 25 points. Please contact group admin if you think the judgement is a mistake, or you could ask for other members to vote to help.",
+		"cmd.ey.exec":        "👮 %s, you are reported by %s to shot spam into the group ⚠️, please well behave! You are punished by %d credit points and the reporter has gained %d points. Please contact group admin if you think the judgement is a mistake, or you could ask other %d members to vote to help to undo this punishment.",
 		"cmd.ey.duplicated":  "👮 The user has already been banned.",
 
 		"cmd.privateSession":          "👀 Please reply a config file to this message to assign `%s`(%d) a new {%s} config ~",
