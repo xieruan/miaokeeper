@@ -291,9 +291,10 @@ func addCreditToMsgSender(chatId int64, m *tb.Message, credit int64, force bool,
 }
 
 func addCredit(chatId int64, user *tb.User, credit int64, force bool, reason OPReasons) *CreditInfo {
-	if chatId < 0 && user != nil && user.ID > 0 && credit != 0 {
+	gc := GetGroupConfig(chatId)
+	if gc != nil && user != nil && user.ID > 0 && credit != 0 {
 		token := fmt.Sprintf("ac-%d-%d", chatId, user.ID)
-		if creditomap.Add(token) < 20 || force { // can only get credit 20 times / hour
+		if force || creditomap.AddBy(token, int(credit)) <= int(gc.CreditMapping.HourlyUpperBound) {
 			return UpdateCredit(BuildCreditInfo(chatId, user, false), UMAdd, credit, reason)
 		}
 	}

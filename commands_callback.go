@@ -40,6 +40,7 @@ func InitCallback() {
 
 	callbackHandler.Add("vote", func(cp *CallbackParams) {
 		gid, tuid := cp.GroupID(), cp.TriggerUserID()
+		gc := cp.GroupConfig()
 		uid, _ := cp.GetUserId("u")
 		secuid, _ := cp.GetUserId("s")
 
@@ -53,9 +54,9 @@ func InitCallback() {
 					Unban(gid, uid, 0)
 					votemap.Unset(vtToken)
 					SmartEdit(cp.Callback.Message, cp.Callback.Message.Text+Locale("cb.unblock.byvote", cp.Locale()))
-					addCredit(gid, &tb.User{ID: uid}, 50, true, OPByAbuse)
+					addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse)
 					if secuid > 0 {
-						addCredit(gid, &tb.User{ID: secuid}, -15, true, OPByAbuse)
+						addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse)
 					}
 				} else {
 					EditBtns(cp.Callback.Message, cp.Callback.Message.Text, "", GenVMBtns(votes, gid, uid, secuid))
@@ -129,6 +130,7 @@ func InitCallback() {
 
 	callbackHandler.Add("unban", func(cp *CallbackParams) {
 		gid := cp.GroupID()
+		gc := cp.GroupConfig()
 		uid, _ := cp.GetUserId("u")
 		secuid, _ := cp.GetUserId("s")
 
@@ -143,9 +145,9 @@ func InitCallback() {
 		SmartEdit(cp.Callback.Message, cp.Callback.Message.Text+Locale("cb.unblock.byadmin", cp.Locale()))
 		joinmap.Unset(joinVerificationId)
 		if secuid > 0 && votemap.Exist(vtToken) {
-			addCredit(gid, &tb.User{ID: uid}, 50, true, OPByAbuse)
+			addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse)
 			votemap.Unset(vtToken)
-			addCredit(gid, &tb.User{ID: secuid}, -15, true, OPByAbuse)
+			addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse)
 		}
 	}).ShouldValidGroupAdmin(true).Should("u", "user")
 
