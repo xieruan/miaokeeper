@@ -22,13 +22,13 @@ func main() {
 	if PingArg {
 		InitTelegram()
 		t := time.Now().UnixMilli()
-		Bot.GetCommands()
+		Bot.Commands()
 		// resp, _ := Bot.Raw("getMe", nil)
 		t1 := time.Now().UnixMilli() - t
-		Bot.GetCommands()
+		Bot.Commands()
 		// _, _ = Bot.Raw("getMe", nil)
 		t2 := time.Now().UnixMilli() - t - t1
-		Bot.GetCommands()
+		Bot.Commands()
 		// _, _ = Bot.Raw("getMe", nil)
 		t3 := time.Now().UnixMilli() - t - t1 - t2
 		fmt.Printf("Response Time: %dms, %dms, %dms (avg: %dms)\n", t1, t2, t3, (t1+t2+t3)/3)

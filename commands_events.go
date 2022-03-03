@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 func CmdOnText(m *tb.Message) {
@@ -108,16 +108,31 @@ func CmdOnUserLeft(m *tb.Message) {
 	LazyDelete(m)
 }
 
-func CmdOnChatMember(cmu *tb.ChatMemberUpdated) {
-	gc := GetGroupConfig(cmu.Chat.ID)
-	if gc != nil && cmu.NewChatMember != nil && cmu.NewChatMember.User != nil && cmu.NewChatMember.User.ID > 0 {
-		user := cmu.NewChatMember.User
-		if cmu.NewChatMember.Role == tb.Kicked ||
-			cmu.NewChatMember.Role == tb.Left {
-			gc.UpdateAdmin(user.ID, UMDel)
-			UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0, OPByCleanUp)
+func CmdOnChatMember(ctx tb.Context) error {
+	return WarpError(func() {
+		cmu := ctx.ChatMember()
+		gc := GetGroupConfig(cmu.Chat.ID)
+		if gc != nil && cmu.NewChatMember != nil && cmu.NewChatMember.User != nil && cmu.NewChatMember.User.ID > 0 {
+			user := cmu.NewChatMember.User
+			if cmu.NewChatMember.Role == tb.Kicked ||
+				cmu.NewChatMember.Role == tb.Left {
+				gc.UpdateAdmin(user.ID, UMDel)
+				UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0, OPByCleanUp)
+			}
 		}
-	}
+	})
+}
+
+func CmdOnChatJoinRequest(ctx tb.Context) error {
+	return WarpError(func() {
+		cjr := ctx.ChatJoinRequest()
+		gc := GetGroupConfig(cjr.Chat.ID)
+		if gc != nil && gc.UnderAttackMode {
+			Bot.DeclineChatJoinRequest(cjr.Chat, cjr.Sender)
+			textMsg := fmt.Sprintf(Locale("channel.kicked.underAttack", GetUserLocale(cjr.Chat, cjr.Sender)), cjr.Sender.ID)
+			SmartSendDelete(cjr.Chat, textMsg, WithMarkdown())
+		}
+	})
 }
 
 func CmdOnUserJoined(m *tb.Message) {

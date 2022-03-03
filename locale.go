@@ -1,7 +1,7 @@
 package main
 
 import (
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 var LocaleAlias = map[string]string{
@@ -119,12 +119,13 @@ var LocaleMap = map[string]map[string]string{
 		"channel.set.success":          "✔️ 已经设置好加群频道验证啦 `(Join=%v, Msg=%v)` ～",
 		"channel.bot.permit":           "👏 欢迎 %s 加入群组，已为机器人自动放行 ～",
 		"channel.user.alreadyFollowed": "👏 欢迎 %s 加入群组，您已关注频道自动放行 ～",
-		"channel.request":              "[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 5 分钟时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～",
+		"channel.request":              "[🎉](tg://user?id=%d) 欢迎 `%s`，您还没有关注本群组关联的频道哦，您有 %d 秒时间验证自己 ～ 请点击下面按钮跳转到频道关注后再回来验证以解除发言限制 ～",
 		"channel.cannotSendMsg":        "❌ 无法发送验证消息，请管理员检查群组权限 ～",
 		"channel.cannotBanUser":        "❌ 无法完成验证流程，请管理员检查机器人封禁权限 ～",
 		"channel.cannotCheckChannel":   "❌ 无法检测用户是否在目标频道内，请管理员检查机器人权限 ～",
-		"channel.pattern.kicked":       "👮‍♀️ [TA](tg://user?id=%d) 的名字命中了广告规则，已自动放逐 15 秒。如果有误杀请联系管理员处理 ～",
+		"channel.pattern.kicked":       "\u200d [TA](tg://user?id=%d) 的名字命中了广告规则，已自动放逐 15 秒。如果有误杀请联系管理员处理 ～",
 		"channel.kicked":               "👀 [TA](tg://user?id=%d) 没有在规定时间内完成验证，已经被我带走啦 ～",
+		"channel.kicked.underAttack":   "⚠️ [TA](tg://user?id=%d) 由于在风控模式下申请加入群组，已被自动隔离 ～",
 
 		"locale.set": "✔️ 设置成功，当前群组的默认语言为: %s ～",
 		"locale.get": "👀 当前群组的默认语言为: %s ～",
@@ -279,12 +280,13 @@ var LocaleMap = map[string]map[string]string{
 		"channel.set.success":          "✔️ Group MFC has been turned on `(Join=%v, Msg=%v)` ～",
 		"channel.bot.permit":           "👏 Welcome %s, bots are permitted to join by default ～",
 		"channel.user.alreadyFollowed": "👏 Welcome %s, you already followed the linked channel, you are all set ～",
-		"channel.request":              "[🎉](tg://user?id=%d) Welcome `%s`, you have not yet followed the linked channel of the group for multi-factor CAPTCHA purpose. Please join the channel within 5 minutes to prove you are not a robot ～",
+		"channel.request":              "[🎉](tg://user?id=%d) Welcome `%s`, you have not yet followed the linked channel of the group for multi-factor CAPTCHA purpose. Please join the channel within %s seconds to prove you are not a robot ～",
 		"channel.cannotSendMsg":        "❌ Cannot send the verification message, please check my permission ～",
 		"channel.cannotBanUser":        "❌ Cannot complete the CAPTCHA, please check my permission ～",
 		"channel.cannotCheckChannel":   "❌ Cannot read the user list of targetted channel, please make sure the bot has enough permission in the channel ～",
-		"channel.pattern.kicked":       "👮‍♀️ [The user's](tg://user?id=%d) name has been marked as fraud. If you believe this is a mistake, please contact group admin for help ～",
+		"channel.pattern.kicked":       "\u200d [The user's](tg://user?id=%d) name has been marked as fraud. If you believe this is a mistake, please contact group admin for help ～",
 		"channel.kicked":               "👀 [The user](tg://user?id=%d) did not pass the MFC verification, so it is banned ～",
+		"channel.kicked.underAttack":   "⚠️ [The user's](tg://user?id=%d) request is automatically declined due to some emergency circumstances.",
 
 		"locale.set": "✔️ The default language of this group has been changed to: %s ～",
 		"locale.get": "👀 The default language of this group is: %s ～",
