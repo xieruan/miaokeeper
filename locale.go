@@ -11,8 +11,10 @@ var LocaleAlias = map[string]string{
 
 var LocaleMap = map[string]map[string]string{
 	"zh": {
-		"system.unexpected": "❌ 无法完成任务，请检查服务器错误日志",
-		"system.notsend":    "❌ 发送消息失败",
+		"system.unexpected":      "❌ 无法完成任务，请检查服务器错误日志",
+		"system.notsend":         "❌ 发送消息失败",
+		"system.wrongUsage":      "❌ 使用方法不对啦！要这么用呢: `%s`",
+		"system.unexpectedError": "❌ 发生了意外: %s",
 
 		"cmd.getToken":       "*🔍 生成成功*\n\n群组名称: `%s`\n群组 ID: `%d`\nAPI 令牌: `%s`\n回调签名: `%s`",
 		"cmd.zc.notAllowed":  "当前群组不允许互相臭嘴哦 ~",
@@ -55,6 +57,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.misc.prevPage":      "⬆️ 上一页",
 		"cmd.misc.atPage":        "第 %d 页",
 		"cmd.misc.nextPage":      "⬇️ 下一页",
+		"cmd.misc.get.success":   "✔️ *读取成功啦 ~*\n\n*键: *`%v`\n*值: *`%v`",
+		"cmd.misc.set.success":   "✔️ *修改成功啦 ~*\n\n*原始值: *`%v`\n*修改后: *`%s`",
 
 		"cmd.credit.logHead": "📖 `%d` 积分记录:\n\n%s",
 
@@ -172,8 +176,10 @@ var LocaleMap = map[string]map[string]string{
 		"cb.disabled":                     "❌ 这个群组还没有被授权哦 ~",
 	},
 	"en": {
-		"system.unexpected": "❌ Cannot fulfill the task, please check logs",
-		"system.notsend":    "❌ Cannot send the message",
+		"system.unexpected":      "❌ Cannot fulfill the task, please check logs",
+		"system.notsend":         "❌ Cannot send the message",
+		"system.wrongUsage":      "❌ Wrong usage: `%s`",
+		"system.unexpectedError": "❌ Unexpected error: %s",
 
 		"cmd.getToken":       "*🔍 Generate Success*\n\nGroup Name: `%s`\nGroup ID: `%d`\nAPI Token: `%s`\nCallback Sign: `%s`",
 		"cmd.zc.notAllowed":  "Warn is not permitted in this group",
@@ -216,6 +222,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.misc.prevPage":      "⬆️ Last",
 		"cmd.misc.atPage":        "# %d",
 		"cmd.misc.nextPage":      "⬇️ Next",
+		"cmd.misc.get.success":   "✔️ *Read Success ~*\n\n*Key: *`%v`\n*Value: *`%v`",
+		"cmd.misc.set.success":   "✔️ *Write Success ~*\n\n*Original: *`%v`\n*Modified: *`%s`",
 
 		"cmd.credit.logHead": "📖 `%d` Logs:\n\n%s",
 

@@ -123,6 +123,8 @@ func InitTelegram() {
 
 		// ---------------- Group Admin ----------------
 
+		HandleLagacy("/set", CmdSetConfig)
+		HandleLagacy("/get", CmdGetConfig)
 		HandleLagacy("/add_admin", CmdAddAdmin)
 		HandleLagacy("/del_admin", CmdDelAdmin)
 		HandleLagacy("/import_policy", CmdSetPolicy)

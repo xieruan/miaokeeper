@@ -238,6 +238,40 @@ func CmdAddAdmin(m *tb.Message) {
 	}
 }
 
+func CmdSetConfig(m *tb.Message) {
+	defer LazyDelete(m)
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+		extra := strings.Fields(m.Payload)
+		if len(extra) != 2 {
+			SmartSendDelete(m, fmt.Sprintf(Locale("system.wrongUsage", GetSenderLocale(m)), "/set <ConfigPath> <Value>"), WithMarkdown())
+		} else if original, err := FieldWriter(gc, extra[0], extra[1], true); err != nil {
+			SmartSendDelete(m, fmt.Sprintf(Locale("system.unexpectedError", GetSenderLocale(m)), err.Error()))
+		} else {
+			SmartSendDelete(m, fmt.Sprintf(Locale("cmd.misc.set.success", GetSenderLocale(m)), original, extra[1]), WithMarkdown())
+		}
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+}
+
+func CmdGetConfig(m *tb.Message) {
+	defer LazyDelete(m)
+	gc := GetGroupConfig(m.Chat.ID)
+	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
+		extra := strings.Fields(m.Payload)
+		if len(extra) != 1 {
+			SmartSendDelete(m, fmt.Sprintf(Locale("system.wrongUsage", GetSenderLocale(m)), "/get <ConfigPath>"), WithMarkdown())
+		} else if original, err := FieldWriter(gc, extra[0], "", false); err != nil {
+			SmartSendDelete(m, fmt.Sprintf(Locale("system.unexpectedError", GetSenderLocale(m)), err.Error()))
+		} else {
+			SmartSendDelete(m, fmt.Sprintf(Locale("cmd.misc.get.success", GetSenderLocale(m)), extra[0], original), WithMarkdown())
+		}
+	} else {
+		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
+	}
+}
+
 func CmdDelAdmin(m *tb.Message) {
 	defer LazyDelete(m)
 	gc := GetGroupConfig(m.Chat.ID)

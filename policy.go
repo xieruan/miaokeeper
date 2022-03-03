@@ -34,15 +34,15 @@ type CreditMapping struct {
 }
 
 type GroupConfig struct {
-	ID            int64
-	Admins        []int64
-	BannedForward []int64
+	ID            int64   `fw:"-"`
+	Admins        []int64 `fw:"-"`
+	BannedForward []int64 `fw:"-"`
 	MergeTo       int64
 
 	Locale           string
-	MustFollow       string
-	MustFollowOnJoin bool
-	MustFollowOnMsg  bool
+	MustFollow       string `fw:"-"`
+	MustFollowOnJoin bool   `fw:"-"`
+	MustFollowOnMsg  bool   `fw:"-"`
 	CreditMapping    *CreditMapping
 
 	UnderAttackMode                    bool
@@ -51,17 +51,17 @@ type GroupConfig struct {
 	RedPacketCaptcha                   bool
 	RedPacketCaptchaFailCreditBehavior int64
 
-	WarnKeywords []string
-	BanKeywords  []string
+	WarnKeywords []string `fw:"-"`
+	BanKeywords  []string `fw:"-"`
 
-	NameBlackListReg   []string
-	NameBlackListRegEx []*regexp.Regexp `json:"-"`
+	NameBlackListReg   []string         `fw:"-"`
+	NameBlackListRegEx []*regexp.Regexp `json:"-" fw:"-"`
 
-	CustomReply []*CustomReplyRule
+	CustomReply []*CustomReplyRule `fw:"-"`
 
-	updateLock    sync.RWMutex `json:"-"`
-	saveLock      sync.Mutex   `json:"-"`
-	saveDebouncer func(func()) `json:"-"`
+	updateLock    sync.RWMutex `json:"-" fw:"-"`
+	saveLock      sync.Mutex   `json:"-" fw:"-"`
+	saveDebouncer func(func()) `json:"-" fw:"-"`
 }
 
 type CustomReplyRule struct {
