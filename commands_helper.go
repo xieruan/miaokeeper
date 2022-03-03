@@ -13,7 +13,7 @@ import (
 
 	"github.com/BBAlliance/miaokeeper/memutils"
 	jsoniter "github.com/json-iterator/go"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 func SendRedPacket(to interface{}, chatId int64, packetId int64, photo *bytes.Buffer) (*tb.Message, error) {
@@ -139,7 +139,11 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 				Bot.Delete(m)
 				return false
 			}
-			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", GetSenderLocale(m)), userId, usrName), "", []string{
+			validationDelay := 300
+			if gc.UnderAttackMode {
+				validationDelay = 30
+			}
+			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", GetSenderLocale(m)), userId, usrName, validationDelay), "", []string{
 				fmt.Sprintf(Locale("btn.channel.step1", GetSenderLocale(m)), strings.TrimLeft(gc.MustFollow, "@")),
 				fmt.Sprintf(Locale("btn.channel.step2", GetSenderLocale(m)), userId),
 				fmt.Sprintf(Locale("btn.adminPanel", GetSenderLocale(m)), userId, 0, userId, 0),
@@ -157,7 +161,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 					}
 					joinmap.Unset(joinVerificationId)
 				} else {
-					lazyScheduler.After(time.Minute*5, memutils.LSC("inGroupVerify", &InGroupVerifyArgs{
+					lazyScheduler.After(time.Second*time.Duration(validationDelay), memutils.LSC("inGroupVerify", &InGroupVerifyArgs{
 						ChatId:         chatId,
 						UserId:         userId,
 						MessageId:      msg.ID,
@@ -378,37 +382,37 @@ func SendBtns(to interface{}, what interface{}, prefix string, btns []string) (*
 		DisableWebPagePreview: true,
 		AllowWithoutReply:     true,
 	}, &tb.ReplyMarkup{
-		OneTimeKeyboard:     true,
-		ResizeReplyKeyboard: true,
-		ForceReply:          false,
-		InlineKeyboard:      MakeBtns(prefix, btns),
+		OneTimeKeyboard: true,
+		ResizeKeyboard:  true,
+		ForceReply:      false,
+		InlineKeyboard:  MakeBtns(prefix, btns),
 	})
 }
 
 func SendBtnsMarkdown(to interface{}, what interface{}, prefix string, btns []string) (*tb.Message, error) {
 	return SmartSendInner(to, what, WithMarkdown(), &tb.ReplyMarkup{
-		OneTimeKeyboard:     true,
-		ResizeReplyKeyboard: true,
-		ForceReply:          false,
-		InlineKeyboard:      MakeBtns(prefix, btns),
+		OneTimeKeyboard: true,
+		ResizeKeyboard:  true,
+		ForceReply:      false,
+		InlineKeyboard:  MakeBtns(prefix, btns),
 	})
 }
 
 func EditBtns(to *tb.Message, what interface{}, prefix string, btns []string) (*tb.Message, error) {
 	return SmartEdit(to, what, &tb.ReplyMarkup{
-		OneTimeKeyboard:     true,
-		ResizeReplyKeyboard: true,
-		ForceReply:          false,
-		InlineKeyboard:      MakeBtns(prefix, btns),
+		OneTimeKeyboard: true,
+		ResizeKeyboard:  true,
+		ForceReply:      false,
+		InlineKeyboard:  MakeBtns(prefix, btns),
 	})
 }
 
 func EditBtnsMarkdown(to *tb.Message, what interface{}, prefix string, btns []string) (*tb.Message, error) {
 	return SmartEdit(to, what, WithMarkdown(), &tb.ReplyMarkup{
-		OneTimeKeyboard:     true,
-		ResizeReplyKeyboard: true,
-		ForceReply:          false,
-		InlineKeyboard:      MakeBtns(prefix, btns),
+		OneTimeKeyboard: true,
+		ResizeKeyboard:  true,
+		ForceReply:      false,
+		InlineKeyboard:  MakeBtns(prefix, btns),
 	})
 }
 
@@ -459,10 +463,10 @@ func SmartSendWithBtns(to interface{}, what interface{}, buttons []string, optio
 
 	if len(buttons) > 0 {
 		withOptions = append(withOptions, &tb.ReplyMarkup{
-			OneTimeKeyboard:     true,
-			ResizeReplyKeyboard: true,
-			ForceReply:          true,
-			InlineKeyboard:      MakeButtons(buttons),
+			OneTimeKeyboard: true,
+			ResizeKeyboard:  true,
+			ForceReply:      true,
+			InlineKeyboard:  MakeButtons(buttons),
 		})
 	}
 	return SmartSendInner(to, what, withOptions...)

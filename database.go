@@ -14,7 +14,7 @@ import (
 	"github.com/BBAlliance/miaokeeper/memutils"
 	_ "github.com/go-sql-driver/mysql"
 	jsoniter "github.com/json-iterator/go"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 var DBCONN = ""

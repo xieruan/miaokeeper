@@ -12,7 +12,7 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 func CmdSuExportCredit(m *tb.Message) {
@@ -49,7 +49,7 @@ func CmdImportPolicy(m *tb.Message) {
 	gc := GetGroupConfig(chatId)
 	if gc != nil && (gc.IsAdmin(m.Sender.ID) || IsAdmin(m.Sender.ID)) {
 		Bot.Notify(m.Chat, tb.UploadingDocument)
-		ioHandler, err := Bot.GetFile(&m.Document.File)
+		ioHandler, err := Bot.File(&m.Document.File)
 		if err != nil {
 			DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
 			SmartSendDelete(m, Locale("policy.importError", GetSenderLocale(m)))
@@ -79,7 +79,7 @@ func CmdSuImportCredit(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && IsAdmin(m.Sender.ID) {
 		Bot.Notify(m.Chat, tb.UploadingDocument)
-		ioHandler, err := Bot.GetFile(&m.Document.File)
+		ioHandler, err := Bot.File(&m.Document.File)
 		if err != nil {
 			DErrorEf(err, "Import Credit Error | not downloaded url=%s", Bot.URL+"/file/bot"+Bot.Token+"/"+m.Document.FilePath)
 			SmartSendDelete(m, Locale("credit.importError", GetSenderLocale(m)))
@@ -754,7 +754,7 @@ func CmdID(m *tb.Message) {
 func CmdPing(m *tb.Message) {
 	defer LazyDelete(m)
 	t := time.Now().UnixMilli()
-	Bot.GetCommands()
+	Bot.Commands()
 	t1 := time.Now().UnixMilli() - t
 	msg, _ := SmartSendDelete(m.Chat, fmt.Sprintf(Locale("cmd.misc.ping.1", GetSenderLocale(m)), t1), WithMarkdown())
 	t2 := time.Now().UnixMilli() - t - t1

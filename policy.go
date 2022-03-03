@@ -10,7 +10,7 @@ import (
 
 	"github.com/bep/debounce"
 	jsoniter "github.com/json-iterator/go"
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 type GroupSignType = int
@@ -45,6 +45,7 @@ type GroupConfig struct {
 	MustFollowOnMsg  bool
 	CreditMapping    *CreditMapping
 
+	UnderAttackMode                    bool
 	AntiSpoiler                        bool
 	DisableWarn                        bool
 	RedPacketCaptcha                   bool

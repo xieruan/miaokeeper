@@ -171,3 +171,21 @@ func POSTJsonWithSign(url string, sign string, payload []byte, timeout time.Dura
 
 	return body
 }
+
+func WarpError(fn func()) (err error) {
+	defer func() {
+		if erro := recover(); erro != nil {
+			switch x := erro.(type) {
+			case string:
+				err = fmt.Errorf(x)
+			case error:
+				err = x
+			default:
+				err = fmt.Errorf("unknown error")
+			}
+		}
+	}()
+
+	fn()
+	return
+}

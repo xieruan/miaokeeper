@@ -6,13 +6,18 @@ import (
 	"strconv"
 	"strings"
 
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "gopkg.in/telebot.v3"
 )
 
 var callbackHandler *CallbackHandler
 
-func CmdOnCallback(c *tb.Callback) {
-	callbackHandler.Handle(c)
+func CmdOnCallback(ctx tb.Context) error {
+	return WarpError(func() {
+		c := ctx.Callback()
+		if c != nil {
+			callbackHandler.Handle(c)
+		}
+	})
 }
 
 func InitCallback() {
