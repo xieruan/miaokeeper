@@ -143,22 +143,42 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			if gc.UnderAttackMode {
 				validationDelay = 30
 			}
-			msg, err := SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", GetSenderLocale(m)), userId, usrName, validationDelay), "", []string{
-				fmt.Sprintf(Locale("btn.channel.step1", GetSenderLocale(m)), strings.TrimLeft(gc.MustFollow, "@")),
-				fmt.Sprintf(Locale("btn.channel.step2", GetSenderLocale(m)), userId),
-				fmt.Sprintf(Locale("btn.adminPanel", GetSenderLocale(m)), userId, 0, userId, 0),
-			})
+
+			inviteLink := ""
+			if strings.HasPrefix(gc.MustFollow, "@") {
+				inviteLink = "https://t.me/" + strings.TrimLeft(gc.MustFollow, "@")
+			} else if followId, err := strconv.ParseInt(gc.MustFollow, 10, 64); err == nil && followId < 0 {
+				if followChat, err := Bot.ChatByID(followId); err == nil && followChat != nil {
+					if followChat.InviteLink != "" {
+						inviteLink = followChat.InviteLink
+					} else {
+						inviteLink, _ = Bot.InviteLink(followChat)
+					}
+				}
+			}
+
+			var msg *tb.Message
+			var err error
+
+			if inviteLink != "" {
+				msg, err = SendBtnsMarkdown(m.Chat, fmt.Sprintf(Locale("channel.request", GetSenderLocale(m)), userId, usrName, validationDelay), "", []string{
+					fmt.Sprintf(Locale("btn.channel.step1", GetSenderLocale(m)), inviteLink),
+					fmt.Sprintf(Locale("btn.channel.step2", GetSenderLocale(m)), userId),
+					fmt.Sprintf(Locale("btn.adminPanel", GetSenderLocale(m)), userId, 0, userId, 0),
+				})
+			}
+
 			if msg == nil || err != nil {
 				if showExceptDialog {
 					SmartSendDelete(m.Chat, Locale("channel.cannotSendMsg", GetSenderLocale(m)))
 				}
 				joinmap.Unset(joinVerificationId)
 			} else {
-				if Ban(chatId, userId, 0) != nil {
+				Bot.Delete(m)
+				if banErr := Ban(chatId, userId, 0); banErr != nil {
+					DErrorEf(banErr, "Verification Error | Ban error")
+					SmartEdit(msg, Locale("channel.cannotBanUser", GetSenderLocale(m)))
 					LazyDelete(msg)
-					if showExceptDialog {
-						SmartSendDelete(m.Chat, Locale("channel.cannotBanUser", GetSenderLocale(m)))
-					}
 					joinmap.Unset(joinVerificationId)
 				} else {
 					lazyScheduler.After(time.Second*time.Duration(validationDelay), memutils.LSC("inGroupVerify", &InGroupVerifyArgs{
@@ -168,7 +188,6 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 						VerificationId: joinVerificationId,
 						LanguageCode:   user.LanguageCode,
 					}))
-					Bot.Delete(m)
 					return false
 				}
 			}
@@ -615,6 +634,9 @@ func UserIsInGroup(chatRepr string, userId int64) UIGStatus {
 		return UIGOut
 	}
 	if cm.Role == tb.Left || cm.Role == tb.Kicked {
+		return UIGOut
+	}
+	if cm.Role == tb.Restricted {
 		return UIGOut
 	}
 	return UIGIn

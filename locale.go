@@ -136,7 +136,7 @@ var LocaleMap = map[string]map[string]string{
 		"btn.notFair":         "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
 		"btn.adminPanel":    "🚩 解封[管理]|unban?u=%d&s=%d||🚮 清退[管理]|kick?u=%d&s=%d",
-		"btn.channel.step1": "👉 第一步：关注频道 👈|https://t.me/%s",
+		"btn.channel.step1": "👉 第一步：关注频道 👈|%s",
 		"btn.channel.step2": "👉 第二步：点我验证 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nTA 已被管理员解封 👊",
@@ -280,7 +280,7 @@ var LocaleMap = map[string]map[string]string{
 		"channel.set.success":          "✔️ Group MFC has been turned on `(Join=%v, Msg=%v)` ～",
 		"channel.bot.permit":           "👏 Welcome %s, bots are permitted to join by default ～",
 		"channel.user.alreadyFollowed": "👏 Welcome %s, you already followed the linked channel, you are all set ～",
-		"channel.request":              "[🎉](tg://user?id=%d) Welcome `%s`, you have not yet followed the linked channel of the group for multi-factor CAPTCHA purpose. Please join the channel within %s seconds to prove you are not a robot ～",
+		"channel.request":              "[🎉](tg://user?id=%d) Welcome `%s`, you have not yet followed the linked channel of the group for multi-factor CAPTCHA purpose. Please join the channel within %d seconds to prove you are not a robot ～",
 		"channel.cannotSendMsg":        "❌ Cannot send the verification message, please check my permission ～",
 		"channel.cannotBanUser":        "❌ Cannot complete the CAPTCHA, please check my permission ～",
 		"channel.cannotCheckChannel":   "❌ Cannot read the user list of targetted channel, please make sure the bot has enough permission in the channel ～",
@@ -297,7 +297,7 @@ var LocaleMap = map[string]map[string]string{
 		// "btn.notFair": "😠 这不公平 (%d)|vote?u=%d&s=%d",
 
 		"btn.adminPanel":    "🚩 UNBAN [ADMIN]|unban?u=%d&s=%d||🚮 KICK [ADMIN]|kick?u=%d&s=%d",
-		"btn.channel.step1": "👉 1ST: JOIN THE CHANNEL 👈|https://t.me/%s",
+		"btn.channel.step1": "👉 1ST: JOIN THE CHANNEL 👈|%s",
 		"btn.channel.step2": "👉 2ND: RELEASE ME 👈|check?u=%d",
 
 		"cb.unblock.byadmin": "\n\nThe user is unbanned by admin 👊",
