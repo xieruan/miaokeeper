@@ -34,15 +34,15 @@ type CreditMapping struct {
 }
 
 type GroupConfig struct {
-	ID            int64   `fw:"-"`
+	ID            int64   `fw:"readonly"`
 	Admins        []int64 `fw:"-"`
 	BannedForward []int64 `fw:"-"`
 	MergeTo       int64
 
 	Locale           string
-	MustFollow       string `fw:"-"`
-	MustFollowOnJoin bool   `fw:"-"`
-	MustFollowOnMsg  bool   `fw:"-"`
+	MustFollow       string `fw:"readonly"`
+	MustFollowOnJoin bool   `fw:"readonly"`
+	MustFollowOnMsg  bool   `fw:"readonly"`
 	CreditMapping    *CreditMapping
 
 	UnderAttackMode                    bool

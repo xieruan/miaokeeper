@@ -34,9 +34,16 @@ func FieldWriter(target interface{}, path string, value string, overWrite bool) 
 		currentKey := "Main." + strings.Join(paths[:i+1], ".")
 
 		if elem.Kind() == reflect.Struct {
-			typeof, ok := elem.Type().FieldByName(paths[i])
-			if ok && typeof.Tag.Get("fw") == "-" {
-				return "", errors.New("ERR: this field is protected: " + currentKey)
+			if typeof, ok := elem.Type().FieldByName(paths[i]); ok {
+				fw := typeof.Tag.Get("fw")
+				switch fw {
+				case "-":
+					return "", errors.New("ERR: this field is protected: " + currentKey)
+				case "readonly":
+					if overWrite {
+						return "", errors.New("ERR: this field is readonly: " + currentKey)
+					}
+				}
 			}
 			elem = reflect.Indirect(elem).FieldByName(paths[i])
 			kind = elem.Kind()
