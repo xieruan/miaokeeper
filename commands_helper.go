@@ -105,6 +105,9 @@ func CheckSpoiler(m *tb.Message) bool {
 func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 	showExceptDialog := isJoin
 	if gc := GetGroupConfig(m.Chat.ID); gc != nil && gc.MustFollow != "" {
+		if IsAdmin(user.ID) || gc.IsAdmin(user.ID) {
+			return true
+		}
 		if isJoin && !gc.MustFollowOnJoin {
 			return true
 		}
