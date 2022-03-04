@@ -13,12 +13,12 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
-type UIGStatus int
+type UIGStatus string
 
 const (
-	UIGIn UIGStatus = iota
-	UIGOut
-	UIGErr
+	UIGIn  UIGStatus = "InGroup"
+	UIGOut UIGStatus = "OutOfGroup"
+	UIGErr UIGStatus = "Error"
 )
 
 var Bot *tb.Bot
@@ -154,7 +154,7 @@ func InitTelegram() {
 
 		HandleLagacy("/mycredit", CmdMyCredit)
 		HandleLagacy("/version", CmdVersion)
-		HandleLagacy("/id", CmdID)
+		HandleLagacy("/info", CmdInfo)
 		HandleLagacy("/ping", CmdPing)
 
 		HandleLagacy(tb.OnUserLeft, CmdOnUserLeft)

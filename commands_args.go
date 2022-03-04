@@ -453,7 +453,7 @@ func CmdSetChannel(m *tb.Message) {
 				gc.Save()
 				SmartSendDelete(m, Locale("channel.set.cancel", GetSenderLocale(m)))
 			} else {
-				if UserIsInGroup(groupName, Bot.Me.ID) != UIGIn {
+				if inGroupStatus, _ := UserIsInGroup(groupName, Bot.Me.ID); inGroupStatus != UIGIn {
 					SmartSendDelete(m, Locale("channel.cannotCheckChannel", GetSenderLocale(m)))
 				} else {
 					gc.MustFollow = groupName
@@ -766,20 +766,27 @@ func CmdVersion(m *tb.Message) {
 	SmartSendDelete(m, fmt.Sprintf(Locale("cmd.misc.version", GetSenderLocale(m)), version))
 }
 
-func CmdID(m *tb.Message) {
+func CmdInfo(m *tb.Message) {
 	defer LazyDelete(m)
 	retStr := ""
+	usrStatus, usrGroupStatus := UIGStatus("N/A"), tb.MemberStatus("N/A")
 	if m.ReplyTo != nil {
 		if m.ReplyTo.SenderChat != nil {
 			retStr = fmt.Sprintf(Locale("cmd.misc.replyid.chat", GetSenderLocale(m)), m.Chat.ID, m.ReplyTo.SenderChat.ID, m.ReplyTo.SenderChat.Type)
 		} else {
-			retStr = fmt.Sprintf(Locale("cmd.misc.replyid.user", GetSenderLocale(m)), m.Chat.ID, m.ReplyTo.Sender.ID, m.ReplyTo.Sender.LanguageCode)
+			if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+				usrStatus, usrGroupStatus = UserIsInGroup(gc.MustFollow, m.ReplyTo.Sender.ID)
+			}
+			retStr = fmt.Sprintf(Locale("cmd.misc.replyid.user", GetSenderLocale(m)), m.Chat.ID, m.ReplyTo.Sender.ID, m.ReplyTo.Sender.LanguageCode, usrStatus, usrGroupStatus)
 		}
 	} else {
 		if m.SenderChat != nil {
 			retStr = fmt.Sprintf(Locale("cmd.misc.id.chat", GetSenderLocale(m)), m.Chat.ID, m.SenderChat.ID, m.SenderChat.Type)
 		} else {
-			retStr = fmt.Sprintf(Locale("cmd.misc.id.user", GetSenderLocale(m)), m.Chat.ID, m.Sender.ID, m.Sender.LanguageCode)
+			if gc := GetGroupConfig(m.Chat.ID); gc != nil {
+				usrStatus, usrGroupStatus = UserIsInGroup(gc.MustFollow, m.Sender.ID)
+			}
+			retStr = fmt.Sprintf(Locale("cmd.misc.id.user", GetSenderLocale(m)), m.Chat.ID, m.Sender.ID, m.Sender.LanguageCode, usrStatus, usrGroupStatus)
 		}
 	}
 	SmartSendDelete(m, retStr, WithMarkdown())

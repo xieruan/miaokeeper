@@ -181,7 +181,7 @@ func InitCallback() {
 		joinVerificationId := fmt.Sprintf("join,%d,%d", gid, uid)
 
 		if uid == cp.TriggerUserID() {
-			usrStatus := UserIsInGroup(gc.MustFollow, uid)
+			usrStatus, _ := UserIsInGroup(gc.MustFollow, uid)
 			if usrStatus == UIGIn {
 				if Unban(gid, uid, 0) == nil {
 					Bot.Delete(cp.Callback.Message)

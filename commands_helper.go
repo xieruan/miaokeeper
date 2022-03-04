@@ -129,7 +129,7 @@ func CheckChannelFollow(m *tb.Message, user *tb.User, isJoin bool) bool {
 			return true
 		}
 
-		usrStatus := UserIsInGroup(gc.MustFollow, user.ID)
+		usrStatus, _ := UserIsInGroup(gc.MustFollow, user.ID)
 		if usrStatus == UIGIn {
 			if showExceptDialog {
 				SmartSendDelete(m.Chat, fmt.Sprintf(Locale("channel.user.alreadyFollowed", GetSenderLocale(m)), usrName))
@@ -615,34 +615,35 @@ func GetQuotableChatName(u *tb.Chat) string {
 	return GetQuotableStr(GetChatName(u))
 }
 
-func UserIsInGroup(chatRepr string, userId int64) UIGStatus {
+func UserIsInGroup(chatRepr string, userId int64) (UIGStatus, tb.MemberStatus) {
 	cm, err := ChatMemberOf(chatRepr, Bot.Me.ID)
 	if err != nil {
-		return UIGErr
+		return UIGErr, ""
 	} else if cm.Role != tb.Administrator && cm.Role != tb.Creator {
-		return UIGErr
+		return UIGErr, ""
 	}
 
 	if userId == Bot.Me.ID {
-		return UIGIn
+		return UIGIn, cm.Role
 	}
 
 	cm, err = ChatMemberOf(chatRepr, userId)
-	// if is admin, pass
-	if cm.Anonymous || cm.Role == tb.Administrator || cm.Role == tb.Creator {
-		return UIGIn
+	if err != nil || cm == nil {
+		return UIGOut, ""
 	}
 
-	if err != nil || cm == nil {
-		return UIGOut
+	// if is admin, pass
+	if cm.Anonymous || cm.Role == tb.Administrator || cm.Role == tb.Creator {
+		return UIGIn, cm.Role
 	}
+
 	if cm.Role == tb.Left || cm.Role == tb.Kicked {
-		return UIGOut
+		return UIGOut, cm.Role
 	}
 	if cm.Role == tb.Restricted {
-		return UIGOut
+		return UIGOut, cm.Role
 	}
-	return UIGIn
+	return UIGIn, cm.Role
 }
 
 func ChatMemberOf(chatRepr string, userId int64) (*tb.ChatMember, error) {
