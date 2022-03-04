@@ -475,7 +475,7 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPR
 		query, err = MYSQLDB.Query(fmt.Sprintf(`DELETE FROM MiaoKeeper_Credit_%d
 			WHERE userid = ?;`, Abs(user.GroupId)), user.ID)
 		queryLogs, _ = MYSQLDB.Query(fmt.Sprintf(`INSERT INTO MiaoKeeper_Credit_Log_%d
-			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, -user.Credit, OPByCleanUp)
+			(userid, credit, op) VALUES (?, ?, ?);`, Abs(user.GroupId)), user.ID, -ci.Credit, OPByCleanUp)
 	}
 	if err != nil {
 		DErrorE(err, "Database Credit Update Error")
