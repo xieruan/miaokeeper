@@ -341,7 +341,7 @@ func ValidUser(u *tb.User) bool {
 
 func BuildCreditInfo(groupId int64, user *tb.User, autoFetch bool) *CreditInfo {
 	ci := &CreditInfo{
-		user.Username, GetUserName(user), user.ID, 0, groupId,
+		user.ID, user.Username, GetUserName(user), 0, groupId,
 	}
 	if autoFetch {
 		ci.Credit = GetCredit(groupId, user.ID).Credit

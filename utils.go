@@ -115,6 +115,13 @@ func Abs(a int64) int64 {
 	return -a
 }
 
+func ParseInt64(s string) int64 {
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return i
+	}
+	return 0
+}
+
 func Type(to interface{}) string {
 	if to == nil {
 		return "nil"
@@ -188,4 +195,10 @@ func WarpError(fn func()) (err error) {
 
 	fn()
 	return
+}
+
+func PlainError(info string, err error) {
+	if err != nil {
+		DErrorf("Unexpected Error | %s error=%v", info, err.Error())
+	}
 }

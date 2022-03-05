@@ -41,7 +41,6 @@ func main() {
 	}
 	DInfo("System | Database is initialzed.")
 
-	InitTables()
 	ReadConfigs()
 	DInfo("System | Config is initialzed.")
 
@@ -66,6 +65,7 @@ func init() {
 	flag.StringVar(&TOKEN, "token", "", "telegram bot token")
 	flag.StringVar(&TELEGRAMURL, "upstream", "", "telegram upstream api url")
 	flag.StringVar(&DBCONN, "database", "", "mysql or its compatible database connection URL")
+	flag.StringVar(&DBPREFIX, "prefix", "MiaoKeeper", "prefix of database table name")
 	flag.StringVar(&redisServer, "redis", "", "use redis to provide high availability among restarts")
 	flag.BoolVar(&VerboseMode, "verbose", false, "display all logs")
 	flag.BoolVar(&VersionArg, "version", false, "display current version and exit")
