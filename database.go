@@ -15,12 +15,14 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"gorm.io/gorm/logger"
 
 	jsoniter "github.com/json-iterator/go"
 	tb "gopkg.in/telebot.v3"
 )
 
 var DBCONN = ""
+var DBPREFIX = "MiaoKeeper"
 var DB *gorm.DB
 var UpdateLock sync.Mutex
 var GroupConfigLock sync.Mutex
@@ -72,7 +74,7 @@ func OPParse(s string) OPReasons {
 }
 
 func DBTName(tableName string, extras ...int64) string {
-	table := "MiaoKeeper_" + tableName
+	table := DBPREFIX + "_" + tableName
 	if len(extras) > 0 {
 		table += "_" + fmt.Sprintf("%d", Abs(extras[0]))
 	}
@@ -101,7 +103,7 @@ type CreditLog struct {
 	UserID    int64     `gorm:"column:userid;not null;index"`
 	Credit    int64     `gorm:"column:credit;not null"`
 	Reason    OPReasons `gorm:"column:op;type:string;size:16;not null;index"`
-	CreatedAt time.Time `gorm:"column:createdat;type:time;autoCreateTime"`
+	CreatedAt time.Time `gorm:"column:createdat;autoCreateTime"`
 }
 
 // GORM:%NAME%_Config
@@ -114,7 +116,7 @@ type DBGlobalConfig struct {
 type DBLottery struct {
 	ID        string    `gorm:"column:id;type:string;size:128;primaryKey;not null"`
 	Config    string    `gorm:"column:config;type:text;not null"`
-	CreatedAt time.Time `gorm:"column:createdat;type:time;autoCreateTime"`
+	CreatedAt time.Time `gorm:"column:createdat;autoCreateTime"`
 }
 
 // GORM:%NAME%_Lottery_Participation
@@ -122,7 +124,7 @@ type DBLotteryParticipation struct {
 	ID          string    `gorm:"column:id;type:string;size:128;uniqueIndex:uniq_participant;index:lottery_id;not null"`
 	Participant int64     `gorm:"column:participant;uniqueIndex:uniq_participant;not null"`
 	Username    string    `gorm:"column:username;type:text;not null"`
-	CreatedAt   time.Time `gorm:"column:createdat;type:time;autoCreateTime"`
+	CreatedAt   time.Time `gorm:"column:createdat;autoCreateTime"`
 }
 
 var GroupConfigCache map[int64]*GroupConfig
@@ -144,13 +146,15 @@ func InitDatabase() (err error) {
 		conn = mysql.Open(connStr)
 	}
 
-	DB, err = gorm.Open(conn, &gorm.Config{})
+	DB, err = gorm.Open(conn, &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	return
 }
 
 func ReadConfig(key string) string {
 	dbgc := DBGlobalConfig{}
-	err := DB.Table(DBTName("Config")).First(&dbgc, key).Error
+	err := DB.Table(DBTName("Config")).First(&dbgc, "k = ?", key).Error
 	if err != nil {
 		DLogf("Config Read Error | key=%s error=%v", key, err.Error())
 	}
@@ -289,7 +293,7 @@ func UpdateGroup(groupId int64, method UpdateMethod) bool {
 func GetCredit(groupId, userId int64) *CreditInfo {
 	ret := &CreditInfo{}
 	realGroup := GetAliasedGroup(groupId)
-	err := DB.Table(DBTName("Credit", realGroup)).First(&ret, userId).Error
+	err := DB.Table(DBTName("Credit", realGroup)).First(&ret, "userid = ?", userId).Error
 	if err != nil {
 		DLogf("Database Credit Read Error | gid=%d rgid=%d uid=%d error=%s", groupId, realGroup, userId, err.Error())
 	}
@@ -520,7 +524,7 @@ func (li *LotteryInstance) GenText() string {
 	if len(li.Winners) > 0 && len(li.Winners) <= len(li.Winners) {
 		status += "\n\n*🏆 获奖者:*"
 		for i := range li.Winners {
-			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))", i+1, GetQuotableStr(li.Winners[i].Username), li.Winners[i].ID, fmt.Sprintf("tg://user?id=%d", li.Winners[i].ID))
+			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))", i+1, GetQuotableStr(li.Winners[i].Username), li.Winners[i].Participant, fmt.Sprintf("tg://user?id=%d", li.Winners[i].Participant))
 		}
 	}
 
@@ -652,7 +656,7 @@ func GetLottery(lotteryId string) *LotteryInstance {
 	}
 
 	ret := DBLottery{}
-	err := DB.Table(DBTName("Lottery")).First(&ret, lotteryId).Error
+	err := DB.Table(DBTName("Lottery")).First(&ret, "id = ?", lotteryId).Error
 	if err != nil {
 		DErrorf("Fetch Lottery Error | id=%s error=%v", lotteryId, err.Error())
 		return nil
