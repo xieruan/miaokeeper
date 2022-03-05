@@ -41,7 +41,6 @@ func main() {
 	}
 	DInfo("System | Database is initialzed.")
 
-	InitTables()
 	ReadConfigs()
 	DInfo("System | Config is initialzed.")
 
