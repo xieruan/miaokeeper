@@ -82,7 +82,7 @@ func DBTName(tableName string, extras ...int64) string {
 }
 
 func GetRandClause() string {
-	if strings.HasPrefix(DBCONN, "postgres://") {
+	if strings.HasPrefix(DBCONN, "postgres") {
 		return "RANDOM()"
 	}
 	return "RAND()"
@@ -93,7 +93,7 @@ type CreditInfo struct {
 	ID       int64  `json:"id" gorm:"column:userid;primaryKey;not null"`
 	Username string `json:"username" gorm:"column:username;type:text;not null"`
 	Name     string `json:"nickname" gorm:"column:name;type:text;not null"`
-	Credit   int64  `json:"credit" gorm:"column:credit;type:text;not null"`
+	Credit   int64  `json:"credit" gorm:"column:credit;not null"`
 	GroupId  int64  `json:"groupId" gorm:"-"`
 }
 
@@ -121,7 +121,7 @@ type DBLottery struct {
 
 // GORM:%NAME%_Lottery_Participation
 type DBLotteryParticipation struct {
-	ID          string    `gorm:"column:id;type:string;size:128;uniqueIndex:uniq_participant;index:lottery_id;not null"`
+	LotteryID   string    `gorm:"column:lotteryid;type:string;size:128;uniqueIndex:uniq_participant;index:lottery_id;not null"`
 	Participant int64     `gorm:"column:participant;uniqueIndex:uniq_participant;not null"`
 	Username    string    `gorm:"column:username;type:text;not null"`
 	CreatedAt   time.Time `gorm:"column:createdat;autoCreateTime"`
@@ -132,7 +132,7 @@ var LotteryConfigCache map[string]*LotteryInstance
 
 func InitDatabase() (err error) {
 	var conn gorm.Dialector
-	if strings.HasPrefix(DBCONN, "postgres://") {
+	if strings.HasPrefix(DBCONN, "postgres") {
 		// postgresSQL
 		conn = postgres.Open(DBCONN)
 	} else {
@@ -236,7 +236,7 @@ func InitGroupTable(groupId int64) {
 func ReadConfigs() {
 	PlainError("Unable to create config table", DB.Table(DBTName("Config")).AutoMigrate(&DBGlobalConfig{}))
 	PlainError("Unable to create lottery table", DB.Table(DBTName("Lottery")).AutoMigrate(&DBLottery{}))
-	PlainError("Unable to create table", DB.Table(DBTName("Lottery_Participation")).AutoMigrate(&DBLotteryParticipation{}))
+	PlainError("Unable to create table", DB.Debug().Table(DBTName("Lottery_Participation")).AutoMigrate(&DBLotteryParticipation{}))
 
 	ADMINS = ParseStrToInt64Arr(ReadConfig("ADMINS"))
 	GROUPS = ParseStrToInt64Arr(ReadConfig("GROUPS"))
@@ -341,7 +341,7 @@ func FlushCredits(groupId int64, records [][]string) {
 	batches := []CreditInfo{}
 	logbatches := []CreditLog{}
 	for _, r := range records {
-		if len(r) == 4 {
+		if len(r) >= 4 {
 			batches = append(batches, CreditInfo{
 				ID:       ParseInt64(r[0]),
 				Name:     r[1],
@@ -561,7 +561,7 @@ func (li *LotteryInstance) Join(userId int64, username string) error {
 	}
 
 	err := DB.Table(DBTName("Lottery_Participation")).Create(&DBLotteryParticipation{
-		ID:          li.ID,
+		LotteryID:   li.ID,
 		Participant: userId,
 		Username:    username,
 	}).Error
@@ -585,7 +585,7 @@ func (li *LotteryInstance) Participants() int {
 		}
 
 		ret := int64(0)
-		err := DB.Table(DBTName("Lottery_Participation")).Where("id = ?", li.ID).Count(&ret).Error
+		err := DB.Table(DBTName("Lottery_Participation")).Where("lotteryid = ?", li.ID).Count(&ret).Error
 		if err != nil {
 			DLogf("Fetch Lottery Participants Number Error | id=%s error=%v", li.ID, err.Error())
 			return -1
@@ -636,7 +636,7 @@ func (li *LotteryInstance) CheckDraw(force bool) bool {
 			winners := []DBLotteryParticipation{}
 			DB.Table(DBTName("Lottery_Participation")).Clauses(clause.OrderBy{
 				Expression: clause.Expr{SQL: GetRandClause()},
-			}).Where("id = ?", li.ID).Limit(li.Num).Find(&winners)
+			}).Where("lotteryid = ?", li.ID).Limit(li.Num).Find(&winners)
 
 			li.Winners = winners
 			li.Update()
