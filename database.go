@@ -236,7 +236,7 @@ func InitGroupTable(groupId int64) {
 func ReadConfigs() {
 	PlainError("Unable to create config table", DB.Table(DBTName("Config")).AutoMigrate(&DBGlobalConfig{}))
 	PlainError("Unable to create lottery table", DB.Table(DBTName("Lottery")).AutoMigrate(&DBLottery{}))
-	PlainError("Unable to create table", DB.Debug().Table(DBTName("Lottery_Participation")).AutoMigrate(&DBLotteryParticipation{}))
+	PlainError("Unable to create table", DB.Table(DBTName("Lottery_Participation")).AutoMigrate(&DBLotteryParticipation{}))
 
 	ADMINS = ParseStrToInt64Arr(ReadConfig("ADMINS"))
 	GROUPS = ParseStrToInt64Arr(ReadConfig("GROUPS"))
