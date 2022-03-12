@@ -43,6 +43,7 @@ type GroupConfig struct {
 	MustFollow       string `fw:"readonly"`
 	MustFollowOnJoin bool   `fw:"readonly"`
 	MustFollowOnMsg  bool   `fw:"readonly"`
+	GroupAPISignSeed string `fw:"readonly"`
 	CreditMapping    *CreditMapping
 
 	UnderAttackMode                    bool
@@ -212,7 +213,7 @@ func (gc *GroupConfig) Check() *GroupConfig {
 }
 
 func (gc *GroupConfig) GenerateSign(signType GroupSignType) string {
-	return SignGroup(gc.ID, signType)
+	return SignGroup(gc.ID, signType, gc.GroupAPISignSeed)
 }
 
 func (gc *GroupConfig) POSTWithSign(url string, payload []byte, timeout time.Duration) []byte {

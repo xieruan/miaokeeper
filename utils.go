@@ -144,10 +144,10 @@ func MD5(str string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func SignGroup(groupId int64, signType int) string {
+func SignGroup(groupId int64, signType int, seed string) string {
 	phaseOne := MD5(fmt.Sprintf("MiaoKeeper:Normal:Hash|%d%d|%s|APITK{%d}##^", signType, groupId, APISeed, groupId))
-	phaseTwo := MD5(fmt.Sprintf("501%s5c%dadd%s51ff13%d", phaseOne, signType, phaseOne, signType))
-	phaseThree := MD5(fmt.Sprintf("%s415%s%daff4%s", phaseOne, phaseTwo, signType, phaseOne))
+	phaseTwo := MD5(fmt.Sprintf("501%s5c%dadd%s51f%sf13%d", phaseOne, signType, phaseOne, seed, signType))
+	phaseThree := MD5(fmt.Sprintf("%s415%s%s%daff4%s", phaseOne, seed, phaseTwo, signType, phaseOne))
 
 	return phaseThree
 }
