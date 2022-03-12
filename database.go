@@ -529,7 +529,7 @@ func (li *LotteryInstance) GenText() string {
 	if li.Status >= 0 {
 		status += fmt.Sprintf("\n*参与人数:* %d", li.Participants())
 	}
-	if len(li.Winners) > 0 && len(li.Winners) <= len(li.Winners) {
+	if len(li.Winners) > 0 {
 		status += "\n\n*🏆 获奖者:*"
 		for i := range li.Winners {
 			status += fmt.Sprintf("\n`%2d.` `%s` ([%d](%s))", i+1, GetQuotableStr(li.Winners[i].Username), li.Winners[i].Participant, fmt.Sprintf("tg://user?id=%d", li.Winners[i].Participant))

@@ -121,7 +121,7 @@ func InitCallback() {
 				} else {
 					gc := cp.GroupConfig()
 					if gc != nil && gc.RedPacketCaptchaFailCreditBehavior != 0 {
-						addCredit(gid, cp.TriggerUser(), gc.RedPacketCaptchaFailCreditBehavior, true, OPByRedPacket, 0, fmt.Sprintf("RedPacketCaptchaFailure"))
+						addCredit(gid, cp.TriggerUser(), gc.RedPacketCaptchaFailCreditBehavior, true, OPByRedPacket, 0, "RedPacketCaptchaFailure")
 					}
 					cp.Response("cb.rp.captchaInvalid")
 				}
