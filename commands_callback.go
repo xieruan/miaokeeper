@@ -59,9 +59,9 @@ func InitCallback() {
 					Unban(gid, uid, 0)
 					votemap.Unset(vtToken)
 					SmartEdit(cp.Callback.Message, cp.Callback.Message.Text+Locale("cb.unblock.byvote", cp.Locale()))
-					addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse)
+					addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse, secuid, "BanPunishmentRevoke")
 					if secuid > 0 {
-						addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse)
+						addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse, uid, "BanBonusRevoke")
 					}
 				} else {
 					EditBtns(cp.Callback.Message, cp.Callback.Message.Text, "", GenVMBtns(votes, gid, uid, secuid))
@@ -114,14 +114,14 @@ func InitCallback() {
 							redpacketrankmap.Set(redpacketBestKey, GetQuotableUserName(cp.TriggerUser()))
 						}
 						cp.Response(Locale("cb.rp.get.1", cp.TriggerUser().LanguageCode) + strconv.Itoa(amount) + Locale("cb.rp.get.2", cp.Locale()))
-						addCredit(gid, cp.TriggerUser(), int64(amount), true, OPByRedPacket)
+						addCredit(gid, cp.TriggerUser(), int64(amount), true, OPByRedPacket, rpKey/100000, "ReceiveRedPacket")
 					}
 
 					SendRedPacket(cp.Callback.Message, gid, rpKey, nil)
 				} else {
 					gc := cp.GroupConfig()
 					if gc != nil && gc.RedPacketCaptchaFailCreditBehavior != 0 {
-						addCredit(gid, cp.TriggerUser(), gc.RedPacketCaptchaFailCreditBehavior, true, OPByRedPacket)
+						addCredit(gid, cp.TriggerUser(), gc.RedPacketCaptchaFailCreditBehavior, true, OPByRedPacket, 0, fmt.Sprintf("RedPacketCaptchaFailure"))
 					}
 					cp.Response("cb.rp.captchaInvalid")
 				}
@@ -150,9 +150,9 @@ func InitCallback() {
 		SmartEdit(cp.Callback.Message, cp.Callback.Message.Text+Locale("cb.unblock.byadmin", cp.Locale()))
 		joinmap.Unset(joinVerificationId)
 		if secuid > 0 && votemap.Exist(vtToken) {
-			addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse)
+			addCredit(gid, &tb.User{ID: uid}, -gc.CreditMapping.Ban, true, OPByAbuse, secuid, "BanPunishmentRevoke")
 			votemap.Unset(vtToken)
-			addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse)
+			addCredit(gid, &tb.User{ID: secuid}, -gc.CreditMapping.BanBouns, true, OPByAbuse, uid, "BanBonusRevoke")
 		}
 	}).ShouldValidGroupAdmin(true).Should("u", "user")
 
@@ -213,11 +213,12 @@ func InitCallback() {
 			} else if cmdtype == 1 {
 				ci := GetCredit(li.GroupID, cp.TriggerUserID())
 				if ci != nil {
+					// TODO: need lock
 					if ci.Credit >= int64(li.Limit) {
-						if li.Consume {
-							addCredit(li.GroupID, cp.TriggerUser(), -int64(li.Limit), true, OPByLottery)
-						}
 						if err := li.Join(cp.TriggerUserID(), GetQuotableUserName(cp.TriggerUser())); err == nil {
+							if li.Consume {
+								addCredit(li.GroupID, cp.TriggerUser(), -int64(li.Limit), true, OPByLottery, cp.TriggerUserID(), "LotteryConsume")
+							}
 							cp.Response("cb.lottery.enroll")
 							if li.Participant > 0 {
 								// check draw by particitant
@@ -229,9 +230,6 @@ func InitCallback() {
 								}
 							})
 						} else {
-							if li.Consume {
-								addCredit(li.GroupID, cp.TriggerUser(), int64(li.Limit), true, OPByLottery)
-							}
 							cp.Response(err.Error())
 						}
 					} else {

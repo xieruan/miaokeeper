@@ -104,6 +104,8 @@ type CreditLog struct {
 	UserID    int64     `gorm:"column:userid;not null;index"`
 	Credit    int64     `gorm:"column:credit;not null"`
 	Reason    OPReasons `gorm:"column:op;type:string;size:16;not null;index"`
+	Executor  int64     `gorm:"column:executor;index"`
+	Notes     string    `gorm:"column:notes;type:string;size:64"`
 	CreatedAt time.Time `gorm:"column:createdat;autoCreateTime"`
 }
 
@@ -334,7 +336,7 @@ func DumpCredits(groupId int64) [][]string {
 }
 
 // does not apply MergeTo
-func FlushCredits(groupId int64, records [][]string) {
+func FlushCredits(groupId int64, records [][]string, executor int64) {
 	if len(records) == 0 {
 		return
 	}
@@ -350,9 +352,10 @@ func FlushCredits(groupId int64, records [][]string) {
 				Credit:   ParseInt64(r[3]),
 			})
 			logbatches = append(logbatches, CreditLog{
-				UserID: ParseInt64(r[0]),
-				Credit: ParseInt64(r[3]),
-				Reason: OPFlush,
+				UserID:   ParseInt64(r[0]),
+				Credit:   ParseInt64(r[3]),
+				Reason:   OPFlush,
+				Executor: executor,
 			})
 		}
 	}
@@ -389,7 +392,7 @@ func QueryLogs(groupId int64, offset uint64, limit uint64, uid int64, before tim
 	return ret
 }
 
-func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPReasons) *CreditInfo {
+func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPReasons, executor int64, notes string) *CreditInfo {
 	ci := GetCredit(user.GroupId, user.ID)
 	if user.Name == "" {
 		user.Name = ci.Name
@@ -414,17 +417,21 @@ func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPR
 			DoUpdates: clause.AssignmentColumns([]string{"name", "username", "credit"}),
 		}).Create(&user).Error
 		DB.Table(DBTName("Credit_Log", realGroup)).Create(&CreditLog{
-			UserID: user.ID,
-			Credit: value,
-			Reason: reason,
+			UserID:   user.ID,
+			Credit:   value,
+			Reason:   reason,
+			Executor: executor,
+			Notes:    notes,
 		})
 	} else if realGroup == user.GroupId {
 		// when the method is UMDel, do not delete aliased credit
 		err = DB.Table(DBTName("Credit", realGroup)).Delete(&user).Error
 		DB.Table(DBTName("Credit_Log", realGroup)).Create(&CreditLog{
-			UserID: user.ID,
-			Credit: -ci.Credit,
-			Reason: reason,
+			UserID:   user.ID,
+			Credit:   -ci.Credit,
+			Reason:   reason,
+			Executor: executor,
+			Notes:    notes,
 		})
 	}
 	if err != nil {

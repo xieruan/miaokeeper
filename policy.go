@@ -379,7 +379,7 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 					return true
 				}
 			}
-			addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true, OPByPolicy)
+			addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true, OPByPolicy, fmt.Sprintf("ByPolicy:%.8s", rule.Name))
 		}
 
 		if rule.ReplyMessage != "" {

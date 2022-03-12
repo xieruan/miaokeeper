@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -98,7 +99,7 @@ func InitRESTServer(portNum int) {
 					c.BindJSON(&consumeRequest)
 					if consumeRequest.Credit > 0 {
 						if ci.Credit >= consumeRequest.Credit || (ci.Credit > 0 && consumeRequest.AllowNegative) {
-							ci = UpdateCredit(ci, UMAdd, -consumeRequest.Credit, OPByAPIConsume)
+							ci = UpdateCredit(ci, UMAdd, -consumeRequest.Credit, OPByAPIConsume, 0, "")
 							c.JSON(http.StatusOK, GinData(ci))
 						} else {
 							c.JSON(http.StatusNotAcceptable, GinError("the user does not have enough credit."))
@@ -114,11 +115,11 @@ func InitRESTServer(portNum int) {
 
 				if ci := GinParseUser(c); ci != nil {
 					bonusRequest := struct {
-						Credit        int64 `json:"credit,omitempty"`
+						Credit int64 `json:"credit,omitempty"`
 					}{}
 					c.BindJSON(&bonusRequest)
 					if bonusRequest.Credit > 0 {
-						ci = UpdateCredit(ci, UMAdd, bonusRequest.Credit, OPByAPIBonus)
+						ci = UpdateCredit(ci, UMAdd, bonusRequest.Credit, OPByAPIBonus, 0, "")
 						c.JSON(http.StatusOK, GinData(ci))
 					} else {
 						c.JSON(http.StatusBadRequest, GinError("added credit should be a positive number."))
