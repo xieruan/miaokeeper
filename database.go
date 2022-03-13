@@ -432,6 +432,7 @@ func (ci *CreditInfo) unsafeSync() {
 		}).Create(&ci).Error; err != nil {
 			DErrorE(err, "Database Credit Update Error")
 		}
+		DLogf("Credit Update Debouncer | gid=%d uid=%d credit=%d", ci.GroupId, ci.ID, ci.Credit)
 	})
 }
 
