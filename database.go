@@ -91,12 +91,16 @@ func GetRandClause() string {
 }
 
 // GORM:%NAME%_Credit_%GROUP%
-type CreditInfo struct {
+type CreditInfoSkeleton struct {
 	ID       int64  `json:"id" gorm:"column:userid;primaryKey;not null"`
 	Username string `json:"username" gorm:"column:username;type:text;not null"`
 	Name     string `json:"nickname" gorm:"column:name;type:text;not null"`
 	Credit   int64  `json:"credit" gorm:"column:credit;not null"`
 	GroupId  int64  `json:"groupId" gorm:"-"`
+}
+
+type CreditInfo struct {
+	CreditInfoSkeleton
 
 	updateLock      sync.Mutex   `json:"-" gorm:"-"`
 	updateDebouncer func(func()) `json:"-" gorm:"-"`
@@ -304,8 +308,8 @@ func UpdateGroup(groupId int64, method UpdateMethod) bool {
 	return changed
 }
 
-func GetCreditRank(groupId int64, limit int) []*CreditInfo {
-	returns := []*CreditInfo{}
+func GetCreditRank(groupId int64, limit int) []*CreditInfoSkeleton {
+	returns := []*CreditInfoSkeleton{}
 	realGroup := GetAliasedGroup(groupId)
 	DB.Table(DBTName("Credit", realGroup)).Order("credit DESC").Limit(limit).Find(&returns)
 	for _, ci := range returns {
@@ -319,7 +323,7 @@ func GetCreditRank(groupId int64, limit int) []*CreditInfo {
 // does not apply MergeTo
 func DumpCredits(groupId int64) [][]string {
 	ret := [][]string{}
-	batches := []CreditInfo{}
+	batches := []CreditInfoSkeleton{}
 	DB.Table(DBTName("Credit", groupId)).FindInBatches(&batches, 100, func(tx *gorm.DB, batchNum int) error {
 		for _, batch := range batches {
 			if batch.ID > 0 && batch.Credit > 0 {
@@ -339,15 +343,20 @@ func FlushCredits(groupId int64, records [][]string, executor int64) {
 		return
 	}
 
-	// TODO: 需要清除所有 CreditInfoCache 防止脏写入
 	creditInfoWritingLock.Lock()
 	defer creditInfoWritingLock.Unlock()
 
-	batches := []CreditInfo{}
+	// 清除所有 CreditInfoCache 防止脏写入
+	// 但对于已经实例化的 CreditInfo 来说还是可能存在刷写不一致问题
+	// 这里采用等待 100ms 的方法，使 debouncer清空。虽然依旧存在问题，但微乎其微
+	time.Sleep(time.Millisecond * 100)
+	CreditInfoCache.Wipe()
+
+	batches := []CreditInfoSkeleton{}
 	logbatches := []CreditLog{}
 	for _, r := range records {
 		if len(r) >= 4 {
-			batches = append(batches, CreditInfo{
+			batches = append(batches, CreditInfoSkeleton{
 				ID:       ParseInt64(r[0]),
 				Name:     r[1],
 				Username: r[2],
