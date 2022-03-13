@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/BBAlliance/miaokeeper/memutils"
+	"github.com/bep/debounce"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -90,12 +91,26 @@ func GetRandClause() string {
 }
 
 // GORM:%NAME%_Credit_%GROUP%
-type CreditInfo struct {
+type CreditInfoSkeleton struct {
 	ID       int64  `json:"id" gorm:"column:userid;primaryKey;not null"`
 	Username string `json:"username" gorm:"column:username;type:text;not null"`
 	Name     string `json:"nickname" gorm:"column:name;type:text;not null"`
 	Credit   int64  `json:"credit" gorm:"column:credit;not null"`
 	GroupId  int64  `json:"groupId" gorm:"-"`
+}
+
+type CreditInfo struct {
+	CreditInfoSkeleton
+
+	updateLock      sync.Mutex   `json:"-" gorm:"-"`
+	updateDebouncer func(func()) `json:"-" gorm:"-"`
+}
+
+type UserInfo struct {
+	Group    int64
+	ID       int64
+	Username string
+	Name     string
 }
 
 // GORM:%NAME%_Credit_Log_%GROUP%
@@ -293,21 +308,8 @@ func UpdateGroup(groupId int64, method UpdateMethod) bool {
 	return changed
 }
 
-func GetCredit(groupId, userId int64) *CreditInfo {
-	ret := &CreditInfo{}
-	realGroup := GetAliasedGroup(groupId)
-	err := DB.Table(DBTName("Credit", realGroup)).First(&ret, "userid = ?", userId).Error
-	if err != nil {
-		DLogf("Database Credit Read Error | gid=%d rgid=%d uid=%d error=%s", groupId, realGroup, userId, err.Error())
-	}
-	if ret.ID == userId {
-		ret.GroupId = groupId
-	}
-	return ret
-}
-
-func GetCreditRank(groupId int64, limit int) []*CreditInfo {
-	returns := []*CreditInfo{}
+func GetCreditRank(groupId int64, limit int) []*CreditInfoSkeleton {
+	returns := []*CreditInfoSkeleton{}
 	realGroup := GetAliasedGroup(groupId)
 	DB.Table(DBTName("Credit", realGroup)).Order("credit DESC").Limit(limit).Find(&returns)
 	for _, ci := range returns {
@@ -321,7 +323,7 @@ func GetCreditRank(groupId int64, limit int) []*CreditInfo {
 // does not apply MergeTo
 func DumpCredits(groupId int64) [][]string {
 	ret := [][]string{}
-	batches := []CreditInfo{}
+	batches := []CreditInfoSkeleton{}
 	DB.Table(DBTName("Credit", groupId)).FindInBatches(&batches, 100, func(tx *gorm.DB, batchNum int) error {
 		for _, batch := range batches {
 			if batch.ID > 0 && batch.Credit > 0 {
@@ -341,11 +343,20 @@ func FlushCredits(groupId int64, records [][]string, executor int64) {
 		return
 	}
 
-	batches := []CreditInfo{}
+	creditInfoWritingLock.Lock()
+	defer creditInfoWritingLock.Unlock()
+
+	// 清除所有 CreditInfoCache 防止脏写入
+	// 但对于已经实例化的 CreditInfo 来说还是可能存在刷写不一致问题
+	// 这里采用等待 100ms 的方法，使 debouncer清空。虽然依旧存在问题，但微乎其微
+	time.Sleep(time.Millisecond * 100)
+	CreditInfoCache.Wipe()
+
+	batches := []CreditInfoSkeleton{}
 	logbatches := []CreditLog{}
 	for _, r := range records {
 		if len(r) >= 4 {
-			batches = append(batches, CreditInfo{
+			batches = append(batches, CreditInfoSkeleton{
 				ID:       ParseInt64(r[0]),
 				Name:     r[1],
 				Username: r[2],
@@ -392,54 +403,120 @@ func QueryLogs(groupId int64, offset uint64, limit uint64, uid int64, before tim
 	return ret
 }
 
-func UpdateCredit(user *CreditInfo, method UpdateMethod, value int64, reason OPReasons, executor int64, notes string) *CreditInfo {
-	ci := GetCredit(user.GroupId, user.ID)
-	if user.Name == "" {
-		user.Name = ci.Name
-	}
-	if user.Username == "" {
-		user.Username = ci.Username
-	}
-	user.Credit = ci.Credit
-	if method == UMSet {
-		user.Credit = value
-	} else if method == UMAdd {
-		user.Credit += value
-	} else if method == UMDel {
-		user.Credit = 0
+func (ui *UserInfo) From(groupId int64, user *tb.User) *UserInfo {
+	ui.ID = user.ID
+	ui.Name = GetQuotableUserName(user)
+	ui.Username = user.Username
+	ui.Group = groupId
+	return ui
+}
+
+var CreditInfoCache *ObliviousMapIfce
+
+func (ci *CreditInfo) Acquire(fn func()) {
+	ci.updateLock.Lock()
+	defer ci.updateLock.Unlock()
+
+	fn()
+}
+
+func (ci *CreditInfo) unsafeSync() {
+	if ci.updateDebouncer == nil {
+		ci.updateDebouncer = debounce.New(time.Second)
 	}
 
-	var err error
-	realGroup := GetAliasedGroup(user.GroupId)
-	if method != UMDel {
-		err = DB.Table(DBTName("Credit", realGroup)).Clauses(clause.OnConflict{
+	ci.updateDebouncer(func() {
+		if err := DB.Table(DBTName("Credit", ci.GroupId)).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "userid"}},
 			DoUpdates: clause.AssignmentColumns([]string{"name", "username", "credit"}),
-		}).Create(&user).Error
-		DB.Table(DBTName("Credit_Log", realGroup)).Create(&CreditLog{
-			UserID:   user.ID,
-			Credit:   value,
-			Reason:   reason,
-			Executor: executor,
-			Notes:    notes,
-		})
-	} else if realGroup == user.GroupId {
-		// when the method is UMDel, do not delete aliased credit
-		err = DB.Table(DBTName("Credit", realGroup)).Delete(&user).Error
-		DB.Table(DBTName("Credit_Log", realGroup)).Create(&CreditLog{
-			UserID:   user.ID,
-			Credit:   -ci.Credit,
-			Reason:   reason,
-			Executor: executor,
-			Notes:    notes,
-		})
-	}
-	if err != nil {
-		DErrorE(err, "Database Credit Update Error")
+		}).Create(&ci).Error; err != nil {
+			DErrorE(err, "Database Credit Update Error")
+		}
+	})
+}
+
+func (ci *CreditInfo) unsafeUpdate(method UpdateMethod, value int64, ui *UserInfo, reason OPReasons, executor int64, notes string) *CreditInfo {
+	if ci == nil || ci.ID <= 0 {
+		return nil
 	}
 
-	DLogf("Update Credit | gid=%d rgid=%d user=%d alter=%d credit=%d", user.GroupId, realGroup, user.ID, method, value)
-	return user
+	// update user info
+	if ui != nil {
+		ci.Name = ui.Name
+		ci.Username = ui.Username
+	}
+
+	// prepare log
+	logCredit := value
+	if method == UMDel {
+		logCredit = -ci.Credit
+	}
+
+	// update credit
+	if method == UMSet {
+		ci.Credit = value
+	} else if method == UMAdd {
+		ci.Credit += value
+	} else if method == UMDel {
+		ci.Credit = 0
+	}
+
+	// flush log
+	if err := DB.Table(DBTName("Credit_Log", ci.GroupId)).Create(&CreditLog{
+		UserID:   ci.ID,
+		Credit:   logCredit,
+		Reason:   reason,
+		Executor: executor,
+		Notes:    notes,
+	}).Error; err != nil {
+		DErrorE(err, "Database Credit Log Update Error")
+	}
+
+	DLogf("Update Credit | gid=%d user=%d alter=%d credit=%d", ci.GroupId, ci.ID, method, value)
+	ci.unsafeSync()
+	return ci
+}
+
+func (ci *CreditInfo) Update(method UpdateMethod, value int64, ui *UserInfo, reason OPReasons, executor int64, notes string) *CreditInfo {
+	if ci == nil {
+		return nil
+	}
+
+	ci.updateLock.Lock()
+	defer ci.updateLock.Unlock()
+	return ci.unsafeUpdate(method, value, ui, reason, executor, notes)
+}
+
+var creditInfoWritingLock sync.Mutex
+
+func GetCreditInfo(groupId, userId int64) *CreditInfo {
+	groupId = GetAliasedGroup(groupId)
+	cicKey := fmt.Sprintf("%d-%d", groupId, userId)
+	if cii, ok := CreditInfoCache.Get(cicKey); ok && cii != nil {
+		if ci, ok := cii.(*CreditInfo); ok && ci != nil {
+			return ci
+		}
+	}
+
+	creditInfoWritingLock.Lock()
+	defer creditInfoWritingLock.Unlock()
+
+	ret := &CreditInfo{}
+	err := DB.Table(DBTName("Credit", groupId)).First(&ret, "userid = ?", userId).Error
+	if err != nil {
+		DLogf("Database Credit Read Error | gid=%d uid=%d error=%s", groupId, userId, err.Error())
+	}
+
+	if ret.ID == userId {
+		ret.GroupId = groupId
+		CreditInfoCache.Set(cicKey, ret)
+	}
+	return ret
+}
+
+func UpdateCredit(ui *UserInfo, method UpdateMethod, value int64, reason OPReasons, executor int64, notes string) *CreditInfo {
+	ci := GetCreditInfo(ui.Group, ui.ID)
+	return ci.Update(method, value, ui, reason, executor, notes)
 }
 
 // status: -1 not start, 0 start, 1 stopped, 2 finished
@@ -709,4 +786,8 @@ func CreateLottery(groupId int64, payload string, limit int, consume bool, num i
 func init() {
 	GroupConfigCache = make(map[int64]*GroupConfig)
 	LotteryConfigCache = make(map[string]*LotteryInstance)
+
+	memdriver := &memutils.MemDriverMemory{}
+	memdriver.Init()
+	CreditInfoCache = NewOMapIfce("cicache/", time.Hour, true, memdriver)
 }
