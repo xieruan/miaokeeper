@@ -103,7 +103,7 @@ func CmdOnUserLeft(m *tb.Message) {
 	gc := GetGroupConfig(m.Chat.ID)
 	if gc != nil && m.UserLeft.ID > 0 {
 		gc.UpdateAdmin(m.UserLeft.ID, UMDel)
-		UpdateCredit(BuildCreditInfo(m.Chat.ID, m.UserLeft, false), UMDel, 0, OPByCleanUp, m.UserLeft.ID, "UserLeft")
+		UpdateCredit((&UserInfo{}).From(m.Chat.ID, m.UserLeft), UMDel, 0, OPByCleanUp, m.UserLeft.ID, "UserLeft")
 	}
 	LazyDelete(m)
 }
@@ -117,7 +117,7 @@ func CmdOnChatMember(ctx tb.Context) error {
 			if cmu.NewChatMember.Role == tb.Kicked ||
 				cmu.NewChatMember.Role == tb.Left {
 				gc.UpdateAdmin(user.ID, UMDel)
-				UpdateCredit(BuildCreditInfo(cmu.Chat.ID, user, false), UMDel, 0, OPByCleanUp, user.ID, "UserKicked")
+				UpdateCredit((&UserInfo{}).From(cmu.Chat.ID, user), UMDel, 0, OPByCleanUp, user.ID, "UserKicked")
 			}
 		}
 	})

@@ -368,19 +368,27 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 	if rule := gc.TestCustomReplyRule(m); rule != nil {
 		if rule.CreditBehavior != 0 {
-			if rule.NoForceCreditBehaviorError != "" && rule.CreditBehavior < 0 {
-				ci := GetCredit(gc.ID, m.Sender.ID)
-				if ci == nil || ci.Credit+int64(rule.CreditBehavior) < 0 {
-					// cannot substract credit points
-					textMessage := BuilRuleMessage(rule.NoForceCreditBehaviorError, m)
-					SmartSendDelete(m, textMessage, WithMarkdown())
-					rule.Resume()
-					gc.Save()
+			if ci := GetCreditInfo(gc.ID, m.Sender.ID); ci != nil {
+				abort := false
+				ci.Acquire(func() {
+					if rule.NoForceCreditBehaviorError != "" && rule.CreditBehavior < 0 {
+						if ci.Credit+int64(rule.CreditBehavior) < 0 {
+							// cannot substract credit points
+							textMessage := BuilRuleMessage(rule.NoForceCreditBehaviorError, m)
+							SmartSendDelete(m, textMessage, WithMarkdown())
+							rule.Resume()
+							gc.Save()
+							abort = true
 
+							return
+						}
+					}
+					ci.unsafeUpdate(UMAdd, int64(rule.CreditBehavior), (&UserInfo{}).From(m.Chat.ID, m.Sender), OPByPolicy, ci.ID, fmt.Sprintf("ByPolicy:%.8s", rule.Name))
+				})
+				if abort {
 					return true
 				}
 			}
-			addCreditToMsgSender(m.Chat.ID, m, int64(rule.CreditBehavior), true, OPByPolicy, fmt.Sprintf("ByPolicy:%.8s", rule.Name))
 		}
 
 		if rule.ReplyMessage != "" {

@@ -35,8 +35,8 @@ func InitCallback() {
 	callbackHandler.Add("user", func(cp *CallbackParams) {
 		groupId, _ := cp.GetGroupId("c")
 		userId, _ := cp.GetUserId("u")
-		ci := GetCredit(groupId, userId)
-		if ci == nil || ci.ID == 0 {
+		ci := GetCreditInfo(groupId, userId)
+		if ci.ID == 0 {
 			cp.Response("cmd.misc.user.notExist")
 		} else {
 			cp.Response(fmt.Sprintf("ID: %s\nName: %s\nCredit: %d", "@"+ci.Username, ci.Name, ci.Credit))
@@ -211,13 +211,12 @@ func InitCallback() {
 			} else if cmdtype == 3 && isMiaoGroupAdmin {
 				li.CheckDraw(true)
 			} else if cmdtype == 1 {
-				ci := GetCredit(li.GroupID, cp.TriggerUserID())
-				if ci != nil {
-					// TODO: need lock
+				ci := GetCreditInfo(li.GroupID, cp.TriggerUserID())
+				ci.Acquire(func() {
 					if ci.Credit >= int64(li.Limit) {
 						if err := li.Join(cp.TriggerUserID(), GetQuotableUserName(cp.TriggerUser())); err == nil {
 							if li.Consume {
-								addCredit(li.GroupID, cp.TriggerUser(), -int64(li.Limit), true, OPByLottery, cp.TriggerUserID(), "LotteryConsume")
+								ci.unsafeUpdate(UMAdd, -int64(li.Limit), (&UserInfo{}).From(li.GroupID, cp.TriggerUser()), OPByLottery, cp.TriggerUserID(), "LotteryConsume")
 							}
 							cp.Response("cb.lottery.enroll")
 							if li.Participant > 0 {
@@ -235,16 +234,14 @@ func InitCallback() {
 					} else {
 						cp.Response("cb.lottery.noEnoughCredit")
 					}
-				} else {
-					cp.Response("cb.lottery.checkFailed")
-				}
+				})
 			} else {
 				cp.Response("cb.notMiaoAdmin")
 			}
 		} else {
 			cp.Response("cb.noEvent")
 		}
-	}).ShouldValidGroup(true).Should("t", "int64").Should("id", "string").Lock("credit")
+	}).ShouldValidGroup(true).Should("t", "int64").Should("id", "string")
 
 	callbackHandler.Add("lg", func(cp *CallbackParams) {
 		groupId, _ := cp.GetGroupId("c")
