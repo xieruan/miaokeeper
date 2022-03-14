@@ -69,6 +69,10 @@ func (clb *CreditLogBank) Flush() {
 	clb.Logs = make([]CreditLog, 0)
 	clb.updateLock.Unlock()
 
+	if len(logbatches) == 0 {
+		return
+	}
+
 	err := DB.Table(DBTName("Credit_Log", clb.Group)).CreateInBatches(&logbatches, 200).Error
 	if err != nil {
 		DErrorE(err, "Database Credit Log Flush Error")
