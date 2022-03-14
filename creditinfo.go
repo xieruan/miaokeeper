@@ -211,7 +211,14 @@ func GetCreditInfo(groupId, userId int64) *CreditInfo {
 	ret := &CreditInfo{}
 	err := DB.Table(DBTName("Credit", groupId)).First(&ret, "userid = ?", userId).Error
 	if err != nil {
-		DLogf("Database Credit Read Error | gid=%d uid=%d error=%s", groupId, userId, err.Error())
+		if err.Error() == "record not found" {
+			// if is new profile, just create and write to cache
+			ret.ID = userId
+			CreditInfoCache.Set(cicKey, ret)
+			DLogf("Database Credit Create New Profile | gid=%d uid=%d", groupId, userId)
+		} else {
+			DLogf("Database Credit Read Error | gid=%d uid=%d error=%s", groupId, userId, err.Error())
+		}
 	}
 
 	if ret.ID == userId {
