@@ -23,6 +23,10 @@ func (om *ObliviousMapIfce) Set(key string, value interface{}) interface{} {
 	return om.driver.Write(om.prefix+key, value, om.expire, om.utif)
 }
 
+func (om *ObliviousMapIfce) SetExpire(key string, duration time.Duration) time.Duration {
+	return om.driver.SetExpire(om.prefix+key, duration)
+}
+
 func (om *ObliviousMapIfce) Unset(key string) {
 	om.driver.Expire(om.prefix + key)
 }
@@ -33,6 +37,10 @@ func (om *ObliviousMapIfce) Exist(key string) bool {
 
 func (om *ObliviousMapIfce) Wipe() {
 	om.driver.Wipe(om.prefix)
+}
+
+func (om *ObliviousMapIfce) WipePrefix(prefix string) {
+	om.driver.WipePrefix(om.prefix + prefix)
 }
 
 type ObliviousMapInt struct {

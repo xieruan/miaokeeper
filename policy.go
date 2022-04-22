@@ -65,6 +65,13 @@ type GroupConfig struct {
 	saveDebouncer func(func()) `json:"-" fw:"-"`
 }
 
+type InvokeOptions struct {
+	Rule      string // unlimit | peruser | peruserinterval
+	Value     int64
+	ShowError bool
+	Reset     bool
+}
+
 type CustomReplyRule struct {
 	Match   string
 	MatchEx *regexp.Regexp `json:"-"`
@@ -80,6 +87,8 @@ type CustomReplyRule struct {
 	ReplyButtons []string
 	ReplyMode    string // deleteself, deleteorigin, deleteboth
 	ReplyImage   string
+
+	InvokeOptions *InvokeOptions
 
 	lock sync.Mutex `json:"-"`
 }
@@ -190,6 +199,14 @@ func (gc *GroupConfig) Check() *GroupConfig {
 		if crr.ReplyButtons == nil {
 			crr.ReplyButtons = make([]string, 0)
 		}
+		if crr.InvokeOptions == nil {
+			crr.InvokeOptions = &InvokeOptions{
+				Rule:      "unlimit",
+				Value:     0,
+				ShowError: true,
+				Reset:     false,
+			}
+		}
 	}
 
 	if gc.CreditMapping == nil {
@@ -210,6 +227,17 @@ func (gc *GroupConfig) Check() *GroupConfig {
 	}
 
 	return gc
+}
+
+func (gc *GroupConfig) ResetRules() {
+	if gc != nil {
+		for _, rule := range gc.CustomReply {
+			if rule.InvokeOptions != nil && rule.InvokeOptions.Reset {
+				key := fmt.Sprintf("%d-%s:", gc.ID, rule.Name)
+				rulemap.WipePrefix(key)
+			}
+		}
+	}
 }
 
 func (gc *GroupConfig) GenerateSign(signType GroupSignType) string {
@@ -367,6 +395,27 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 
 func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 	if rule := gc.TestCustomReplyRule(m); rule != nil {
+		if rule.InvokeOptions != nil {
+			key := fmt.Sprintf("%d-%s:%d", gc.ID, rule.Name, m.Sender.ID)
+			switch rule.InvokeOptions.Rule {
+			case "peruser":
+				if rulemap.Add(key) > int(rule.InvokeOptions.Value) {
+					if rule.InvokeOptions.ShowError {
+						SmartSendDelete(m, Locale("policy.rule.limit.peruser", GetSenderLocale(m)))
+					}
+					return false
+				}
+			case "peruserinterval":
+				if rulemap.Add(key) > 1 {
+					if rule.InvokeOptions.ShowError {
+						SmartSendDelete(m, Locale("policy.rule.limit.peruserinterval", GetSenderLocale(m)))
+					}
+					return false
+				} else {
+					rulemap.SetExpire(key, time.Duration(rule.InvokeOptions.Value)*time.Second)
+				}
+			}
+		}
 		if rule.CreditBehavior != 0 {
 			if ci := GetCreditInfo(gc.ID, m.Sender.ID); ci != nil {
 				abort := false
