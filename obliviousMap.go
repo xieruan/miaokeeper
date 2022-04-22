@@ -66,7 +66,11 @@ func (om *ObliviousMapInt) Get(key string) (int, bool) {
 }
 
 func (om *ObliviousMapInt) Set(key string, value int) int {
-	return om.ObliviousMapIfce.Set(key, value).(int)
+	val := om.ObliviousMapIfce.Set(key, value)
+	if val == nil {
+		return 0
+	}
+	return val.(int)
 }
 
 type ObliviousMapStr struct {
@@ -75,11 +79,18 @@ type ObliviousMapStr struct {
 
 func (om *ObliviousMapStr) Get(key string) (string, bool) {
 	a, b := om.ObliviousMapIfce.Get(key)
+	if a == nil {
+		return "", false
+	}
 	return a.(string), b
 }
 
 func (om *ObliviousMapStr) Set(key string, value string) string {
-	return om.ObliviousMapIfce.Set(key, value).(string)
+	val := om.ObliviousMapIfce.Set(key, value)
+	if val == nil {
+		return ""
+	}
+	return val.(string)
 }
 
 func NewOMapIfce(prefix string, expire time.Duration, updateTimeIfWrite bool, driver memutils.MemDriver) *ObliviousMapIfce {
