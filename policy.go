@@ -397,6 +397,20 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 
 func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 	if rule := gc.TestCustomReplyRule(m); rule != nil {
+		var sent *tb.Message
+		var sendingErr error
+		defer func() {
+			if sent != nil && sendingErr == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
+				LazyDelete(sent)
+			}
+			if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
+				LazyDelete(m)
+			}
+			if sendingErr != nil {
+				SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+sendingErr.Error())
+			}
+		}()
+
 		if rule.InvokeOptions != nil {
 			if rule.InvokeOptions.UserOnly && !ValidUser(m.Sender) {
 				return false
@@ -429,6 +443,7 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 				}
 			}
 		}
+
 		if rule.CreditBehavior != 0 {
 			if ci := GetCreditInfo(gc.ID, m.Sender.ID); ci != nil {
 				abort := false
@@ -472,17 +487,7 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 				}
 			}
 
-			sent, err := SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), WithMarkdown())
-			if sent != nil && err == nil && rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteself" {
-				LazyDelete(sent)
-			}
-			if rule.ReplyMode == "deleteboth" || rule.ReplyMode == "deleteorigin" {
-				LazyDelete(m)
-			}
-
-			if err != nil {
-				SmartSendDelete(m, Locale("system.notsend", GetSenderLocale(m))+"\n\n"+err.Error())
-			}
+			sent, sendingErr = SmartSendWithBtns(target, message, BuildRuleMessages(rule.ReplyButtons, m), WithMarkdown())
 		}
 
 		if rule.CallbackURL != "" {
