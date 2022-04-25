@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/BBAlliance/miaokeeper/memutils"
@@ -12,7 +13,15 @@ type ObliviousMapIfce struct {
 	driver memutils.MemDriver
 
 	expire time.Duration
+	hold   sync.Mutex
 	utif   bool
+}
+
+func (om *ObliviousMapIfce) Hold(fn func()) {
+	om.hold.Lock()
+	defer om.hold.Unlock()
+
+	fn()
 }
 
 func (om *ObliviousMapIfce) Get(key string) (interface{}, bool) {

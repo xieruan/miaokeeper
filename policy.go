@@ -66,10 +66,11 @@ type GroupConfig struct {
 }
 
 type InvokeOptions struct {
-	Rule      string // unlimit | peruser | peruserinterval
+	Rule      string // unlimit | peruser | peruserinterval | peruserday
 	Value     int64
 	ShowError bool
 	Reset     bool
+	UserOnly  bool
 }
 
 type CustomReplyRule struct {
@@ -205,6 +206,7 @@ func (gc *GroupConfig) Check() *GroupConfig {
 				Value:     0,
 				ShowError: true,
 				Reset:     false,
+				UserOnly:  false,
 			}
 		}
 	}
@@ -396,6 +398,9 @@ func (gc *GroupConfig) TestCustomReplyRule(m *tb.Message) *CustomReplyRule {
 func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 	if rule := gc.TestCustomReplyRule(m); rule != nil {
 		if rule.InvokeOptions != nil {
+			if rule.InvokeOptions.UserOnly && !ValidUser(m.Sender) {
+				return false
+			}
 			key := fmt.Sprintf("%d-%s:%d", gc.ID, rule.Name, m.Sender.ID)
 			switch rule.InvokeOptions.Rule {
 			case "peruser":
@@ -413,6 +418,14 @@ func (gc *GroupConfig) ExecPolicy(m *tb.Message) bool {
 					return false
 				} else {
 					rulemap.SetExpire(key, time.Duration(rule.InvokeOptions.Value)*time.Second)
+				}
+			case "peruserday":
+				key += fmt.Sprintf(":%d", time.Now().Day())
+				if rulemap.Add(key) > int(rule.InvokeOptions.Value) {
+					if rule.InvokeOptions.ShowError {
+						SmartSendDelete(m, Locale("policy.rule.limit.peruserday", GetSenderLocale(m)))
+					}
+					return false
 				}
 			}
 		}
