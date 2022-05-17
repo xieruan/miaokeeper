@@ -523,7 +523,8 @@ func CmdCreditRank(m *tb.Message) {
 
 func CmdCreditLog(m *tb.Message) {
 	defer LazyDelete(m)
-	_, ah := ArgParse(m.Payload)
+	recordIdStr, ah := ArgParse(m.Payload)
+	recordId := int64(0)
 	userId := int64(0)
 	groupId := m.Chat.ID
 	if gid, ok := ah.Int64("group"); ok && gid < 0 {
@@ -532,13 +533,23 @@ func CmdCreditLog(m *tb.Message) {
 	if m.IsReply() && m.ReplyTo.SenderChat == nil {
 		userId = m.ReplyTo.Sender.ID
 	}
+	if recordIdStr != "" {
+		recordId, _ = strconv.ParseInt(recordIdStr, 10, 64)
+	}
 	if IsGroupAdminMiaoKo(&tb.Chat{ID: groupId}, m.Sender) {
 		if uid, ok := ah.Int64("user"); ok {
 			userId = uid
 		}
 		reason, _ := ah.Str("reason")
-
-		GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPParse(strings.ToUpper(reason)), 0)
+		if recordId == 0 {
+			GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPParse(strings.ToUpper(reason)), 0)
+		} else {
+			if cl := FindLog(groupId, recordId); cl != nil {
+				SmartSend(m, fmt.Sprintf(Locale("cmd.credit.details", GetSenderLocale(m)), cl.ID, cl.UserID, cl.Credit, cl.Reason, cl.Notes, cl.Executor, cl.CreatedAt.Format("01-02 15:04")))
+			} else {
+				SmartSendDelete(m, Locale("cmd.credit.notFound", GetSenderLocale(m)))
+			}
+		}
 	} else {
 		SmartSendDelete(m, Locale("cmd.noGroupPerm", GetSenderLocale(m)))
 	}

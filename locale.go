@@ -60,7 +60,9 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.misc.get.success":   "✔️ *读取成功啦 ~*\n\n*键: *`%v`\n*值: *`%v`",
 		"cmd.misc.set.success":   "✔️ *修改成功啦 ~*\n\n*原始值: *`%v`\n*修改后: *`%s`",
 
-		"cmd.credit.logHead": "📖 `%d` 积分记录:\n\n%s",
+		"cmd.credit.logHead":  "📖 `%d` 积分记录:\n\n%s",
+		"cmd.credit.notFound": "❌ 未能找到这项纪录",
+		"cmd.credit.details":  "📖 积分细则:\n\n`ID:` `%v`\n`用户ID:` `%v`\n`积分:` `%v`\n`原因:` `%v`\n`细则:` `%v`\n`操作者:` `%v`\n`触发时间:` `%v`",
 
 		"grant.assign.success":  "✔️ TA 已经成为管理员啦 ～",
 		"grant.assign.failure":  "❌ TA 已经是管理员啦 ～",
@@ -229,7 +231,9 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.misc.get.success":   "✔️ *Read Success ~*\n\n*Key: *`%v`\n*Value: *`%v`",
 		"cmd.misc.set.success":   "✔️ *Write Success ~*\n\n*Original: *`%v`\n*Modified: *`%s`",
 
-		"cmd.credit.logHead": "📖 `%d` Logs:\n\n%s",
+		"cmd.credit.logHead":  "📖 `%d` Logs:\n\n%s",
+		"cmd.credit.notFound": "❌ Cannot find the record.",
+		"cmd.credit.details":  "📖 Log Details:\n\n`ID:` `%v`\n`User ID:` `%v`\n`Credit:` `%v`\n`Reason:` `%v`\n`Notes:` `%v`\n`Operator:` `%v`\n`Time:` `%v`",
 
 		"grant.assign.success":  "✔️ The user is promoted ～",
 		"grant.assign.failure":  "❌ The user does not need to be promoted ～",

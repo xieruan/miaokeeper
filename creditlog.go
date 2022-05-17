@@ -112,6 +112,16 @@ func FlushCreditLogs() {
 	}
 }
 
+func FindLog(groupId int64, logId int64) *CreditLog {
+	ret := &CreditLog{}
+	DB.Table(DBTName("Credit_Log", groupId)).First(&ret, logId)
+	DInfof("Find Log | group=%d id=%d", groupId, logId)
+	if ret != nil && ret.ID == logId {
+		return ret
+	}
+	return nil
+}
+
 func QueryLogs(groupId int64, offset uint64, limit uint64, uid int64, before time.Time, vtype OPReasons) []CreditLog {
 	var ret = []CreditLog{}
 

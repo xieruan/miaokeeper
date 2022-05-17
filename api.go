@@ -87,14 +87,15 @@ func InitRESTServer(portNum int) {
 			credit.POST("/:userId/consume", func(c *gin.Context) {
 				if ci := GinParseUser(c); ci != nil {
 					consumeRequest := struct {
-						Credit        int64 `json:"credit,omitempty"`
-						AllowNegative bool  `json:"allowNegative,omitempty"`
+						Credit        int64  `json:"credit,omitempty"`
+						Note          string `json:"note,omitempty"`
+						AllowNegative bool   `json:"allowNegative,omitempty"`
 					}{}
 					c.BindJSON(&consumeRequest)
 					if consumeRequest.Credit > 0 {
 						ci.Acquire(func() {
 							if ci.Credit >= consumeRequest.Credit || (ci.Credit > 0 && consumeRequest.AllowNegative) {
-								ci.unsafeUpdate(UMAdd, -consumeRequest.Credit, nil, OPByAPIConsume, 0, "")
+								ci.unsafeUpdate(UMAdd, -consumeRequest.Credit, nil, OPByAPIConsume, 0, consumeRequest.Note)
 								c.JSON(http.StatusOK, GinData(ci))
 							} else {
 								c.JSON(http.StatusNotAcceptable, GinError("the user does not have enough credit."))
@@ -108,11 +109,12 @@ func InitRESTServer(portNum int) {
 			credit.POST("/:userId/bonus", func(c *gin.Context) {
 				if ci := GinParseUser(c); ci != nil {
 					bonusRequest := struct {
-						Credit int64 `json:"credit,omitempty"`
+						Credit int64  `json:"credit,omitempty"`
+						Note   string `json:"note,omitempty"`
 					}{}
 					c.BindJSON(&bonusRequest)
 					if bonusRequest.Credit > 0 {
-						ci.Update(UMAdd, bonusRequest.Credit, nil, OPByAPIBonus, 0, "")
+						ci.Update(UMAdd, bonusRequest.Credit, nil, OPByAPIBonus, 0, bonusRequest.Note)
 						c.JSON(http.StatusOK, GinData(ci))
 					} else {
 						c.JSON(http.StatusBadRequest, GinError("added credit should be a positive number."))
