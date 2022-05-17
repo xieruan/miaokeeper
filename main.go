@@ -19,6 +19,15 @@ func main() {
 		os.Exit(0)
 	}
 
+	{
+		tz := os.Getenv("TZ")
+		if tz == "" {
+			tz = "Asia/Shanghai"
+		}
+		loc, _ := time.LoadLocation(tz)
+		time.Local = loc
+	}
+
 	if PingArg {
 		InitTelegram()
 		t := time.Now().UnixMilli()
