@@ -264,12 +264,14 @@ func GenLogDialog(c *tb.Callback, m *tb.Message, groupId int64, offset uint64, l
 
 	if !isToggle {
 		nlen := 0
+		idlen := 0
 		logs = QueryLogs(groupId, offset, limit, userId, before, reason)
 		for _, r := range logs {
 			nlen = MaxInt(nlen, len(fmt.Sprintf("%d", r.Credit)))
+			idlen = MaxInt(idlen, len(fmt.Sprintf("%d", r.ID)))
 		}
 		for _, r := range logs {
-			text += fmt.Sprintf("`%10d` | `%s(%"+fmt.Sprintf("%d", nlen)+"d)` | `%s`\n", r.UserID, r.Reason[:1], r.Credit, r.CreatedAt.Format("01-02.15:04"))
+			text += fmt.Sprintf("`%"+fmt.Sprintf("%d", idlen)+"d` | `%10d` | `%s(%"+fmt.Sprintf("%d", nlen)+"d)` | `%s`\n", r.ID, r.UserID, r.Reason[:1], r.Credit, r.CreatedAt.Format("0102.15:04"))
 		}
 		toggleButtonMode = 1
 	} else {

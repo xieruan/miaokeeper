@@ -545,7 +545,7 @@ func CmdCreditLog(m *tb.Message) {
 			GenLogDialog(nil, m, groupId, 0, 10, userId, time.Now(), OPParse(strings.ToUpper(reason)), 0)
 		} else {
 			if cl := FindLog(groupId, recordId); cl != nil {
-				SmartSend(m, fmt.Sprintf(Locale("cmd.credit.details", GetSenderLocale(m)), cl.ID, cl.UserID, cl.Credit, cl.Reason, cl.Notes, cl.Executor, cl.CreatedAt.Format("01-02 15:04")))
+				SmartSend(m, fmt.Sprintf(Locale("cmd.credit.details", GetSenderLocale(m)), cl.ID, cl.UserID, cl.Credit, cl.Reason, cl.Notes, cl.Executor, cl.CreatedAt.Format("01-02 15:04")), WithMarkdown())
 			} else {
 				SmartSendDelete(m, Locale("cmd.credit.notFound", GetSenderLocale(m)))
 			}
