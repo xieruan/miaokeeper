@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"regexp"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/BBAlliance/miaokeeper/memutils"
 	"github.com/bep/debounce"
+	"github.com/gofrs/uuid"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -29,6 +31,7 @@ var APISeed = ""
 
 var GROUPS = []int64{}
 var ADMINS = []int64{}
+var ADMIN_SINGLE_AUTH = ""
 
 var lastID = int64(-1)
 var lastText = ""
@@ -146,6 +149,7 @@ func InitTelegram() {
 
 		// ---------------- Normal User ----------------
 
+		HandleLagacy("/start", CmdStart)
 		HandleLagacy("/ban_user", CmdBanUserCommand)
 		HandleLagacy("/unban_user", CmdUnbanUserCommand)
 		HandleLagacy("/kick_user", CmdKickUserCommand)
@@ -184,6 +188,15 @@ func InitTelegram() {
 
 	if CleanArg {
 		DInfo("System | Clean mode is on.")
+	}
+
+	// log init message if there is no super admin
+	if len(ADMINS) == 0 {
+		uuid, _ := uuid.NewV4()
+		ADMIN_SINGLE_AUTH = uuid.String()
+
+		DInfo("System | Please authorize your very first telegram account with the following link:")
+		DInfo("System | " + fmt.Sprintf("https://t.me/%s?start=%s", Bot.Me.Username, ADMIN_SINGLE_AUTH))
 	}
 }
 

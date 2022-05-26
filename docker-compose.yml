@@ -1,6 +1,7 @@
 version: "3"
 services:
   miaokeeper:
+    container_name: miaokeeper
     image: ghcr.io/bballiance/miaokeeper:latest
     networks:
       - miaokeeper

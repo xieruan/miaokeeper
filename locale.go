@@ -43,6 +43,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.noMiaoPerm":              "❌ 您没有喵组权限，亦或是您未再对应群组使用这个命令",
 		"cmd.mustReplyChannelOrInput": "❌ 请回复一则转发的频道消息或者手动加上频道 id ～",
 		"cmd.mustInGroup":             "❌ 请在群组发送这条命令哦 ～",
+		"cmd.startSuGrant":            "✔️ 授权成功，您现在可以把我添加到目标群组中，并在群组中发送 /su_add_group 开启管理模式 ～",
+		"cmd.addToGroup":              "➕ 添加到组|https://t.me/%s?startgroup=",
 
 		"cmd.misc.version":       "👀 当前版本为: %s",
 		"cmd.misc.replyid.chat":  "*群组 ID:* `%d`\n*回复匿名群 ID:* `%d`\n*回复匿名群类型:* `%s`",
@@ -214,6 +216,8 @@ var LocaleMap = map[string]map[string]string{
 		"cmd.noMiaoPerm":              "❌ You are not authorized to use this miao-perm command, or the group is not set up yet by admin.",
 		"cmd.mustReplyChannelOrInput": "❌ Please reply this command to a forwarded channel message, or pass in the channel id as a parameter.",
 		"cmd.mustInGroup":             "❌ Please send this command in a group chat.",
+		"cmd.startSuGrant":            "✔️ User authorized. Now I am able to guard your group. Please add me into your group and send /su_add_group in that group to start.",
+		"cmd.addToGroup":              "➕ Add Me to Group|https://t.me/%s?startgroup=",
 
 		"cmd.misc.version":       "👀 Current Version: %s",
 		"cmd.misc.replyid.chat":  "*Chat ID:* `%d`\n*Reply SenderChat ID:* `%d`\n*Reply SenderChat Type:* `%s`",

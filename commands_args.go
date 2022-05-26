@@ -636,6 +636,20 @@ func CmdLottery(m *tb.Message) {
 	}
 }
 
+func CmdStart(m *tb.Message) {
+	if m.Chat.ID > 0 {
+		if ADMIN_SINGLE_AUTH != "" {
+			if len(ADMINS) == 0 && m.Payload == ADMIN_SINGLE_AUTH {
+				UpdateAdmin(m.Sender.ID, UMSet)
+				SendBtns(m, Locale("cmd.startSuGrant", GetSenderLocale(m)), "", []string{
+					fmt.Sprintf(Locale("cmd.addToGroup", GetSenderLocale(m)), Bot.Me.Username),
+				})
+				ADMIN_SINGLE_AUTH = ""
+			}
+		}
+	}
+}
+
 func CmdBanUserCommand(m *tb.Message) {
 	defer LazyDelete(m)
 	if IsGroupAdmin(m.Chat, m.Sender) && ValidReplyUser(m) {

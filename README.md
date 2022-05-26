@@ -33,7 +33,7 @@
 ```
 
 > 3.若无报错说明启动成功。  
-> 4.启动成功后通过 `-setadmin 用户ID` 添加管理。或者在启动时填入参数，若在启动时添加将会自动退出程序。若无报错，请去掉 `-setadmin 用户ID` 后再次启动。
+> 4.启动成功根据控制台 log 点击授权链接进行首个超管授权。如果链接失效或超管账号丢失，可以通过 `-setadmin 用户ID` 添加管理。使用 `-setadmin` 参数重置管理员成功后程序会自动退出。
 
 ### 2.Docker安装  
 
@@ -52,13 +52,14 @@ wget https://raw.githubusercontent.com/BBAlliance/miaokeeper/master/docker-compo
 
 > 3.修改 `docker-compose.yml` 中的 `<YOUR_TOKEN>` 为你自己的机器人Token。  
 
-> 4.使用 `Docker-compose`  命令启动Docker容器。  
-> 5.使用 `docker exec -it 容器名 or ID bash` 进入容器，进入容器后通过 `./miaokeeper  -setadmin 123456 -token <YOUR_TOKEN> -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper`  添加管理。其中 `-setadmin   `  后加上TG用户ID。若无报错，说明添加成功，重启容器即可。  
+> 4.使用 `docker-compose` (或 `docker compose`) 命令启动Docker容器。  
+> 5.启动成功后，根据控制台 log (`docker logs miaokeeper`) 点击授权链接进行首个超管授权。
+> 6.如果链接失效或超管账号丢失，你也可以使用 `docker exec -it 容器名 or ID bash` 进入容器，进入容器后通过 `./miaokeeper -setadmin 123456 -token <YOUR_TOKEN> -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper`  添加管理。其中 `-setadmin` 后加上TG用户ID。若无报错，说明添加成功，重启容器即可。  
 > 
 > 例如：  
 
 ```bash
-./miaokeeper  -setadmin 123456 -token 123456:XXXXXXXXXXXXXXXX -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper 
+./miaokeeper -setadmin 123456 -token 123456:XXXXXXXXXXXXXXXX -database root:miaokeeper2022@tcp\(mariadb:3306\)/miaokeeper 
 
 ```
 
