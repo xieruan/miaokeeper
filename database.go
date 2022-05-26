@@ -87,7 +87,7 @@ func WriteConfig(key, value string) {
 		DoUpdates: clause.AssignmentColumns([]string{"v"}),
 	}).Create(&dbgc).Error
 	if err != nil {
-		DLogf("Config Write Error | key=%s value=%s error=%v", key, value, err.Error())
+		DInfof("Config Write Error | key=%s value=%s error=%v", key, value, err.Error())
 	}
 }
 

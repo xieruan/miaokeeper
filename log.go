@@ -48,7 +48,7 @@ func LogTypeToStr(lt LogType) string {
 }
 
 func PrintLogUnit(lu *LogUnit) {
-	if VerboseMode || (lu.Type == LTLog || lu.Type == LTError) {
+	if VerboseMode || (lu.Type == LTInfo || lu.Type == LTError) {
 		if lu.Type <= LTWarn {
 			fmt.Fprintf(os.Stdout, "%s | %s | %s", LogTypeToStr(lu.Type), lu.TimeStr, lu.Data)
 		} else {
